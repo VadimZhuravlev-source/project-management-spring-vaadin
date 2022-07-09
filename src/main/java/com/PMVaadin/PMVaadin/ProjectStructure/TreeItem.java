@@ -9,7 +9,8 @@ public class TreeItem<V extends HierarchyElement> implements SimpleTree<V> {
 
     private V value;
     private List<SimpleTree<V>> children = new LinkedList<>();
-    private SimpleTree parent;
+    private SimpleTree<V> parent;
+    private SimpleTree<V> rootItem;
 
     public TreeItem() {
 
@@ -18,7 +19,6 @@ public class TreeItem<V extends HierarchyElement> implements SimpleTree<V> {
     public TreeItem(V value) {
         this.value = value;
     }
-
 
     @Override
     public void setValue(V value) {
@@ -30,14 +30,13 @@ public class TreeItem<V extends HierarchyElement> implements SimpleTree<V> {
         return value;
     }
 
-
     @Override
-    public void setParent(SimpleTree parent) {
+    public void setParent(SimpleTree<V> parent) {
         this.parent = parent;
     }
 
     @Override
-    public SimpleTree getParent() {
+    public SimpleTree<V> getParent() {
         return parent;
     }
 
@@ -47,36 +46,42 @@ public class TreeItem<V extends HierarchyElement> implements SimpleTree<V> {
     }
 
     @Override
-    public <T> SimpleTree getTreeByList(List<V> hierarchyElements,
-                                                                                       Function<V, T> getId,
-                                                                                       Function<V, T> getParentId){
+    public SimpleTree getRootItem() {
+        return rootItem;
+    }
 
-        Map<T, TreeItem<V>> mappedIdAllElements = new HashMap<>();
 
-        List<TreeItem<V>> treeItems = new ArrayList<>(hierarchyElements.size());
+    @Override
+    public <T> List<SimpleTree<V>> getTreeItemList(List<V> hierarchyElements,
+                                          Function<V, T> getId,
+                                          Function<V, T> getParentId){
+
+        Map<T, SimpleTree<V>> mappedIdAllElements = new HashMap<>();
+
+        List<SimpleTree<V>> treeItems = new ArrayList<>(hierarchyElements.size());
         for (V hierarchyElement: hierarchyElements) {
-            TreeItem<V> treeItem = new TreeItem(hierarchyElement);
+            SimpleTree<V> treeItem = new TreeItem(hierarchyElement);
             T id = getId.apply(hierarchyElement);
             mappedIdAllElements.put(id, treeItem);
             treeItems.add(treeItem);
         }
 
-        TreeItem<V> rootItem = nullTreeItem();
-        for (TreeItem<V> treeItem : treeItems) {
+        rootItem = nullTreeItem();
+        for (SimpleTree<V> treeItem : treeItems) {
             V projectTask = treeItem.getValue();
             T parentId = getParentId.apply(projectTask);
-            TreeItem<V> parent = mappedIdAllElements.get(parentId);
+            SimpleTree<V> parent = mappedIdAllElements.get(parentId);
             if (parent == null) {
                 parent = rootItem;
             }
-            if (parent == treeItem){
+            if (parent == treeItem){ //ToDo throw exception
                 continue;
             }
             parent.getChildren().add(treeItem);
             treeItem.setParent(parent);
         }
 
-        return rootItem;
+        return treeItems;
 
     }
 

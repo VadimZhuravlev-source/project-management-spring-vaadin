@@ -1,6 +1,5 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 import com.PMVaadin.PMVaadin.Entities.ProjectTaskOrderedHierarchy;
 
 public interface TreeProjectTasks<V extends ProjectTaskOrderedHierarchy> {

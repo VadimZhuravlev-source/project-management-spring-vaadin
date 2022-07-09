@@ -2,19 +2,14 @@ package com.PMVaadin.PMVaadin.Services;
 
 import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 import com.PMVaadin.PMVaadin.Entities.ProjectTaskImpl;
-import com.PMVaadin.PMVaadin.ProjectStructure.SimpleTree;
-import com.PMVaadin.PMVaadin.ProjectStructure.TreeItem;
-import com.PMVaadin.PMVaadin.ProjectStructure.TreeProjectTasks;
-import com.PMVaadin.PMVaadin.ProjectStructure.TreeProjectTasksImpl;
+import com.PMVaadin.PMVaadin.ProjectStructure.*;
 import com.PMVaadin.PMVaadin.Repositories.ProjectTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceUnit;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ProjectTaskServiceImpl implements ProjectTaskService {
@@ -43,16 +38,26 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         projectTask2.setId(2);
         projectTask2.setLevelOrder(2);
         projectTask2.setName("2");
+        ProjectTask projectTask11 = new ProjectTaskImpl();
+        projectTask11.setId(3);
+        projectTask11.setLevelOrder(1);
+        projectTask11.setName("1.1");
+        projectTask11.setParentId(1);
         ProjectTask projectTask12 = new ProjectTaskImpl();
-        projectTask12.setId(3);
-        projectTask12.setLevelOrder(1);
+        projectTask12.setId(4);
+        projectTask12.setLevelOrder(2);
         projectTask12.setName("1.2");
-        projectTask12.setParentId(1);
-        ProjectTask projectTask13 = new ProjectTaskImpl();
-        projectTask13.setId(4);
-        projectTask13.setLevelOrder(2);
-        projectTask13.setName("1.3");
-        projectTask13.setParentId(1);
+        projectTask12.setParentId(1); // when parentId = 7, then the list will become the list with circle
+        ProjectTask projectTask121 = new ProjectTaskImpl();
+        projectTask121.setId(6);
+        projectTask121.setLevelOrder(1);
+        projectTask121.setName("1.2.1");
+        projectTask121.setParentId(4);
+        ProjectTask projectTask1211 = new ProjectTaskImpl();
+        projectTask1211.setId(7);
+        projectTask1211.setLevelOrder(1);
+        projectTask1211.setName("1.2.1.1");
+        projectTask1211.setParentId(6);
         ProjectTask projectTask21 = new ProjectTaskImpl();
         projectTask21.setId(5);
         projectTask21.setLevelOrder(1);
@@ -60,15 +65,19 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         projectTask21.setParentId(2);
         projectTasks.add(projectTask1);
         projectTasks.add(projectTask2);
+        projectTasks.add(projectTask11);
         projectTasks.add(projectTask12);
-        projectTasks.add(projectTask13);
+        projectTasks.add(projectTask121);
+        projectTasks.add(projectTask1211);
         projectTasks.add(projectTask21);
 
-        SimpleTree<ProjectTask> treeItem = new TreeItem<>();
-        SimpleTree<ProjectTask> rootTreeItem = treeItem.getTreeByList(projectTasks, ProjectTask::getId, ProjectTask::getParentId);
+        SimpleTree<ProjectTask> simpleTree = new TreeItem<>();
+        List<SimpleTree<ProjectTask>> treeItems = simpleTree.getTreeItemList(projectTasks, ProjectTask::getId, ProjectTask::getParentId);
+        Validations<ProjectTask> validations = new ValidationsImpl();
+        boolean isDetectedCycle = validations.detectCycle(treeItems);
+        if (isDetectedCycle) projectTasks.clear();
         TreeProjectTasks<ProjectTask> treeProjectTasks = new TreeProjectTasksImpl<>();
-        //SimpleTree<ProjectTask> rootTreeItem = treeProjectTasks.getTreeByList(projectTasks, ProjectTask::getId, ProjectTask::getParentId);
-        treeProjectTasks.fillWbs(rootTreeItem);
+        treeProjectTasks.fillWbs(simpleTree.getRootItem());
 
         return projectTasks;
 

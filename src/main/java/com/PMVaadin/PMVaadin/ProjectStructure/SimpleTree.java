@@ -9,11 +9,13 @@ public interface SimpleTree<V extends HierarchyElement> {
 
     void setValue(V value);
     V getValue();
-    void setParent(SimpleTree parent);
-    SimpleTree getParent();
+    void setParent(SimpleTree<V> parent);
+    SimpleTree<V> getParent();
     List<SimpleTree<V>> getChildren();
-    <T> SimpleTree getTreeByList(List<V> hierarchyElements,
-                                                      Function<V, T> getId,
-                                                      Function<V, T> getParentId);
+    SimpleTree<V> getRootItem();
+
+    <T> List<SimpleTree<V>> getTreeItemList(List<V> hierarchyElements,
+                                   Function<V, T> getId,
+                                   Function<V, T> getParentId);
 
 }
