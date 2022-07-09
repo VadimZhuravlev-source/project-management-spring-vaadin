@@ -1,0 +1,60 @@
+plugins {
+	id 'org.springframework.boot' version '2.7.1'//2.7.2-SNAPSHOT'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+	id 'com.vaadin' version '23.1.2'
+	id "org.flywaydb.flyway" version "8.5.13"
+	id 'java'
+}
+
+group = 'com.PMVaadin'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+//	maven { url 'https://repo.spring.io/milestone' }
+//	maven { url 'https://repo.spring.io/snapshot' }
+}
+
+ext {
+	set('vaadinVersion', "23.1.2")
+}
+
+dependencies {
+	//implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+//	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.flywaydb:flyway-core'
+	compileOnly 'org.projectlombok:lombok'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'org.springframework.security:spring-security-test'
+	implementation 'com.vaadin:vaadin-spring-boot-starter'
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "com.vaadin:vaadin-bom:${vaadinVersion}"
+	}
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+flyway {
+	url = 'jdbc:postgresql://localhost:5432/PM'
+	user = 'postgres'
+	password = '123'
+	schemas = ['public']
+}
