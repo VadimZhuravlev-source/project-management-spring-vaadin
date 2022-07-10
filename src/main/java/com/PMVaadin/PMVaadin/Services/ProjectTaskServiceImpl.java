@@ -27,9 +27,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     public List<ProjectTask> getProjectTasks() {
         List<ProjectTask> projectTasks = projectTaskRepository.findAll();
 
-        //List<ProjectTask> projectTaskList = projectTasks.stream().collect(Collectors.toList());
-
-        //List<ProjectTask> projectTasks = new ArrayList<>();
         ProjectTask projectTask1 = new ProjectTaskImpl();
         projectTask1.setId(1);
         projectTask1.setLevelOrder(1);
@@ -47,7 +44,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         projectTask12.setId(4);
         projectTask12.setLevelOrder(2);
         projectTask12.setName("1.2");
-        projectTask12.setParentId(1); // when parentId = 7, then the list will become the list with circle
+        projectTask12.setParentId(7); // when parentId = 7, then the list will become the list with circle
         ProjectTask projectTask121 = new ProjectTaskImpl();
         projectTask121.setId(6);
         projectTask121.setLevelOrder(1);
@@ -71,15 +68,18 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         projectTasks.add(projectTask1211);
         projectTasks.add(projectTask21);
 
-        SimpleTree<ProjectTask> simpleTree = new TreeItem<>();
-        List<SimpleTree<ProjectTask>> treeItems = simpleTree.getTreeItemList(projectTasks, ProjectTask::getId, ProjectTask::getParentId);
-        Validations<ProjectTask> validations = new ValidationsImpl();
-        boolean isDetectedCycle = validations.detectCycle(treeItems);
-        if (isDetectedCycle) projectTasks.clear();
         TreeProjectTasks<ProjectTask> treeProjectTasks = new TreeProjectTasksImpl<>();
-        treeProjectTasks.fillWbs(simpleTree.getRootItem());
+        treeProjectTasks.populateTreeByList(projectTasks);
+        ValidationsMessage validations = treeProjectTasks.validateTree();
+
+        if (!validations.validationPassed()) projectTasks.clear();
+
+        treeProjectTasks.fillWbs();
 
         return projectTasks;
 
     }
+
+
+
 }
