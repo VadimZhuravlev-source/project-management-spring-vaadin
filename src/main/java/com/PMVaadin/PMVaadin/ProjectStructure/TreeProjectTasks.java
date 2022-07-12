@@ -1,13 +1,13 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTaskOrderedHierarchy;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
 import java.util.List;
 
-public interface TreeProjectTasks<V extends ProjectTaskOrderedHierarchy> {
+public interface TreeProjectTasks {
 
     void fillWbs();
-    void populateTreeByList(List<V> list);
-    ValidationsMessage validateTree();
+    void populateTreeByList(List<ProjectTask> list);
+    void validateTree() throws Exception;
 
 }

@@ -6,6 +6,7 @@ import java.util.List;
 
 public interface ProjectTaskService {
 
-    List<ProjectTask> getProjectTasks();
+    List<ProjectTask> getProjectTasks() throws Exception;
+    ProjectTask saveTask(ProjectTask projectTask);
 
 }

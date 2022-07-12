@@ -1,15 +1,15 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTaskOrderedHierarchy;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class TreeProjectTasksImpl<V extends ProjectTaskOrderedHierarchy> implements TreeProjectTasks<V>{
+public class TreeProjectTasksImpl implements TreeProjectTasks{
 
-    private TreeItem<V> rootItem = new SimpleTreeItem<>();
-    private List<TreeItem<V>> treeItems = new ArrayList<>();
-    private Validations<V> validations = new ValidationsImpl<>();
+    private TreeItem<ProjectTask> rootItem = new SimpleTreeItem<>();
+    private List<TreeItem<ProjectTask>> treeItems = new ArrayList<>();
+    private Validations validations = new ValidationsImpl();
 
     @Override
     public void fillWbs() {
@@ -19,34 +19,27 @@ public class TreeProjectTasksImpl<V extends ProjectTaskOrderedHierarchy> impleme
     }
 
     @Override
-    public void populateTreeByList(List<V> projectTasks) {
+    public void populateTreeByList(List<ProjectTask> projectTasks) {
 
-        TreeItemList<V> treeItemList = new TreeItemList<>();
-        this.treeItems = treeItemList.getTreeItemList(projectTasks, V::getId, V::getParentId);
+        TreeItemList<ProjectTask> treeItemList = new TreeItemList<>();
+        this.treeItems = treeItemList.getTreeItemList(projectTasks, ProjectTask::getId, ProjectTask::getParentId);
         this.rootItem = treeItemList.getRootItem();
 
     }
 
     @Override
-    public ValidationsMessage validateTree() {
+    public void validateTree() throws Exception {
 
-        boolean isDetectedCycle = validations.detectCycle(treeItems);
-        if (isDetectedCycle)
-            return new ValidationsMessageImpl(false, "Detect cycle in tree");
-
-        boolean isQuantitiesEquals = validations.checkQuantitiesTreeItemInTree(rootItem, treeItems);
-        if (!isQuantitiesEquals)
-            return new ValidationsMessageImpl(false, "Quantities in rootTree and treeItems list aren't equals");
-
-        return new ValidationsMessageImpl();
+        validations.detectCycle(treeItems);
+        validations.checkQuantitiesTreeItemInTree(rootItem, treeItems);
 
     };
 
-    private void fillWbsRecursively(List<TreeItem<V>> children, String previousWbs) {
+    private void fillWbsRecursively(List<TreeItem<ProjectTask>> children, String previousWbs) {
 
-        for (TreeItem<V> child: children) {
+        for (TreeItem<ProjectTask> child: children) {
 
-            V hierarchyElement = child.getValue();
+            ProjectTask hierarchyElement = child.getValue();
             String newWbs = previousWbs + hierarchyElement.getLevelOrder().toString();
             hierarchyElement.setWbs(newWbs);
             fillWbsRecursively(child.getChildren(), newWbs + ".");

@@ -1,11 +1,11 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.HierarchyElement;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
 import java.util.List;
 
-public interface Unloopable<V extends HierarchyElement> {
+public interface Unloopable {
 
-    boolean detectCycle(List<TreeItem<V>> treeItems);
+    void detectCycle(List<? extends TreeItem> treeItems) throws Exception;
 
 }

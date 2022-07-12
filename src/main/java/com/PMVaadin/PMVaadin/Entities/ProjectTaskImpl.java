@@ -1,5 +1,6 @@
 package com.PMVaadin.PMVaadin.Entities;
 
+import com.PMVaadin.PMVaadin.Entities.Calendar.OperationListenerForCalendar;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,13 +32,6 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Setter
     @Column(name = "level_order")
     private Integer levelOrder;
-
-//    @Setter
-//    @Transient
-//    private Integer tempId;
-//    @Setter
-//    @Transient
-//    private Integer tempParentId;
 
     // service fields
     @Version
@@ -74,9 +68,32 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
         if (!(o instanceof ProjectTask)) return false;
         ProjectTask projectTask = (ProjectTask) o;
 
-        return getId().equals(projectTask.getId()) //&& getTempId() == projectTask.getTempId()
-                && getParentId().equals(projectTask.getParentId()) //&& getTempParentId() == projectTask.getTempParentId()
-                && getVersion() == projectTask.getVersion();
+        boolean equalsId;
+        if (getId() == null){
+            equalsId = getId() == projectTask.getId();
+        } else {
+            equalsId = getId().equals(projectTask.getId());
+        }
+
+        if (!equalsId) return false;
+
+        boolean equalsParentId;
+        if (getParentId() == null){
+            equalsParentId = getParentId() == projectTask.getParentId();
+        } else {
+            equalsParentId = getParentId().equals(projectTask.getParentId());
+        }
+
+        if (!equalsParentId) return false;
+
+        boolean equalsVersion;
+        if (getVersion() == null){
+            equalsVersion = getVersion() == projectTask.getVersion();
+        } else {
+            equalsVersion = getVersion().equals(projectTask.getVersion());
+        }
+
+        return equalsVersion;
     }
 
     @Override
@@ -93,4 +110,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
                 ", wbs='" + wbs + '\'' +
                 '}';
     }
+
+    @Override
+    public boolean isNew() {
+        return getId() == null;
+    };
+
 }

@@ -1,44 +1,44 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.HierarchyElement;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
 import java.util.List;
 
-public class ValidationsImpl<V extends HierarchyElement> implements Validations<V> {
+public class ValidationsImpl implements Validations {
 
     @Override
-    public boolean detectCycle(List<TreeItem<V>> treeItems) {
+    public void detectCycle(List<? extends TreeItem> treeItems) throws Exception {
 
         // Floyd’s cycle detection algorithm
-        for (TreeItem<V> treeItem : treeItems) {
-            TreeItem<V> fastItem = treeItem;
-            TreeItem<V> slowItem = treeItem;
+        for (TreeItem treeItem : treeItems) {
+            TreeItem fastItem = treeItem;
+            TreeItem slowItem = treeItem;
             while (fastItem != null && fastItem.getParent() != null) {
                 // move slow by one
                 slowItem = slowItem.getParent();
                 // move fast by two
                 fastItem = fastItem.getParent().getParent();
-                if (slowItem == fastItem) return true;
+                if (slowItem == fastItem)
+                    throw new Exception("Detect cycle in tree with element: " + treeItem.getValue().toString());
             }
         }
-
-        return false;
 
     }
 
     @Override
-    public boolean checkQuantitiesTreeItemInTree(TreeItem<V> rootItem, List<TreeItem<V>> treeItems) {
+    public void checkQuantitiesTreeItemInTree(TreeItem rootItem, List<? extends TreeItem> treeItems) throws Exception {
 
         int quantityInRootItem = getQuantityInRootItemRecursively(rootItem);
 
-        return quantityInRootItem == treeItems.size();
+        if (quantityInRootItem != treeItems.size())
+            throw new Exception("Quantity of elements in rootTree and treeItems aren't equals");
 
-    };
+    }
 
-    private int getQuantityInRootItemRecursively(TreeItem<V> rootItem) {
+    private int getQuantityInRootItemRecursively(TreeItem<?> rootItem) {
 
         int quantity = 0;
-        for (TreeItem<V> treeItem: rootItem.getChildren()) {
+        for (TreeItem treeItem: rootItem.getChildren()) {
             quantity++;
             quantity = quantity + getQuantityInRootItemRecursively(treeItem);
         }

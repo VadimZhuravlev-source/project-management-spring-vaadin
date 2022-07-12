@@ -1,7 +1,5 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.HierarchyElement;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,20 +18,20 @@ public class TreeItemList<V> {
                                                                              Function<V, T> getId,
                                                                              Function<V, T> getParentId){
 
-        Map<T, TreeItem<V>> mappedIdAllElements = new HashMap<>();
+        Map<T, TreeItem<V>> mapIdTreeItem = new HashMap<>();
 
         List<TreeItem<V>> treeItems = new ArrayList<>(hierarchyElements.size());
         for (V hierarchyElement: hierarchyElements) {
             TreeItem<V> treeItem = new SimpleTreeItem(hierarchyElement);
             T id = getId.apply(hierarchyElement);
-            mappedIdAllElements.put(id, treeItem);
+            mapIdTreeItem.put(id, treeItem);
             treeItems.add(treeItem);
         }
 
         for (TreeItem<V> treeItem : treeItems) {
-            V projectTask = treeItem.getValue();
-            T parentId = getParentId.apply(projectTask);
-            TreeItem<V> parent = mappedIdAllElements.get(parentId);
+            V hierarchyElement = treeItem.getValue();
+            T parentId = getParentId.apply(hierarchyElement);
+            TreeItem<V> parent = mapIdTreeItem.get(parentId);
             if (parent == null) {
                 parent = rootItem;
             }
