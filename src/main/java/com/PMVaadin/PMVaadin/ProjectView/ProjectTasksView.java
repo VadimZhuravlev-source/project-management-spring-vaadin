@@ -4,10 +4,12 @@ import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 import com.PMVaadin.PMVaadin.Entities.ProjectTaskImpl;
 import com.PMVaadin.PMVaadin.MainLayout;
 import com.PMVaadin.PMVaadin.Services.ProjectTaskService;
+import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
@@ -20,8 +22,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 import javax.annotation.security.PermitAll;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Route(value="", layout = MainLayout.class)
@@ -47,7 +48,7 @@ public class ProjectTasksView extends VerticalLayout {
         form = new ProjectTaskForm();
         form.setWidth("30em");
         form.addListener(ProjectTaskForm.SaveEvent.class, this::saveProjectTask);
-        form.addListener(ProjectTaskForm.DeleteEvent.class, this::deleteProjectTask);
+        form.addListener(ProjectTaskForm.DeleteEvent.class, this::deleteProjectTaskEvent);
         form.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
 
         SplitLayout content = new SplitLayout(treeGrid, form);
@@ -63,7 +64,7 @@ public class ProjectTasksView extends VerticalLayout {
 
         closeEditor();
 
-        treeGrid.asSingleSelect().addValueChangeListener(event ->
+        treeGrid.asMultiSelect().addValueChangeListener(event ->
                 editProjectTask(event.getValue()));
 
     }
@@ -74,20 +75,20 @@ public class ProjectTasksView extends VerticalLayout {
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
+        treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
         treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(ProjectTask.getHeaderName()).setFrozen(true)
-                .setAutoWidth(true).setFlexGrow(0).setResizable(true).setSortable(false);
-        treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true);
-        treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true);
-        treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true);
+                .setAutoWidth(true).setFlexGrow(0).setResizable(true).setSortable(false).setWidth("10em");
+        treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setAutoWidth(true);
+        treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true).setAutoWidth(true);
+        treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true).setAutoWidth(true);
         treeGrid.getColumns().forEach(col -> col.setAutoWidth(true));
-//        TreeData<ProjectTask> treeData = new TreeData<>();
         treeGrid.setDataProvider(new TreeDataProvider<>(treeData));
 
     }
 
     private void updateTreeData() {
 
-        List<ProjectTask> projectTasks = null;
+        List<ProjectTask> projectTasks;
         try {
             projectTasks = projectTaskService.getProjectTasks();
         } catch (Exception exception) {
@@ -114,38 +115,66 @@ public class ProjectTasksView extends VerticalLayout {
         filterText.setValueChangeMode(ValueChangeMode.LAZY);
         //filterText.addValueChangeListener(e -> updateList());
 
-        Button addProjectTask = new Button("Add task");
+        Button addProjectTask = new Button("Add");
         addProjectTask.addClickListener(click -> addProjectTask());
 
         Button updateTreeData = new Button("Update");
         updateTreeData.addClickListener(click -> updateTreeData());
 
-        HorizontalLayout toolbar = new HorizontalLayout(filterText, addProjectTask, updateTreeData);
+        Button deleteProjectTask = new Button("Delete");
+        deleteProjectTask.addClickListener(this::deleteProjectTaskClick);
+        deleteProjectTask.addClickShortcut(Key.DELETE);
+
+        HorizontalLayout toolbar = new HorizontalLayout(filterText, addProjectTask, deleteProjectTask, updateTreeData);
         toolbar.addClassName("toolbar");
         return toolbar;
     }
 
     private void saveProjectTask(ProjectTaskForm.SaveEvent event) {
-        ProjectTask selectedProjectTask = treeGrid.asSingleSelect().getValue();
+        ProjectTask selectedProjectTask = treeGrid.asMultiSelect().getValue().stream().findFirst().get();
         ProjectTask savedProjectTask = event.getProjectTask();
         if (selectedProjectTask != null && savedProjectTask.isNew()) savedProjectTask.setParentId(selectedProjectTask.getId());
-        projectTaskService.saveTask(savedProjectTask);
+        try {
+            savedProjectTask = projectTaskService.saveTask(savedProjectTask);
+        } catch (Exception e) {
+            Notification.show(e.getMessage());
+            return;
+        }
         updateTreeData();
-        treeGrid.asSingleSelect().clear();
-        treeGrid.asSingleSelect().setValue(savedProjectTask);
+        treeGrid.asMultiSelect().clear();
+        Set<ProjectTask> set = new HashSet<>();
+        set.add(savedProjectTask);
+        treeGrid.asMultiSelect().setValue(set);
         closeEditor();
     }
 
-    private void deleteProjectTask(ProjectTaskForm.DeleteEvent event) {
-        //service.deleteProjectTask(event.getContact());
+    private void deleteProjectTaskEvent(ProjectTaskForm.DeleteEvent event) {
+        List<ProjectTask> projectTasks = new ArrayList<>();
+        projectTasks.add(event.getProjectTask());
+        deleteProjectTask(projectTasks);
+    }
+
+    private void deleteProjectTaskClick(ClickEvent<Button> clickEvent) {
+        List<ProjectTask> projectTasks = treeGrid.asMultiSelect().getValue().stream().toList();
+        deleteProjectTask(projectTasks);
+    }
+
+    private void deleteProjectTask(List<ProjectTask> projectTasks) {
+        try {
+            projectTaskService.deleteTasks(projectTasks);
+        } catch (Exception e) {
+            Notification.show(e.getMessage());
+            return;
+        }
         updateTreeData();
         closeEditor();
     }
 
-    public void editProjectTask(ProjectTask projectTask) {
-        if (projectTask == null) {
+    private void editProjectTask(Set<ProjectTask> projectTasks) {
+        if (projectTasks == null || projectTasks.size() != 1) {
             closeEditor();
         } else {
+            ProjectTask projectTask = projectTasks.stream().findFirst().get();
             form.setProjectTask(projectTask);
             form.setVisible(true);
             addClassName("editing");
@@ -154,8 +183,9 @@ public class ProjectTasksView extends VerticalLayout {
 
     private void addProjectTask() {
 
-        //treeGrid.asSingleSelect().clear();
-        editProjectTask(new ProjectTaskImpl());
+        Set<ProjectTask> set = new HashSet<>();
+        set.add(new ProjectTaskImpl());
+        editProjectTask(set);
 
     }
 

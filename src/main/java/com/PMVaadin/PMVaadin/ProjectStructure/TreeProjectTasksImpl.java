@@ -35,6 +35,11 @@ public class TreeProjectTasksImpl implements TreeProjectTasks{
 
     };
 
+    @Override
+    public TreeItem<ProjectTask> getRootItem() {
+        return rootItem;
+    }
+
     private void fillWbsRecursively(List<TreeItem<ProjectTask>> children, String previousWbs) {
 
         for (TreeItem<ProjectTask> child: children) {

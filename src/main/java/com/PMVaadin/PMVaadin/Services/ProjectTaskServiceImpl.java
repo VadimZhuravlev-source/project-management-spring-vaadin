@@ -6,20 +6,24 @@ import com.PMVaadin.PMVaadin.Repositories.ProjectTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.PersistenceUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ProjectTaskServiceImpl implements ProjectTaskService {
 
-    @PersistenceUnit
-    private EntityManagerFactory entityManagerFactory;
     private ProjectTaskRepository projectTaskRepository;
+    private EntityManagerService entityManagerService;
 
     @Autowired
     public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository){
         this.projectTaskRepository = projectTaskRepository;
+    }
+
+    @Autowired
+    public void setEntityManagerService(EntityManagerService entityManagerService){
+        this.entityManagerService = entityManagerService;
     }
 
     @Override
@@ -36,7 +40,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public ProjectTask saveTask(ProjectTask projectTask) {
+    public ProjectTask saveTask(ProjectTask projectTask) throws Exception {
 
         if (projectTask.isNew()) {
             Integer parentId = projectTask.getParentId();
@@ -44,13 +48,55 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             if (parentId == null) {
                 levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
             } else {
-                levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(projectTask.getParentId());
+                levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentId);
             }
             if (levelOrder == null) levelOrder = 0;
             projectTask.setLevelOrder(++levelOrder);
         }
 
+        if (projectTask.getId() == projectTask.getParentId())
+            throw new Exception("Incorrect data. Update project and try again.");
+
         return projectTaskRepository.save(projectTask);
+
+    }
+
+    @Override
+    public void deleteTasks(List<ProjectTask> projectTasks) throws Exception {
+
+        List<Integer> projectTaskIds = prepareHierarchyElementsToDelete(projectTasks);
+        projectTaskRepository.deleteAllById(projectTaskIds);
+
+    }
+
+    private List<Integer> prepareHierarchyElementsToDelete(List<ProjectTask> projectTasks) {
+
+        projectTasks = projectTasks.stream().distinct().collect(Collectors.toList());
+
+        if (projectTasks.size() == 0) {
+            return new ArrayList<>();
+        }
+
+        List<ProjectTask> allHierarchyElements = entityManagerService.getElementsChildrenInDepth(projectTasks);
+
+        TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+        treeProjectTasks.populateTreeByList(allHierarchyElements);
+        TreeItem<ProjectTask> rootItem = treeProjectTasks.getRootItem();
+
+        List<Integer> projectTaskIds = new ArrayList<>(allHierarchyElements.size());
+        fillDeletedProjectTasksRecursively(rootItem, projectTaskIds);
+
+        return projectTaskIds;
+
+    }
+
+    private void fillDeletedProjectTasksRecursively(TreeItem<ProjectTask> treeItem, List<Integer> projectTaskIds) {
+
+        for (TreeItem<ProjectTask> currentTreeItem: treeItem.getChildren()) {
+            fillDeletedProjectTasksRecursively(currentTreeItem, projectTaskIds);
+            projectTaskIds.add(currentTreeItem.getValue().getId());
+        }
+
     }
 
 }

@@ -9,7 +9,7 @@ BEGIN
 		  FROM
 			project_tasks
 		  WHERE
-			project_tasks.id = ANY(array_parent_id::uuid[])
+			project_tasks.id = ANY(array_parent_id::INT[])
 		UNION ALL
 		  SELECT
 			ARRAY(
@@ -52,7 +52,7 @@ BEGIN
 		  FROM
 			project_tasks
 		  WHERE
-			project_tasks.id = ANY(array_parent_id::uuid[])
+			project_tasks.id = ANY(array_parent_id::INT[])
 		UNION ALL
 		  SELECT
 			p.*

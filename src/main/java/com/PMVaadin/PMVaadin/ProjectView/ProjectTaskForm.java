@@ -32,14 +32,11 @@ public class ProjectTaskForm extends FormLayout {
     Button delete = new Button("Delete");
     Button close = new Button("Cancel");
 
-    {
+    public ProjectTaskForm() {
+        addClassName("project-task-form");
         wbs.setEnabled(false);
         dateOfCreation.setEnabled(false);
         updateDate.setEnabled(false);
-    }
-
-    public ProjectTaskForm() {
-        addClassName("project-task-form");
         binder.bindInstanceFields(this);
         add(dateOfCreation,
                 updateDate,
@@ -49,6 +46,7 @@ public class ProjectTaskForm extends FormLayout {
                 startDate,
                 finishDate,
                 createButtonsLayout());
+        name.setAutofocus(true);
     }
 
     private HorizontalLayout createButtonsLayout() {
