@@ -2,6 +2,7 @@ package com.PMVaadin.PMVaadin.Services;
 
 import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 import com.PMVaadin.PMVaadin.Entities.ProjectTaskImpl;
+import com.PMVaadin.PMVaadin.ProjectStructure.TreeItem;
 import com.PMVaadin.PMVaadin.Repositories.ProjectTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,7 +14,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 
@@ -85,11 +85,11 @@ class ProjectTaskServiceImplTest {
     @Test
     void getProjectTasks() {
 
-        Mockito.when(projectTaskRepository.findAll()).thenReturn(projectTasks);
+        Mockito.when(projectTaskRepository.findAllByOrderByLevelOrderAsc()).thenReturn(projectTasks);
 
-        List<ProjectTask> projectTaskList = null;
+        TreeItem<ProjectTask> projectTaskList = null;
         try {
-            projectTaskList = projectTaskService.getProjectTasks();
+            projectTaskList = projectTaskService.getTreeProjectTasks();
         } catch (Exception e) {
 
         }
@@ -99,7 +99,7 @@ class ProjectTaskServiceImplTest {
         projectTask12.setParentId(7);
 
         try {
-            projectTaskList = projectTaskService.getProjectTasks();
+            projectTaskList = projectTaskService.getTreeProjectTasks();
         } catch (Exception e) {
 
         }

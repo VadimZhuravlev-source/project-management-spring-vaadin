@@ -36,7 +36,8 @@ BEGIN
             project_tasks.*
         FROM project_tasks
         JOIN full_hierarchy_of_element
-            ON project_tasks.id = full_hierarchy_of_element.id;
+            ON project_tasks.id = full_hierarchy_of_element.id
+        ORDER BY level_order ASC;
 END;
 $BODY$
 

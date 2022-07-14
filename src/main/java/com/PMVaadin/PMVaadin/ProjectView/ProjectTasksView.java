@@ -3,6 +3,7 @@ package com.PMVaadin.PMVaadin.ProjectView;
 import com.PMVaadin.PMVaadin.Entities.ProjectTask;
 import com.PMVaadin.PMVaadin.Entities.ProjectTaskImpl;
 import com.PMVaadin.PMVaadin.MainLayout;
+import com.PMVaadin.PMVaadin.ProjectStructure.TreeItem;
 import com.PMVaadin.PMVaadin.Services.ProjectTaskService;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Key;
@@ -33,7 +34,7 @@ public class ProjectTasksView extends VerticalLayout {
     private ProjectTaskService projectTaskService;
     private final TreeData<ProjectTask> treeData = new TreeData<>();
 
-    private TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
+    private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
     private TextField filterText = new TextField();
     private ProjectTaskForm form;
 
@@ -52,9 +53,6 @@ public class ProjectTasksView extends VerticalLayout {
         form.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
 
         SplitLayout content = new SplitLayout(treeGrid, form);
-//        content.setFlexGrow(2, treeGrid);
-//        content.setFlexGrow(1, form);
-//        content.setFlexShrink(0, form);
         content.addClassNames("content", "gap-m");
         content.setSizeFull();
 
@@ -77,8 +75,8 @@ public class ProjectTasksView extends VerticalLayout {
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
         treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(ProjectTask.getHeaderName()).setFrozen(true)
-                .setAutoWidth(true).setFlexGrow(0).setResizable(true).setSortable(false).setWidth("10em");
-        treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setAutoWidth(true);
+                .setFlexGrow(0).setResizable(true).setSortable(false).setWidth("25em");
+        treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setWidth("5em");
         treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true).setAutoWidth(true);
         treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true).setAutoWidth(true);
         treeGrid.getColumns().forEach(col -> col.setAutoWidth(true));
@@ -88,24 +86,27 @@ public class ProjectTasksView extends VerticalLayout {
 
     private void updateTreeData() {
 
-        List<ProjectTask> projectTasks;
+        TreeItem<ProjectTask> rootTask;
         try {
-            projectTasks = projectTaskService.getProjectTasks();
+            rootTask = projectTaskService.getTreeProjectTasks();
         } catch (Exception exception) {
             Notification.show(exception.getMessage());
             return;
         }
 
-        Map<Integer, ProjectTask> map = projectTasks.stream().collect(
-                Collectors.toMap(ProjectTask::getId, projectTask -> projectTask)
-        );
-
         treeData.clear();
-        for (ProjectTask projectTask: projectTasks) {
-            treeData.addItem(map.get(projectTask.getParentId()), projectTask);
-        }
+        populateTreeDataRecursively(rootTask);
 
         treeGrid.getDataProvider().refreshAll();
+
+    }
+
+    private void populateTreeDataRecursively(TreeItem<ProjectTask> treeItem) {
+
+        for (TreeItem<ProjectTask> child: treeItem.getChildren()) {
+            treeData.addItem(child.getParent().getValue(), child.getValue());
+            populateTreeDataRecursively(child);
+        }
 
     }
 
@@ -131,7 +132,9 @@ public class ProjectTasksView extends VerticalLayout {
     }
 
     private void saveProjectTask(ProjectTaskForm.SaveEvent event) {
-        ProjectTask selectedProjectTask = treeGrid.asMultiSelect().getValue().stream().findFirst().get();
+
+        ProjectTask selectedProjectTask = treeGrid.asMultiSelect().getValue().stream().findFirst().orElse(null);
+
         ProjectTask savedProjectTask = event.getProjectTask();
         if (selectedProjectTask != null && savedProjectTask.isNew()) savedProjectTask.setParentId(selectedProjectTask.getId());
         try {
@@ -174,9 +177,10 @@ public class ProjectTasksView extends VerticalLayout {
         if (projectTasks == null || projectTasks.size() != 1) {
             closeEditor();
         } else {
-            ProjectTask projectTask = projectTasks.stream().findFirst().get();
+            ProjectTask projectTask = projectTasks.stream().findFirst().orElse(null);
             form.setProjectTask(projectTask);
             form.setVisible(true);
+            form.name.setAutofocus(true);
             addClassName("editing");
         }
     }

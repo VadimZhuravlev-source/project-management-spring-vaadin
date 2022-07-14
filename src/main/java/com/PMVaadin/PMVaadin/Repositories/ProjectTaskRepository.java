@@ -6,26 +6,35 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integer> {
 
-    List<ProjectTask> findAll();
+    List<ProjectTask> findAllByOrderByLevelOrderAsc();
 
-    List<ProjectTask> findAllById(Iterable ids);
+    List<ProjectTask> findAllById(Iterable<Integer> ids);
 
     ProjectTask findById(Integer id);
 
-    void deleteAllById(Iterable ids);
+    void deleteAllById(Iterable<Integer> ids);
 
     ProjectTask save(ProjectTask projectTask);
 
-    @Query(value = "SELECT MAX(level_order) FROM project_tasks WHERE parent_id = :parentId",
-            nativeQuery = true)
+    Iterable<ProjectTask> saveAll(Iterable<ProjectTask> ids);
+
+    @Query(value = "SELECT MAX(level_order) FROM project_tasks WHERE parent_id = :parentId", nativeQuery = true)
     Integer findMaxOrderIdOnParentLevel(@Param("parentId") Integer parentId);
 
-    @Query(value = "SELECT MAX(level_order) FROM project_tasks WHERE parent_id is NULL",
-            nativeQuery = true)
+    @Query(value = "SELECT MAX(level_order) FROM project_tasks WHERE parent_id IS NULL", nativeQuery = true)
     Integer findMaxOrderIdOnParentLevelWhereParentNull();
+
+    List<ProjectTask> findByParentIdInOrderByLevelOrderAsc(Collection<Integer> ids);
+
+    @Query(value = "SELECT * FROM project_tasks WHERE parent_id IS NULL\n" +
+            "UNION\n" +
+            "SELECT * FROM project_tasks WHERE parent_id in (:parentIds)\n" +
+            "ORDER BY level_order ASC", nativeQuery = true)
+    List<ProjectTaskImpl> findByParentIdInWithNullOrderByLevelOrderAsc(@Param("parentIds") Iterable<Integer> ids);
 
 }

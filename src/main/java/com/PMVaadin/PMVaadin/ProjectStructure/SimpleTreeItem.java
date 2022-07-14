@@ -5,7 +5,7 @@ import java.util.*;
 public class SimpleTreeItem<V> implements TreeItem<V> {
 
     private V value;
-    private List<TreeItem<V>> children = new LinkedList<>();
+    private final List<TreeItem<V>> children = new LinkedList<>();
     private TreeItem<V> parent;
 
     public SimpleTreeItem() {

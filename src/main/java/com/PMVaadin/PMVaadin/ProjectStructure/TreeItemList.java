@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 public class TreeItemList<V> {
 
-    private TreeItem<V> rootItem = new SimpleTreeItem<>();
+    private final TreeItem<V> rootItem = new SimpleTreeItem<>();
 
     public TreeItem<V> getRootItem() {
         return rootItem;
@@ -22,7 +22,7 @@ public class TreeItemList<V> {
 
         List<TreeItem<V>> treeItems = new ArrayList<>(hierarchyElements.size());
         for (V hierarchyElement: hierarchyElements) {
-            TreeItem<V> treeItem = new SimpleTreeItem(hierarchyElement);
+            TreeItem<V> treeItem = new SimpleTreeItem<>(hierarchyElement);
             T id = getId.apply(hierarchyElement);
             mapIdTreeItem.put(id, treeItem);
             treeItems.add(treeItem);

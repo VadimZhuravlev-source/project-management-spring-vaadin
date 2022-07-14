@@ -10,5 +10,6 @@ public interface TreeProjectTasks {
     void populateTreeByList(List<ProjectTask> list);
     void validateTree() throws Exception;
     TreeItem<ProjectTask> getRootItem();
+    List<ProjectTask> recalculateProjectProperties();
 
 }

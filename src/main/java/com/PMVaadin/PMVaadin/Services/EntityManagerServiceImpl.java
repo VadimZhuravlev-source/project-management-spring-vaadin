@@ -7,7 +7,6 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class EntityManagerServiceImpl implements EntityManagerService {
@@ -25,10 +24,10 @@ public class EntityManagerServiceImpl implements EntityManagerService {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
 
         StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_children_of_parent_in_depth",
-                ProjectTask.class);
+                ProjectTaskImpl.class);
         query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
 
-        List<Integer> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).collect(Collectors.toList());
+        List<Integer> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
         String parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
         query.setParameter(1, parameterValue);
         query.execute();

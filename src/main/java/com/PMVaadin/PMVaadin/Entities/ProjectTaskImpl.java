@@ -1,6 +1,5 @@
 package com.PMVaadin.PMVaadin.Entities;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.OperationListenerForCalendar;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -65,32 +64,34 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ProjectTask)) return false;
-        ProjectTask projectTask = (ProjectTask) o;
+        if (!(o instanceof ProjectTask projectTask)) return false;
 
         boolean equalsId;
-        if (getId() == null){
-            equalsId = getId() == projectTask.getId();
+        Integer id = getId();
+        if (id == null){
+            equalsId = id == projectTask.getId();
         } else {
-            equalsId = getId().equals(projectTask.getId());
+            equalsId = id.equals(projectTask.getId());
         }
 
         if (!equalsId) return false;
 
         boolean equalsParentId;
-        if (getParentId() == null){
-            equalsParentId = getParentId() == projectTask.getParentId();
+        Integer parentId = getParentId();
+        if (parentId == null){
+            equalsParentId = parentId == projectTask.getParentId();
         } else {
-            equalsParentId = getParentId().equals(projectTask.getParentId());
+            equalsParentId = parentId.equals(projectTask.getParentId());
         }
 
         if (!equalsParentId) return false;
 
         boolean equalsVersion;
-        if (getVersion() == null){
-            equalsVersion = getVersion() == projectTask.getVersion();
+        Integer version = getVersion();
+        if (version == null){
+            equalsVersion = version == projectTask.getVersion();
         } else {
-            equalsVersion = getVersion().equals(projectTask.getVersion());
+            equalsVersion = version.equals(projectTask.getVersion());
         }
 
         return equalsVersion;
@@ -114,6 +115,6 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Override
     public boolean isNew() {
         return getId() == null;
-    };
+    }
 
 }

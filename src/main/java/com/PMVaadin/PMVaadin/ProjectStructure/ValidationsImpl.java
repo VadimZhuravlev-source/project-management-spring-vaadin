@@ -1,18 +1,16 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask;
-
 import java.util.List;
 
 public class ValidationsImpl implements Validations {
 
     @Override
-    public void detectCycle(List<? extends TreeItem> treeItems) throws Exception {
+    public void detectCycle(List<? extends TreeItem<?>> treeItems) throws Exception {
 
         // Floyd’s cycle detection algorithm
-        for (TreeItem treeItem : treeItems) {
-            TreeItem fastItem = treeItem;
-            TreeItem slowItem = treeItem;
+        for (TreeItem<?> treeItem : treeItems) {
+            TreeItem<?> fastItem = treeItem;
+            TreeItem<?> slowItem = treeItem;
             while (fastItem != null && fastItem.getParent() != null) {
                 // move slow by one
                 slowItem = slowItem.getParent();
@@ -26,7 +24,7 @@ public class ValidationsImpl implements Validations {
     }
 
     @Override
-    public void checkQuantitiesTreeItemInTree(TreeItem rootItem, List<? extends TreeItem> treeItems) throws Exception {
+    public void checkQuantitiesTreeItemInTree(TreeItem<?> rootItem, List<? extends TreeItem<?>> treeItems) throws Exception {
 
         int quantityInRootItem = getQuantityInRootItemRecursively(rootItem);
 
@@ -38,7 +36,7 @@ public class ValidationsImpl implements Validations {
     private int getQuantityInRootItemRecursively(TreeItem<?> rootItem) {
 
         int quantity = 0;
-        for (TreeItem treeItem: rootItem.getChildren()) {
+        for (TreeItem<?> treeItem: rootItem.getChildren()) {
             quantity++;
             quantity = quantity + getQuantityInRootItemRecursively(treeItem);
         }
