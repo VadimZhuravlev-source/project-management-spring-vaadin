@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integer> {
 
@@ -15,7 +16,7 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     List<ProjectTask> findAllById(Iterable<Integer> ids);
 
-    ProjectTask findById(Integer id);
+    Optional<ProjectTask> findById(Integer id);
 
     void deleteAllById(Iterable<Integer> ids);
 

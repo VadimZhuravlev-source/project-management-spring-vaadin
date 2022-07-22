@@ -1,5 +1,6 @@
 package com.PMVaadin.PMVaadin.Entities;
 
+import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -8,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Objects;
 
@@ -54,12 +56,19 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Transient
     private String wbs;
 
+    // Terms
     @Setter
     @Column(name = "start_date")
     private Date startDate;
     @Setter
     @Column(name = "finish_date")
     private Date finishDate;
+//    @Setter
+//    @Column(name = "duration")
+//    private BigDecimal duration;
+    @ManyToOne
+    @JoinColumn(name = "calendar_id")
+    private Calendar calendar;
 
     @Override
     public boolean equals(Object o) {
@@ -74,38 +83,20 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
             equalsId = id.equals(projectTask.getId());
         }
 
-        if (!equalsId) return false;
+        return equalsId;
 
-        boolean equalsParentId;
-        Integer parentId = getParentId();
-        if (parentId == null){
-            equalsParentId = parentId == projectTask.getParentId();
-        } else {
-            equalsParentId = parentId.equals(projectTask.getParentId());
-        }
-
-        if (!equalsParentId) return false;
-
-        boolean equalsVersion;
-        Integer version = getVersion();
-        if (version == null){
-            equalsVersion = version == projectTask.getVersion();
-        } else {
-            equalsVersion = version.equals(projectTask.getVersion());
-        }
-
-        return equalsVersion;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getParentId(), getVersion());
+        return Objects.hash(getId());
     }
 
     @Override
     public String toString() {
         return "ProjectTaskImpl{" +
-                "id=" + id +
+                "name=" + name +
+                ", id=" + id +
                 ", version=" + version +
                 ", parentId=" + parentId +
                 ", wbs='" + wbs + '\'' +

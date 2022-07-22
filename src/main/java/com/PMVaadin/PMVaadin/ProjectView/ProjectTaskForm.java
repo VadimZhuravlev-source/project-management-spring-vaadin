@@ -70,6 +70,7 @@ public class ProjectTaskForm extends FormLayout {
     public void setProjectTask(ProjectTask projectTask) {
         this.projectTask = projectTask;
         binder.readBean(projectTask);
+        name.focus();
     }
 
     private void validateAndSave() {

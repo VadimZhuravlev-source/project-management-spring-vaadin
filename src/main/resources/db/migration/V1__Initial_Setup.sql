@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS "project_tasks";
+--DROP TABLE IF EXISTS "project_tasks";
 
 CREATE TABLE project_tasks(
    id SERIAL NOT null,

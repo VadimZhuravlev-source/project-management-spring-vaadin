@@ -1,12 +1,12 @@
 
-ALTER TABLE project_tasks
-DROP CONSTRAINT IF EXISTS fk_calendar_id;
-
-ALTER TABLE project_tasks
-DROP COLUMN IF EXISTS calendar_id;
-
-DROP TABLE IF EXISTS "day_of_week_settings";
-DROP TABLE IF EXISTS "calendars";
+--ALTER TABLE project_tasks
+--DROP CONSTRAINT IF EXISTS fk_calendar_id;
+--
+--ALTER TABLE project_tasks
+--DROP COLUMN IF EXISTS calendar_id;
+--
+--DROP TABLE IF EXISTS "day_of_week_settings";
+--DROP TABLE IF EXISTS "calendars";
 
 CREATE TABLE calendars(
    id SERIAL NOT null,

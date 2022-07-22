@@ -1,15 +1,27 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
 import com.PMVaadin.PMVaadin.Entities.ProjectTask;
+import com.PMVaadin.PMVaadin.Entities.ProjectTaskImpl;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-public class TreeProjectTasksImpl implements TreeProjectTasks{
+@Component
+@Scope("prototype")
+public class TreeProjectTasksImpl implements TreeProjectTasks {
 
     private TreeItem<ProjectTask> rootItem;
     private List<TreeItem<ProjectTask>> treeItems = new ArrayList<>();
     private final Validations validations = new ValidationsImpl();
+    private final Unloopable unloopable = new UnloopableImpl();
+
+    public TreeProjectTasksImpl() {
+
+    }
 
     @Override
     public void fillWbs() {
@@ -31,7 +43,7 @@ public class TreeProjectTasksImpl implements TreeProjectTasks{
     @Override
     public void validateTree() throws Exception {
 
-        validations.detectCycle(treeItems);
+        unloopable.detectCycle(treeItems);
         validations.checkQuantitiesTreeItemInTree(rootItem, treeItems);
 
     }
@@ -42,9 +54,35 @@ public class TreeProjectTasksImpl implements TreeProjectTasks{
     }
 
     @Override
-    public List<ProjectTask> recalculateProjectProperties() {
+    public List<ProjectTask> recalculateThePropertiesOfTheWholeProject() {
 
         return getProjectTasksWithChangedLevelOrder(this.rootItem);
+
+    }
+
+    @Override
+    public List<ProjectTask> recalculateLevelOrderForProjectTasks(List<ProjectTask> projectTasks) {
+
+        Map<Integer, List<ProjectTask>> groupedList =
+                projectTasks.stream().collect(Collectors.groupingBy(p -> {
+                    if (p.getParentId() == null) return 0; return p.getParentId();
+                    },
+                        Collectors.toList()));
+
+        List<ProjectTask> savedTasks = new ArrayList<>();
+        for (Map.Entry<Integer, List<ProjectTask>> kv: groupedList.entrySet()) {
+
+            TreeItem<ProjectTask> parent = new SimpleTreeItem<>(new ProjectTaskImpl());
+            for (ProjectTask projectTask: kv.getValue()) {
+                TreeItem<ProjectTask> children = new SimpleTreeItem<>(projectTask);
+                parent.getChildren().add(children);
+                children.setParent(parent);
+            }
+            calculateLevelOrderRecursively(parent, savedTasks);
+
+        }
+
+        return savedTasks;
 
     }
 

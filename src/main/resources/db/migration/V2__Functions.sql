@@ -1,3 +1,5 @@
+--DROP FUNCTION IF EXISTS get_children_of_parent_in_depth(array_parent_id TEXT);
+--DROP FUNCTION IF EXISTS get_parents_of_parent(array_parent_id TEXT);
 
 CREATE FUNCTION get_children_of_parent_in_depth(array_parent_id TEXT) RETURNS SETOF project_tasks AS
 $BODY$

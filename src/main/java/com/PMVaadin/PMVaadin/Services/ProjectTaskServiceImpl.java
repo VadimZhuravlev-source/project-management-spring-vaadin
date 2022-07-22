@@ -8,10 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,6 +16,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     private ProjectTaskRepository projectTaskRepository;
     private EntityManagerService entityManagerService;
+    private TreeProjectTasks treeProjectTasks;
 
     @Autowired
     public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository){
@@ -30,11 +28,16 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         this.entityManagerService = entityManagerService;
     }
 
+    @Autowired
+    public void setTreeProjectTasks(TreeProjectTasks treeProjectTasks){
+        this.treeProjectTasks = treeProjectTasks;
+    }
+
     @Override
     public TreeItem<ProjectTask> getTreeProjectTasks() throws Exception {
 
         List<ProjectTask> projectTasks = projectTaskRepository.findAllByOrderByLevelOrderAsc();
-        TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
         treeProjectTasks.populateTreeByList(projectTasks);
         treeProjectTasks.validateTree();
         treeProjectTasks.fillWbs();
@@ -56,6 +59,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             }
             if (levelOrder == null) levelOrder = 0;
             projectTask.setLevelOrder(++levelOrder);
+        } else {
+            Optional<ProjectTask> foundValue = projectTaskRepository.findById(projectTask.getId());
+            ProjectTask foundTask = foundValue.orElse(null);
+            if (foundTask == null) throw new Exception("Incorrect data. Update project and try again.");
         }
 
         if (projectTask.getId() != null && projectTask.getId().equals(projectTask.getParentId()))
@@ -66,7 +73,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public void deleteTasks(List<ProjectTask> projectTasks) throws Exception {
+    public void deleteTasks(List<? extends ProjectTask> projectTasks) {
 
         List<Integer> parentIds = projectTasks.stream().map(ProjectTask::getParentId).toList();
         List<ProjectTask> projectTaskForDeletion = getProjectTasksToDeletion(projectTasks);
@@ -75,7 +82,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         parentIds = parentIds.stream().filter(integer -> Objects.isNull(parentIdsForDeletion.get(integer))).collect(Collectors.toList());
         List<Integer> projectTaskIds = projectTaskForDeletion.stream().map(ProjectTask::getId).toList();
 
-        transactionalActsWithTasks(projectTaskIds, parentIds);
+        transactionalDeletionAndRecalculation(projectTaskIds, parentIds);
 
     }
 
@@ -83,8 +90,55 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     public void recalculateProject() {
 
         List<ProjectTask> projectTasks = projectTaskRepository.findAllByOrderByLevelOrderAsc();
-        List<ProjectTask> savedElements = recalculateProjectProperties(projectTasks);
+        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+        treeProjectTasks.populateTreeByList(projectTasks);
+        List<ProjectTask> savedElements = treeProjectTasks.recalculateThePropertiesOfTheWholeProject();
         projectTaskRepository.saveAll(savedElements);
+
+    }
+
+    @Override
+    public void setNewParentOfTheTasks(Set<? extends ProjectTask> projectTasks, ProjectTask parent) {
+
+        List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
+        projectTaskList.add(parent);
+
+        List<Integer> ids = projectTaskList.stream().map(ProjectTask::getId).collect(Collectors.toList());
+
+        Map<ProjectTask, ProjectTask> foundProjectTasks =
+                projectTaskRepository.findAllById(ids).stream().collect(Collectors.toMap(p -> p, p -> p));
+
+        if (foundProjectTasks.size() != projectTaskList.size())
+            throw new IllegalStateException("Incorrect data. Should update project and try again.");
+
+        ProjectTask parentInBase = foundProjectTasks.get(parent);
+
+        if (parentInBase == null)
+            throw new IllegalStateException("Incorrect data. Should update project and try again.");
+
+        if (!parent.getVersion().equals(parentInBase.getVersion()))
+            throw new IllegalStateException("The task " + parent + " has been changed by another user. Should update project and try again.");
+
+        Map<ProjectTask, ProjectTask> parentsOfParentMap = entityManagerService.getParentsOfParent(parentInBase).stream().collect(
+                Collectors.toMap(p -> p, p -> p));
+
+        List<Integer> parentIds = new ArrayList<>();
+        Integer levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parent.getId());
+        if (levelOrder == null) levelOrder = 0;
+        projectTaskList = new ArrayList<>(projectTasks);
+        for (ProjectTask projectTask: projectTaskList) {
+            if (parentsOfParentMap.get(projectTask) != null)
+                // Detected circle in tree
+                throw new IllegalStateException("Project structure has been changed. Should update project and try again.");
+            ProjectTask projectTasksInBase = foundProjectTasks.get(projectTask);
+            if (!projectTask.getVersion().equals(projectTasksInBase.getVersion()))
+                throw new IllegalStateException("The task " + projectTask + " has been changed by another user. Should update project and try again.");
+            parentIds.add(projectTask.getParentId());
+            projectTask.setParentId(parent.getId());
+            projectTask.setLevelOrder(++levelOrder);
+        }
+
+        transactionalSaveAndRecalculation(projectTaskList, parentIds);
 
     }
 
@@ -103,12 +157,22 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             foundProjectTasks = projectTaskRepository.findByParentIdInOrderByLevelOrderAsc(parentIds);
         }
 
-        return recalculateProjectProperties(foundProjectTasks);
+        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+        return treeProjectTasks.recalculateLevelOrderForProjectTasks(foundProjectTasks);
 
     }
 
     @Transactional
-    private void transactionalActsWithTasks(List<Integer> projectTaskIds, List<Integer> parentIds) {
+    private void transactionalSaveAndRecalculation(List<ProjectTask> projectTaskList, List<Integer> parentIds) {
+
+        projectTaskRepository.saveAll(projectTaskList);
+        List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
+        projectTaskRepository.saveAll(savedElements);
+
+    }
+
+    @Transactional
+    private void transactionalDeletionAndRecalculation(List<Integer> projectTaskIds, List<Integer> parentIds) {
 
         projectTaskRepository.deleteAllById(projectTaskIds);
         List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
@@ -116,7 +180,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private List<ProjectTask> getProjectTasksToDeletion(List<ProjectTask> projectTasks) {
+    private List<ProjectTask> getProjectTasksToDeletion(List<? extends ProjectTask> projectTasks) {
 
         projectTasks = projectTasks.stream().distinct().collect(Collectors.toList());
 
@@ -126,7 +190,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         List<ProjectTask> allHierarchyElements = entityManagerService.getElementsChildrenInDepth(projectTasks);
 
-        TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
         treeProjectTasks.populateTreeByList(allHierarchyElements);
         TreeItem<ProjectTask> rootItem = treeProjectTasks.getRootItem();
 
@@ -143,14 +207,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             fillDeletedProjectTasksRecursively(currentTreeItem, projectTaskIds);
             projectTaskIds.add(currentTreeItem.getValue());
         }
-
-    }
-
-    private List<ProjectTask> recalculateProjectProperties(List<ProjectTask> projectTasks) {
-
-        TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
-        treeProjectTasks.populateTreeByList(projectTasks);
-        return treeProjectTasks.recalculateProjectProperties();
 
     }
 

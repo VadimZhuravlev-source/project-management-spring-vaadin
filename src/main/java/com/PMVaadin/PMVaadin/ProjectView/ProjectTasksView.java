@@ -10,6 +10,9 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.ItemClickEvent;
+import com.vaadin.flow.component.grid.dnd.GridDropEvent;
+import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -58,7 +61,7 @@ public class ProjectTasksView extends VerticalLayout {
 
         add(getToolbar(), content);
 
-        updateTreeData();
+        updateTreeGrid();
 
         closeEditor();
 
@@ -75,16 +78,103 @@ public class ProjectTasksView extends VerticalLayout {
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
         treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(ProjectTask.getHeaderName()).setFrozen(true)
-                .setFlexGrow(0).setResizable(true).setSortable(false).setWidth("25em");
+                .setResizable(true).setSortable(false).setWidth("25em");
         treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setWidth("5em");
         treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true).setAutoWidth(true);
         treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true).setAutoWidth(true);
         treeGrid.getColumns().forEach(col -> col.setAutoWidth(true));
         treeGrid.setDataProvider(new TreeDataProvider<>(treeData));
 
+        // hide checkbox column
+        treeGrid.getElement().getNode().runWhenAttached(ui ->
+                ui.beforeClientResponse(this, context ->
+                        getElement().executeJs(
+                                "if (this.querySelector('vaadin-grid-flow-selection-column')) {" +
+                                        " this.querySelector('vaadin-grid-flow-selection-column').hidden = true }")));
+
+        // DragDrop
+        treeGrid.setRowsDraggable(true);
+        treeGrid.setDropMode(GridDropMode.ON_TOP_OR_BETWEEN);
+
+        treeGrid.addDragStartListener(
+                e -> {
+                    List<ProjectTask> draggedItems = e.getDraggedItems();
+                    if (!treeGrid.asMultiSelect().getSelectedItems().containsAll(draggedItems)) {
+                        treeGrid.asMultiSelect().clear();
+                        treeGrid.asMultiSelect().setValue(new HashSet<>(draggedItems));
+                    }
+                }
+        );
+
+        treeGrid.addDropListener(this::dropEvent);
+
+        treeGrid.addItemClickListener(this::onMouseClick);
+
     }
 
-    private void updateTreeData() {
+    private void onMouseClick(ItemClickEvent<ProjectTask> event) {
+        if (event == null) {
+            return;
+        }
+
+        ProjectTask projectTask = event.getItem();
+
+        Set<ProjectTask> newSelectedProjectTasks = new HashSet<>();
+        if (event.isCtrlKey()) {
+            newSelectedProjectTasks.addAll(treeGrid.asMultiSelect().getSelectedItems());
+        }
+
+        if (newSelectedProjectTasks.contains(projectTask))
+            newSelectedProjectTasks.remove(projectTask);
+        else
+            newSelectedProjectTasks.add(projectTask);
+
+        treeGrid.asMultiSelect().setValue(newSelectedProjectTasks);
+
+    }
+
+    private void dropEvent(GridDropEvent<ProjectTask> event) {
+
+        ProjectTask dropTargetItem = event.getDropTargetItem().orElse(null);
+
+        Set<ProjectTask> draggedItems = event.getSource().getSelectedItems();
+        if (dropTargetItem == null || draggedItems == null || draggedItems.contains(dropTargetItem)) return;
+
+        if (!checkMovableDraggedItemsInDroppedItem(draggedItems, dropTargetItem)) return;
+
+        try {
+            projectTaskService.setNewParentOfTheTasks(draggedItems, dropTargetItem);
+        } catch (Exception e) {
+            Notification.show(e.getMessage());
+            return;
+        }
+
+        updateTreeGrid();
+
+    }
+
+    private boolean checkMovableDraggedItemsInDroppedItem(Set<ProjectTask> draggedItems, ProjectTask dropTargetItem) {
+
+        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
+        Map<ProjectTask, Boolean> rootItems = treeData.getRootItems().stream()
+                .collect(Collectors.toMap(projectTask -> projectTask, o -> true));
+
+        ProjectTask parent = dropTargetItem;
+        Map<ProjectTask, Boolean> allItemParents = new HashMap<>();
+        while (parent != null) {
+            if (rootItems.getOrDefault(parent, false)) break;
+            parent = treeData.getParent(parent);
+            allItemParents.put(parent, true);
+        }
+
+        for (ProjectTask draggedItem:draggedItems) {
+            if (allItemParents.getOrDefault(draggedItem, false)) return false;
+        }
+
+        return true;
+    }
+
+    private void updateTreeGrid() {
 
         TreeItem<ProjectTask> rootTask;
         try {
@@ -95,17 +185,26 @@ public class ProjectTasksView extends VerticalLayout {
         }
 
         treeData.clear();
-        populateTreeDataRecursively(rootTask);
+        Map<Integer, Boolean> selectedIds = treeGrid.asMultiSelect().getSelectedItems()
+                .stream().collect(Collectors.toMap(ProjectTask::getId, p -> true));
+
+        treeGrid.asMultiSelect().clear();
+        Set<ProjectTask> selectedTasks = new HashSet<>(selectedIds.size());
+
+        populateTreeDataRecursively(rootTask, selectedIds, selectedTasks);
+        treeGrid.asMultiSelect().setValue(selectedTasks);
 
         treeGrid.getDataProvider().refreshAll();
 
     }
 
-    private void populateTreeDataRecursively(TreeItem<ProjectTask> treeItem) {
+    private void populateTreeDataRecursively(TreeItem<ProjectTask> treeItem, Map<Integer, Boolean> selectedIds,
+                                             Set<ProjectTask> selectedTasks) {
 
         for (TreeItem<ProjectTask> child: treeItem.getChildren()) {
             treeData.addItem(child.getParent().getValue(), child.getValue());
-            populateTreeDataRecursively(child);
+            if (selectedIds.getOrDefault(child.getValue().getId(), false)) selectedTasks.add(child.getValue());
+            populateTreeDataRecursively(child, selectedIds, selectedTasks);
         }
 
     }
@@ -120,7 +219,8 @@ public class ProjectTasksView extends VerticalLayout {
         addProjectTask.addClickListener(click -> addProjectTask());
 
         Button updateTreeData = new Button("Update");
-        updateTreeData.addClickListener(click -> updateTreeData());
+        updateTreeData.addClickListener(click -> updateTreeGrid());
+        updateTreeData.addClickShortcut(Key.F5);
 
         Button deleteProjectTask = new Button("Delete");
         deleteProjectTask.addClickListener(this::deleteProjectTaskClick);
@@ -138,17 +238,15 @@ public class ProjectTasksView extends VerticalLayout {
         ProjectTask savedProjectTask = event.getProjectTask();
         if (selectedProjectTask != null && savedProjectTask.isNew()) savedProjectTask.setParentId(selectedProjectTask.getId());
         try {
-            savedProjectTask = projectTaskService.saveTask(savedProjectTask);
+            projectTaskService.saveTask(savedProjectTask);
         } catch (Exception e) {
             Notification.show(e.getMessage());
             return;
         }
-        updateTreeData();
-        treeGrid.asMultiSelect().clear();
-        Set<ProjectTask> set = new HashSet<>();
-        set.add(savedProjectTask);
-        treeGrid.asMultiSelect().setValue(set);
+        updateTreeGrid();
+
         closeEditor();
+
     }
 
     private void deleteProjectTaskEvent(ProjectTaskForm.DeleteEvent event) {
@@ -169,7 +267,7 @@ public class ProjectTasksView extends VerticalLayout {
             Notification.show(e.getMessage());
             return;
         }
-        updateTreeData();
+        updateTreeGrid();
         closeEditor();
     }
 
@@ -180,7 +278,6 @@ public class ProjectTasksView extends VerticalLayout {
             ProjectTask projectTask = projectTasks.stream().findFirst().orElse(null);
             form.setProjectTask(projectTask);
             form.setVisible(true);
-            form.name.setAutofocus(true);
             addClassName("editing");
         }
     }
