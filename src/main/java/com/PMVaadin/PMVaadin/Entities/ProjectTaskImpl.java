@@ -9,7 +9,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Objects;
 
@@ -63,9 +62,9 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Setter
     @Column(name = "finish_date")
     private Date finishDate;
-//    @Setter
+    //    @Setter
 //    @Column(name = "duration")
-//    private BigDecimal duration;
+//    private new BigDecimal duration;
     @ManyToOne
     @JoinColumn(name = "calendar_id")
     private Calendar calendar;
@@ -77,7 +76,7 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
 
         boolean equalsId;
         Integer id = getId();
-        if (id == null){
+        if (id == null) {
             equalsId = id == projectTask.getId();
         } else {
             equalsId = id.equals(projectTask.getId());

@@ -106,7 +106,6 @@ public class ProjectTaskForm extends FormLayout {
         DeleteEvent(ProjectTaskForm source, ProjectTask projectTask) {
             super(source, projectTask);
         }
-
     }
 
     public static class CloseEvent extends ProjectTaskFormEvent {
