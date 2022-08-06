@@ -1,6 +1,5 @@
 package com.PMVaadin.PMVaadin.Entities.Calendar;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,17 +27,12 @@ public class DayOfWeekSettings implements Serializable {
     @Version
     private Integer version;
 
-//    @Column(name = "calendar_id")
-//    private UUID calendarId;
-
     @Setter
     @ManyToOne
     @JoinColumn(name = "calendar_id", nullable = false)
     private Calendar calendar;
 
     @Setter
-    //@Enumerated(EnumType.STRING)
-    //@Convert
     @Column(name = "day_of_week")
     private Integer dayOfWeek;
 
@@ -58,6 +52,14 @@ public class DayOfWeekSettings implements Serializable {
 
     }
 
+    public static String getWorkDaysName() {
+        return "Day of week";
+    }
+
+    public static String getHourOfWorkName() {
+        return "Hours";
+    }
+
     public void fillDayOfWeekString() {
         dayOfWeekString = DayOfWeek.of(dayOfWeek).getDisplayName(TextStyle.FULL, Locale.getDefault());
     }
@@ -66,27 +68,5 @@ public class DayOfWeekSettings implements Serializable {
     public int hashCode() {
         return Objects.hash(id, version);
     }
-
-    @Override
-    public boolean equals(Object o) {
-
-        if (this == o) {
-            return true;
-        }
-
-        if (!(o instanceof DayOfWeekSettings)) {
-            return false;
-        }
-
-        DayOfWeekSettings that = (DayOfWeekSettings) o;
-
-        return getId().equals(that.getId()) && getVersion().equals(that.getVersion());
-    }
-
-    @Override
-    public String toString() {
-        return dayOfWeek.toString() + " " + countHours.toString();
-    }
-
 
 }
