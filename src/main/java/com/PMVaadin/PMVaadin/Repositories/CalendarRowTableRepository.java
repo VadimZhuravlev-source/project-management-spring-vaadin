@@ -8,6 +8,6 @@ import java.util.List;
 
 public interface CalendarRowTableRepository extends Repository<Calendar, Integer> {
 
-    List<CalendarRowTable> findAll();
-
+    List<Calendar> findAll();
+    Calendar findById(Integer id);
 }

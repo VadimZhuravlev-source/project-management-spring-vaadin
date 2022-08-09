@@ -5,12 +5,8 @@ import javax.persistence.PrePersist;
 import java.util.UUID;
 
 public class OperationListenerForCalendar {
-
     @PostLoad
     public void postLoad(Calendar calendar) {
-
-        calendar.setSettingString(calendar.getSetting().toString());
-
+        calendar.setSetting(calendar.getSetting());
     }
-
 }

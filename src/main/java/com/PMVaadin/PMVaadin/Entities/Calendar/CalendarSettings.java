@@ -29,11 +29,11 @@ public enum CalendarSettings {
     public String toString() {
 
         if (this == EIGHTHOURWORKINGDAY) {
-            return "8 hour working day";
+            return "Eight hour working day";
         }else if (this == HOURSHIFT12) {
-            return "12 hour shift";
+            return "Twelve hour shift";
         }else if (this == HOURSHIFT24) {
-            return "24 hour shift";
+            return "Twenty four hour shift";
         }else if (this == DAYSOFWEEKSETTINGS) {
             return "Days of the week settings";
         }
@@ -46,7 +46,7 @@ public enum CalendarSettings {
         List<DayOfWeekSettings> daysOfWeekSettings = new ArrayList<>();
 
         if (this == EIGHTHOURWORKINGDAY) {
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.MONDAY.getValue(), new BigDecimal("8.00")));
+            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.MONDAY.getValue(), new  BigDecimal("8.00")));
             daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.TUESDAY.getValue(), new BigDecimal("8.00")));
             daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.WEDNESDAY.getValue(), new BigDecimal("8.00")));
             daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.THURSDAY.getValue(), new BigDecimal("8.00")));
