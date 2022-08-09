@@ -1,8 +1,9 @@
 package com.PMVaadin.PMVaadin.ProjectView;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask;
-import com.PMVaadin.PMVaadin.Entities.ProjectTaskImpl;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTaskImpl;
 import com.PMVaadin.PMVaadin.MainLayout;
+import com.PMVaadin.PMVaadin.ProjectStructure.StandardError;
 import com.PMVaadin.PMVaadin.ProjectStructure.TreeItem;
 import com.PMVaadin.PMVaadin.Services.ProjectTaskService;
 import com.vaadin.flow.component.ClickEvent;
@@ -13,7 +14,6 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.ItemClickEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class ProjectTasksView extends VerticalLayout {
 
     private ProjectTaskService projectTaskService;
-    private final TreeData<ProjectTask> treeData = new TreeData<>();
+    //private final TreeData<ProjectTask> treeData = new TreeData<>();
 
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
     private TextField filterText = new TextField();
@@ -83,7 +83,7 @@ public class ProjectTasksView extends VerticalLayout {
         treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true).setAutoWidth(true);
         treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true).setAutoWidth(true);
         treeGrid.getColumns().forEach(col -> col.setAutoWidth(true));
-        treeGrid.setDataProvider(new TreeDataProvider<>(treeData));
+        treeGrid.setDataProvider(new TreeDataProvider<>(new TreeData<>()));
 
         // hide checkbox column
         treeGrid.getElement().getNode().runWhenAttached(ui ->
@@ -144,8 +144,8 @@ public class ProjectTasksView extends VerticalLayout {
 
         try {
             projectTaskService.setNewParentOfTheTasks(draggedItems, dropTargetItem);
-        } catch (Exception e) {
-            Notification.show(e.getMessage());
+        } catch (Throwable e) {
+            showProblem(e);
             return;
         }
 
@@ -179,13 +179,13 @@ public class ProjectTasksView extends VerticalLayout {
         TreeItem<ProjectTask> rootTask;
         try {
             rootTask = projectTaskService.getTreeProjectTasks();
-        } catch (Exception exception) {
-            Notification.show(exception.getMessage());
+        } catch (Throwable e) {
+            showProblem(e);
             return;
         }
 
-        treeData.clear();
-        Map<Integer, Boolean> selectedIds = treeGrid.asMultiSelect().getSelectedItems()
+        treeGrid.getTreeData().clear();
+        Map<?, Boolean> selectedIds = treeGrid.asMultiSelect().getSelectedItems()
                 .stream().collect(Collectors.toMap(ProjectTask::getId, p -> true));
 
         treeGrid.asMultiSelect().clear();
@@ -198,11 +198,11 @@ public class ProjectTasksView extends VerticalLayout {
 
     }
 
-    private void populateTreeDataRecursively(TreeItem<ProjectTask> treeItem, Map<Integer, Boolean> selectedIds,
+    private void populateTreeDataRecursively(TreeItem<ProjectTask> treeItem, Map<?, Boolean> selectedIds,
                                              Set<ProjectTask> selectedTasks) {
 
         for (TreeItem<ProjectTask> child: treeItem.getChildren()) {
-            treeData.addItem(child.getParent().getValue(), child.getValue());
+            treeGrid.getTreeData().addItem(child.getParent().getValue(), child.getValue());
             if (selectedIds.getOrDefault(child.getValue().getId(), false)) selectedTasks.add(child.getValue());
             populateTreeDataRecursively(child, selectedIds, selectedTasks);
         }
@@ -226,23 +226,62 @@ public class ProjectTasksView extends VerticalLayout {
         deleteProjectTask.addClickListener(this::deleteProjectTaskClick);
         deleteProjectTask.addClickShortcut(Key.DELETE);
 
-        HorizontalLayout toolbar = new HorizontalLayout(filterText, addProjectTask, deleteProjectTask, updateTreeData);
+        Button moveUp = new Button("Move up");
+        moveUp.addClickListener(event -> moveTasks(Direction.UP));
+
+        Button moveDown = new Button("Move down");
+        moveDown.addClickListener(event -> moveTasks(Direction.DOWN));
+
+        Button expandAll = new Button("Expand all");
+        expandAll.addClickListener(this::expandAll);
+
+        Button collapseAll = new Button("Collapse all");
+        collapseAll.addClickListener(this::collapseAll);
+
+        Button showConfirmDialog = new Button("Show confirm dialog");
+        showConfirmDialog.addClickListener(e -> {
+            try {
+                throw new RuntimeException("asjfokasjfiosadjflksadjf");
+            } catch (Throwable exception) {
+                showProblem(exception);
+            }
+        });
+
+        HorizontalLayout toolbar = new HorizontalLayout(filterText, addProjectTask, deleteProjectTask, updateTreeData,
+                moveUp, moveDown, expandAll, collapseAll, showConfirmDialog);
+
         toolbar.addClassName("toolbar");
         return toolbar;
     }
 
+    private void expandAll(ClickEvent<Button> clickEvent) {
+
+        treeGrid.expandRecursively(treeGrid.getTreeData().getRootItems(), 20);
+
+    }
+
+    private void collapseAll(ClickEvent<Button> clickEvent) {
+
+        treeGrid.collapseRecursively(treeGrid.getTreeData().getRootItems(), 20);
+
+    }
+
     private void saveProjectTask(ProjectTaskForm.SaveEvent event) {
 
-        ProjectTask selectedProjectTask = treeGrid.asMultiSelect().getValue().stream().findFirst().orElse(null);
-
         ProjectTask savedProjectTask = event.getProjectTask();
-        if (selectedProjectTask != null && savedProjectTask.isNew()) savedProjectTask.setParentId(selectedProjectTask.getId());
+        if (savedProjectTask == null) return;
         try {
             projectTaskService.saveTask(savedProjectTask);
-        } catch (Exception e) {
-            Notification.show(e.getMessage());
+        } catch (Throwable e) {
+            showProblem(e);
             return;
         }
+
+        treeGrid.asMultiSelect().clear();
+        Set<ProjectTask> selectedTasks = new HashSet<>(1);
+        selectedTasks.add(savedProjectTask);
+        treeGrid.asMultiSelect().setValue(selectedTasks);
+
         updateTreeGrid();
 
         closeEditor();
@@ -263,8 +302,8 @@ public class ProjectTasksView extends VerticalLayout {
     private void deleteProjectTask(List<ProjectTask> projectTasks) {
         try {
             projectTaskService.deleteTasks(projectTasks);
-        } catch (Exception e) {
-            Notification.show(e.getMessage());
+        } catch (Throwable e) {
+            showProblem(e);
             return;
         }
         updateTreeGrid();
@@ -284,8 +323,15 @@ public class ProjectTasksView extends VerticalLayout {
 
     private void addProjectTask() {
 
+        ProjectTask selectedProjectTask = treeGrid.asMultiSelect().getValue().stream().findFirst().orElse(null);
+
+        Integer parentId = null;
+        if (selectedProjectTask != null) parentId = selectedProjectTask.getParentId();
+
         Set<ProjectTask> set = new HashSet<>();
-        set.add(new ProjectTaskImpl());
+        ProjectTask newProjectTasks = new ProjectTaskImpl();
+        newProjectTasks.setParentId(parentId);
+        set.add(newProjectTasks);
         editProjectTask(set);
 
     }
@@ -294,6 +340,90 @@ public class ProjectTasksView extends VerticalLayout {
         form.setProjectTask(null);
         form.setVisible(false);
         removeClassName("editing");
+    }
+
+    private void moveTasks(Direction direction) {
+
+        ProjectTask projectTasks1 = treeGrid.asMultiSelect().getValue().stream().findFirst().orElse(null);
+        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
+        ProjectTask parent = treeData.getParent(projectTasks1);
+        List<ProjectTask> children = treeData.getChildren(parent);
+
+        ProjectTask projectTasks2 = null;
+        if (direction == Direction.UP) {
+            for (ProjectTask child : children) {
+                if (child.equals(projectTasks1)) break;
+                projectTasks2 = child;
+            }
+        }else {
+            for (int i = children.size() - 1; i >= 0; i--) {
+                if (children.get(i).equals(projectTasks1)) break;
+                projectTasks2 = children.get(i);
+            }
+        }
+
+        if (projectTasks2 == null) return;
+
+        List<ProjectTask> replacedTasks;
+        try {
+            Map<ProjectTask, ProjectTask> swappedTasks = new HashMap<>();
+            swappedTasks.put(projectTasks1, projectTasks2);
+            replacedTasks = projectTaskService.swapTasks(swappedTasks);
+        } catch (Throwable e) {
+            showProblem(e);
+            return;
+        }
+        int countReplacedTasks = 2;
+        if (replacedTasks.size() != countReplacedTasks) {
+            return;
+        }
+
+        updateTreeGrid();
+
+//        ProjectTask replacedTasks1 = null;
+//        ProjectTask replacedTasks2 = null;
+//        for (ProjectTask projectTask: replacedTasks) {
+//            if (projectTask.equals(projectTasks1)) replacedTasks1 = projectTask;
+//            if (projectTask.equals(projectTasks2)) replacedTasks2 = projectTask;
+//        }
+//
+//        if (replacedTasks1 == null || replacedTasks2 == null) return;
+//
+//        treeGrid.getDataProvider().refreshItem(replacedTasks1);
+//        treeGrid.getDataProvider().refreshItem(replacedTasks2);
+//
+//        if (direction == Direction.UP) {
+//            treeData.moveAfterSibling(replacedTasks1, replacedTasks2);
+//        } else {
+//            treeData.moveAfterSibling(replacedTasks2, replacedTasks1);
+//        }
+//        treeGrid.getDataProvider().refreshItem(parent, true);
+
+    }
+
+    private void showProblem(Throwable exception) {
+
+        ConfirmDialog confirmDialog = new ConfirmDialog();
+        confirmDialog.setHeaderTitle("Error");
+        confirmDialog.addCancelText("Close");
+        confirmDialog.setRejectable(false);
+        confirmDialog.addConfirmText("Ok");
+        String message = "";
+        if (exception instanceof StandardError) {
+            message = exception.getMessage();
+        } else {
+            message = "An unexpected error occurred: \n" + exception.getMessage();
+        }
+        confirmDialog.add(message);
+        confirmDialog.addDetailsText(exception.getStackTrace().toString());
+
+        confirmDialog.open();
+
+    }
+
+    private enum Direction {
+        UP,
+        DOWN
     }
 
 }

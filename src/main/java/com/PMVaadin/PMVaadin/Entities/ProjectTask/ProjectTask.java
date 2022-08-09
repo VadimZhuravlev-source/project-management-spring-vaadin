@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.Entities;
+package com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
 import java.util.Date;
 

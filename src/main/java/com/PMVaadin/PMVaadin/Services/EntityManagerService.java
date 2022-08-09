@@ -1,6 +1,6 @@
 package com.PMVaadin.PMVaadin.Services;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
 
 import java.util.List;
 

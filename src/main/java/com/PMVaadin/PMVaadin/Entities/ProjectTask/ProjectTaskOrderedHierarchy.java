@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.Entities;
+package com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
 public interface ProjectTaskOrderedHierarchy extends HierarchyElement<Integer>{
 

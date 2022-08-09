@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.Entities;
+package com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
 import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
 import lombok.Getter;
@@ -9,7 +9,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Objects;
 
@@ -106,6 +105,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Override
     public boolean isNew() {
         return getId() == null;
+    }
+
+    @Override
+    public Integer getNullId() {
+        return 0;
     }
 
 }

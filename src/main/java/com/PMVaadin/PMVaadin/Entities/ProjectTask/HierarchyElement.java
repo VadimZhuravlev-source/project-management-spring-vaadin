@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.Entities;
+package com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
 public interface HierarchyElement<T> {
 
@@ -6,5 +6,6 @@ public interface HierarchyElement<T> {
     void setId(T id);
     T getParentId();
     void setParentId(T parentId);
+    T getNullId();
 
 }

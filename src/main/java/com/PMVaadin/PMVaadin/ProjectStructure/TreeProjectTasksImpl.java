@@ -1,7 +1,7 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask;
-import com.PMVaadin.PMVaadin.Entities.ProjectTaskImpl;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTaskImpl;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +41,7 @@ public class TreeProjectTasksImpl implements TreeProjectTasks {
     }
 
     @Override
-    public void validateTree() throws Exception {
+    public void validateTree(){
 
         unloopable.detectCycle(treeItems);
         validations.checkQuantitiesTreeItemInTree(rootItem, treeItems);
@@ -63,16 +63,16 @@ public class TreeProjectTasksImpl implements TreeProjectTasks {
     @Override
     public List<ProjectTask> recalculateLevelOrderForProjectTasks(List<ProjectTask> projectTasks) {
 
-        Map<Integer, List<ProjectTask>> groupedList =
+        Map<?, List<ProjectTask>> groupedList =
                 projectTasks.stream().collect(Collectors.groupingBy(p -> {
-                    if (p.getParentId() == null) return 0; return p.getParentId();
+                    if (p.getParentId() == null) return p.getNullId(); return p.getParentId();
                     },
                         Collectors.toList()));
 
         List<ProjectTask> savedTasks = new ArrayList<>();
-        for (Map.Entry<Integer, List<ProjectTask>> kv: groupedList.entrySet()) {
+        for (Map.Entry<?, List<ProjectTask>> kv: groupedList.entrySet()) {
 
-            TreeItem<ProjectTask> parent = new SimpleTreeItem<>(new ProjectTaskImpl());
+            TreeItem<ProjectTask> parent = new SimpleTreeItem<>();
             for (ProjectTask projectTask: kv.getValue()) {
                 TreeItem<ProjectTask> children = new SimpleTreeItem<>(projectTask);
                 parent.getChildren().add(children);

@@ -5,12 +5,12 @@ import java.util.List;
 public class ValidationsImpl implements Validations {
 
     @Override
-    public void checkQuantitiesTreeItemInTree(TreeItem<?> rootItem, List<? extends TreeItem<?>> treeItems) throws Exception {
+    public void checkQuantitiesTreeItemInTree(TreeItem<?> rootItem, List<? extends TreeItem<?>> treeItems) {
 
         int quantityInRootItem = getQuantityInRootItemRecursively(rootItem);
 
         if (quantityInRootItem != treeItems.size())
-            throw new Exception("Quantity of elements in rootTree and treeItems aren't equals");
+            throw new StandardError("Quantity of elements in rootTree and treeItems aren't equals");
 
     }
 

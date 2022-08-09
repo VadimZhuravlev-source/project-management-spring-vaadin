@@ -1,7 +1,7 @@
 package com.PMVaadin.PMVaadin.Services;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask;
-import com.PMVaadin.PMVaadin.Entities.ProjectTaskImpl;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTaskImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

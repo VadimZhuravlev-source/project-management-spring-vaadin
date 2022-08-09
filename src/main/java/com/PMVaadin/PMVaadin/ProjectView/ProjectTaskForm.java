@@ -1,6 +1,6 @@
 package com.PMVaadin.PMVaadin.ProjectView;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask;
+import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;

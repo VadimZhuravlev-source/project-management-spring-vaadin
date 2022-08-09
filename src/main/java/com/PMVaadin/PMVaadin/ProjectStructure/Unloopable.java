@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface Unloopable {
 
-    void detectCycle(List<? extends TreeItem<?>> treeItems) throws Exception;
+    void detectCycle(List<? extends TreeItem<?>> treeItems);
 
 }
