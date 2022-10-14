@@ -1,4 +1,6 @@
-package com.PMVaadin.PMVaadin.ProjectStructure;
+package com.PMVaadin.PMVaadin.Tree;
+
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -6,17 +8,44 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-public class TreeItemList<V> {
+@NoArgsConstructor
+public class SimpleTree<V> implements Tree<V> {
 
     private final TreeItem<V> rootItem = new SimpleTreeItem<>();
+    private List<TreeItem<V>> treeItems;
+
+    public <T> SimpleTree(List<V> hierarchyElements,
+                          Function<V, T> getId,
+                          Function<V, T> getParentId) {
+
+        populateTree(hierarchyElements, getId, getParentId);
+
+    }
 
     public TreeItem<V> getRootItem() {
         return rootItem;
     }
 
-    public <T> List<TreeItem<V>> getTreeItemList(List<V> hierarchyElements,
-                                                                             Function<V, T> getId,
-                                                                             Function<V, T> getParentId){
+    public List<TreeItem<V>> getTreeItems() {
+
+        if (treeItems == null) {
+            return new ArrayList<>();
+        }
+
+        return treeItems;
+    }
+
+    public <T> List<TreeItem<V>> getTreeItems(List<V> hierarchyElements,
+                                              Function<V, T> getId,
+                                              Function<V, T> getParentId) {
+
+        populateTree(hierarchyElements, getId, getParentId);
+        return treeItems;
+
+    }
+    private <T> void populateTree(List<V> hierarchyElements,
+                              Function<V, T> getId,
+                              Function<V, T> getParentId) {
 
         Map<T, TreeItem<V>> mapIdTreeItem = new HashMap<>();
 
@@ -42,7 +71,7 @@ public class TreeItemList<V> {
             treeItem.setParent(parent);
         }
 
-        return treeItems;
+        this.treeItems = treeItems;
 
     }
 

@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.ProjectStructure;
+package com.PMVaadin.PMVaadin.Tree;
 
 import java.util.List;
 

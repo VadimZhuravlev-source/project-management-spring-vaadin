@@ -4,6 +4,7 @@ import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
 import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTaskImpl;
 import com.PMVaadin.PMVaadin.ProjectStructure.*;
 import com.PMVaadin.PMVaadin.Repositories.ProjectTaskRepository;
+import com.PMVaadin.PMVaadin.Tree.TreeItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public TreeItem<ProjectTask> getTreeProjectTasks() {
+    public List<ProjectTask> getTreeProjectTasks() {
 
         List<ProjectTask> projectTasks = projectTaskRepository.findAllByOrderByLevelOrderAsc();
         //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
@@ -42,7 +43,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         treeProjectTasks.validateTree();
         treeProjectTasks.fillWbs();
 
-        return treeProjectTasks.getRootItem();
+        projectTasks.clear();
+        populateListByRootItemRecursively(projectTasks, treeProjectTasks.getRootItem());
+
+        return projectTasks;
 
     }
 
@@ -132,7 +136,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         Map<ProjectTask, ProjectTask> parentsOfParentMap = entityManagerService.getParentsOfParent(parentInBase).stream().collect(
                 Collectors.toMap(p -> p, p -> p));
 
-        List<Integer> parentIds = new ArrayList<>();
+        var parentIds = new ArrayList<>();
         Integer levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parent.getId());
         if (levelOrder == null) levelOrder = 0;
         projectTaskList = new ArrayList<>(projectTasks);
@@ -198,6 +202,15 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
 //        return projectTaskRepository.replaceTasks(projectTask1.getId(), projectTask1.getVersion(),
 //                projectTask2.getId(), projectTask2.getVersion());
+
+    }
+
+    private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {
+
+        for (TreeItem<ProjectTask> child: treeItem.getChildren()) {
+            projectTasks.add(child.getValue());
+            populateListByRootItemRecursively(projectTasks, child);
+        }
 
     }
 

@@ -1,7 +1,10 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
 import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
-import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTaskImpl;
+import com.PMVaadin.PMVaadin.Tree.SimpleTree;
+import com.PMVaadin.PMVaadin.Tree.SimpleTreeItem;
+import com.PMVaadin.PMVaadin.Tree.Tree;
+import com.PMVaadin.PMVaadin.Tree.TreeItem;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
@@ -33,10 +36,9 @@ public class TreeProjectTasksImpl implements TreeProjectTasks {
     @Override
     public void populateTreeByList(List<ProjectTask> projectTasks) {
 
-        rootItem = new SimpleTreeItem<>();
-        TreeItemList<ProjectTask> treeItemList = new TreeItemList<>();
-        this.treeItems = treeItemList.getTreeItemList(projectTasks, ProjectTask::getId, ProjectTask::getParentId);
-        this.rootItem = treeItemList.getRootItem();
+        Tree<ProjectTask> tree = new SimpleTree<>(projectTasks, ProjectTask::getId, ProjectTask::getParentId);
+        this.treeItems = tree.getTreeItems();
+        this.rootItem = tree.getRootItem();
 
     }
 

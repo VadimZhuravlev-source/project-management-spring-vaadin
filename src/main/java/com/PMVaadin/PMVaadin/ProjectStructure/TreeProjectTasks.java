@@ -1,6 +1,7 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
 import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
+import com.PMVaadin.PMVaadin.Tree.TreeItem;
 
 import java.util.List;
 

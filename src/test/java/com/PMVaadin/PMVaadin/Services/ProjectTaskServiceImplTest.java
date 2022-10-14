@@ -2,7 +2,7 @@ package com.PMVaadin.PMVaadin.Services;
 
 import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
 import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTaskImpl;
-import com.PMVaadin.PMVaadin.ProjectStructure.TreeItem;
+import com.PMVaadin.PMVaadin.Tree.TreeItem;
 import com.PMVaadin.PMVaadin.Repositories.ProjectTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
