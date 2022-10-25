@@ -2,6 +2,8 @@ package com.PMVaadin.PMVaadin;
 
 import com.PMVaadin.PMVaadin.CalendarsView.CalendarsView;
 import com.PMVaadin.PMVaadin.ProjectView.ProjectTasksView;
+import com.PMVaadin.PMVaadin.Services.SecurityService;
+import com.PMVaadin.PMVaadin.security.AdminUsersView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
@@ -14,18 +16,20 @@ import com.vaadin.flow.router.RouterLink;
 
 public class MainLayout extends AppLayout {
 
-    public MainLayout() {
+    private final SecurityService securityService;
 
+    public MainLayout() {
+        this.securityService = new SecurityService();
         createHeader();
         createDrawer();
-
     }
 
     private void createHeader() {
         H1 logo = new H1("Project management");
         logo.addClassNames("text-l", "m-m");
 
-        Button logout = new Button("Log out");
+        Button logout = new Button("Log out",  click ->
+                securityService.logout());
 
         HorizontalLayout header = new HorizontalLayout(new DrawerToggle(), logo, logout);
 
@@ -45,9 +49,13 @@ public class MainLayout extends AppLayout {
         RouterLink calendarsLink = new RouterLink("Calendars", CalendarsView.class);
         calendarsLink.setHighlightCondition(HighlightConditions.sameLocation());
 
+        RouterLink usersLink = new RouterLink("Users", AdminUsersView.class);
+        calendarsLink.setHighlightCondition(HighlightConditions.sameLocation());
+
         addToDrawer(new VerticalLayout(
                 projectTasksLink,
-                calendarsLink
+                calendarsLink,
+                usersLink
         ));
     }
 
