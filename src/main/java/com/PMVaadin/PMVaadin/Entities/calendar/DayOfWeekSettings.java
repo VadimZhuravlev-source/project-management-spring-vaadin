@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.Entities.Calendar;
+package com.PMVaadin.PMVaadin.Entities.calendar;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,7 +30,7 @@ public class DayOfWeekSettings implements Serializable {
     @Setter
     @ManyToOne
     @JoinColumn(name = "calendar_id", nullable = false)
-    private Calendar calendar;
+    private CalendarImpl calendar;
 
     @Setter
     @Column(name = "day_of_week")

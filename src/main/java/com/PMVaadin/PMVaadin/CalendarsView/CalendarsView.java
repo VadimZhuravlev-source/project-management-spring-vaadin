@@ -1,6 +1,7 @@
 package com.PMVaadin.PMVaadin.CalendarsView;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.CalendarImpl;
 import com.PMVaadin.PMVaadin.MainLayout;
 import com.PMVaadin.PMVaadin.Services.CalendarService;
 import com.vaadin.flow.component.button.Button;
@@ -26,7 +27,7 @@ public class CalendarsView extends VerticalLayout {
 
     private final CalendarService calendarService;
     private CalendarForm calendarForm;
-    private Grid<Calendar> grid = new Grid<>(Calendar.class, false);
+    private Grid<CalendarImpl> grid = new Grid<>(CalendarImpl.class, false);
     private final TextField filterText = new TextField();
     private Dialog dialog;
 
@@ -46,8 +47,8 @@ public class CalendarsView extends VerticalLayout {
     private void configureGrid() {
         grid.addClassNames("calendar-grid");
         grid.setSizeFull();
-        grid.addColumn(Calendar::getName).setHeader("Name");
-        grid.addColumn(Calendar::getSetting).setHeader("Setting");
+        grid.addColumn(CalendarImpl::getName).setHeader("Name");
+        grid.addColumn(CalendarImpl::getSetting).setHeader("Setting");
         grid.getColumns().forEach(col -> col.setAutoWidth(true));
     }
 
@@ -61,7 +62,7 @@ public class CalendarsView extends VerticalLayout {
         dialog.setHeaderTitle("New Calendar");
         dialog.add(calendarForm);
         addContactButton.addClickListener(e -> {
-            calendarForm.setCalendar(new Calendar());
+            calendarForm.setCalendar(new CalendarImpl());
             dialog.open();
         });
         Button editContactButton = new Button("Edit calendar");
@@ -77,12 +78,12 @@ public class CalendarsView extends VerticalLayout {
 
 
     private void populateDate() {
-        List<Calendar> calendars = calendarService.getCalendars();
+        List<CalendarImpl> calendars = calendarService.getCalendars();
         if (null != calendars) grid.setItems(calendars);
     }
 
     private void saveCalendar(CalendarForm.SaveEvent event) {
-        Calendar calendar = event.getCalendar();
+        CalendarImpl calendar = event.getCalendar();
         try {
             calendarService.saveCalendars(calendar);
         } catch (Exception e) {
@@ -94,7 +95,7 @@ public class CalendarsView extends VerticalLayout {
     }
 
     private void deleteCalendar() {
-        Calendar calendar = (Calendar) grid.getSelectionModel().getSelectedItems()
+        CalendarImpl calendar = (CalendarImpl) grid.getSelectionModel().getSelectedItems()
                 .stream().findFirst().orElseThrow();
         try {
             calendarService.deleteCalendar(calendar);
@@ -107,9 +108,9 @@ public class CalendarsView extends VerticalLayout {
     }
 
     private void editCalendar() {
-        Integer selectedID = ((Calendar) grid.getSelectionModel().getSelectedItems()
-                .stream().findFirst().orElse(new Calendar())).getId();
-        Calendar calendarForEdit = calendarService.getCalendarById(selectedID);
+        Integer selectedID = ((CalendarImpl) grid.getSelectionModel().getSelectedItems()
+                .stream().findFirst().orElse(new CalendarImpl())).getId();
+        CalendarImpl calendarForEdit = calendarService.getCalendarById(selectedID);
         calendarForm.setCalendar(calendarForEdit);
         dialog.add(calendarForm);
         dialog.open();

@@ -1,6 +1,7 @@
 package com.PMVaadin.PMVaadin.Services;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.CalendarImpl;
 import com.PMVaadin.PMVaadin.Repositories.CalendarRepository;
 import com.PMVaadin.PMVaadin.Repositories.CalendarRowTableRepository;
 import com.PMVaadin.PMVaadin.Repositories.DayOfWeekSettingsRepository;
@@ -8,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class CalendarServiceImpl implements CalendarService {
@@ -16,7 +16,7 @@ public class CalendarServiceImpl implements CalendarService {
     private CalendarRepository calendarRepository;
     private CalendarRowTableRepository calendarRowTableRepository;
     private DayOfWeekSettingsRepository dayOfWeekSettingsRepository;
-    private List<Calendar> calendarTableList;
+    private List<CalendarImpl> calendarTableList;
 
     @Autowired
     public void setCalendarRepository(CalendarRepository calendarRepository) {
@@ -34,28 +34,28 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     @Override
-    public List<Calendar> getCalendars() {
+    public List<CalendarImpl> getCalendars() {
         return calendarRowTableRepository.findAll();
     }
 
     @Override
-    public  Calendar getCalendarById(Integer id) {
-       return calendarRepository.findById(id).orElse(new Calendar());
+    public CalendarImpl getCalendarById(Integer id) {
+        return (CalendarImpl) calendarRepository.findById(id).orElse(new CalendarImpl());
     }
 
     @Override
-    public void saveCalendars(Calendar calendar) {
+    public void saveCalendars(CalendarImpl calendar) {
         calendarRepository.save(calendar);
         calendarTableList.add(calendarRowTableRepository.findById(calendar.getId()));
     }
 
     @Override
-    public void deleteCalendar(Calendar calendar) {
+    public void deleteCalendar(CalendarImpl calendar) {
         calendarRepository.deleteById(calendar.getId());
     }
 
 
-    public Calendar saveCalendar(Calendar calendar) {
+    public CalendarImpl saveCalendar(CalendarImpl calendar) {
         return calendarRepository.save(calendar);
     }
 

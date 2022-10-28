@@ -1,13 +1,12 @@
 package com.PMVaadin.PMVaadin.Repositories;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
-import com.PMVaadin.PMVaadin.Entities.Calendar.CalendarRowTable;
+import com.PMVaadin.PMVaadin.Entities.calendar.CalendarImpl;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;
 
-public interface CalendarRowTableRepository extends Repository<Calendar, Integer> {
+public interface CalendarRowTableRepository extends Repository<CalendarImpl, Integer> {
 
-    List<Calendar> findAll();
-    Calendar findById(Integer id);
+    List<CalendarImpl> findAll();
+    CalendarImpl findById(Integer id);
 }

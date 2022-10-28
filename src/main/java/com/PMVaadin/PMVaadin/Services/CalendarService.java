@@ -1,16 +1,17 @@
 package com.PMVaadin.PMVaadin.Services;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.CalendarImpl;
 
 import java.util.List;
 
 public interface CalendarService {
 
-    List<Calendar> getCalendars();
+    List<CalendarImpl> getCalendars();
 
-    Calendar getCalendarById(Integer id);
+    CalendarImpl getCalendarById(Integer id);
 
-    void saveCalendars(Calendar calendar);
+    void saveCalendars(CalendarImpl calendar);
 
-    void deleteCalendar(Calendar calendar);
+    void deleteCalendar(CalendarImpl calendar);
 }

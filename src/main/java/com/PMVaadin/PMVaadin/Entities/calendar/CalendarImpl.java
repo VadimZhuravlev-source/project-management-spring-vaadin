@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.Entities.Calendar;
+package com.PMVaadin.PMVaadin.Entities.calendar;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.Objects;
 @NoArgsConstructor
 @Table(name = "calendars")
 @Transactional
-public class Calendar implements Serializable, CalendarRowTable {
+public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @Id
     @Setter
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -51,7 +51,7 @@ public class Calendar implements Serializable, CalendarRowTable {
     @LazyCollection(LazyCollectionOption.FALSE)
     private List<DayOfWeekSettings> daysOfWeekSettings;
 
-    public Calendar(String name) {
+    public CalendarImpl(String name) {
         this.name = name;
     }
 
@@ -75,7 +75,7 @@ public class Calendar implements Serializable, CalendarRowTable {
             return true;
         }
 
-        if (!(o instanceof Calendar that)) {
+        if (!(o instanceof CalendarImpl that)) {
             return false;
         }
 
