@@ -1,9 +1,6 @@
 package com.PMVaadin.PMVaadin.CalendarsView;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
-import com.PMVaadin.PMVaadin.Entities.Calendar.CalendarSettings;
-import com.PMVaadin.PMVaadin.Entities.Calendar.DayOfWeekSettings;
-import com.PMVaadin.PMVaadin.Entities.Calendar.ExceptionDays;
+import com.PMVaadin.PMVaadin.Entities.calendar.*;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
@@ -30,15 +27,15 @@ import java.util.List;
 
 @Transactional
 public class CalendarForm extends FormLayout {
-    private Calendar calendar;
+    private CalendarImpl calendar;
     private List<ExceptionDays> exceptionDaysList;
     private List<DayOfWeekSettings> workDaysList;
 
     private DatePicker dateOfException = new DatePicker(ExceptionDays.getExceptionDaysName());
     private IntegerField dayOfWeek = new IntegerField(DayOfWeekSettings.getWorkDaysName());
     private BigDecimalField hourOfWork = new BigDecimalField(DayOfWeekSettings.getHourOfWorkName());
-    private TextField calendarName = new TextField(Calendar.getHeaderName());
-    private ComboBox<CalendarSettings> calendarSetting = new ComboBox<CalendarSettings>(Calendar.getSettingName());
+    private TextField calendarName = new TextField(CalendarImpl.getHeaderName());
+    private ComboBox<CalendarSettings> calendarSetting = new ComboBox<CalendarSettings>(CalendarImpl.getSettingName());
     private Grid<ExceptionDays> exceptionDaysGrid = new Grid<>(ExceptionDays.class, false);
     private Grid<DayOfWeekSettings> workDaysGrid = new Grid<>(DayOfWeekSettings.class, false);
 
@@ -56,7 +53,7 @@ public class CalendarForm extends FormLayout {
     private final Button fillDayOfWeek = new Button("Fill days of week");
 
     public CalendarForm() {
-        if (calendar == null) calendar = new Calendar();
+        if (calendar == null) calendar = new CalendarImpl();
         exceptionDaysList = calendar.getCalendarException();
         if (null == exceptionDaysList) exceptionDaysList = new ArrayList<>();
         workDaysList = calendar.getDaysOfWeekSettings();
@@ -174,7 +171,7 @@ public class CalendarForm extends FormLayout {
         return new HorizontalLayout(save, delete);
     }
 
-    public void setCalendar(Calendar calendar) {
+    public void setCalendar(CalendarImpl calendar) {
         this.calendar = calendar;
         calendarName.setValue(calendar.getId() == null ? "" : calendar.getName());
         calendarSetting.setValue(calendar.getId() == null ? CalendarSettings.EIGHTHOURWORKINGDAY : calendar.getSetting());
@@ -235,32 +232,32 @@ public class CalendarForm extends FormLayout {
 
     // Events
     public static abstract class CalendarFormEvent extends ComponentEvent<CalendarForm> {
-        private Calendar calendar;
+        private CalendarImpl calendar;
 
-        protected CalendarFormEvent(CalendarForm source, Calendar calendar) {
+        protected CalendarFormEvent(CalendarForm source, CalendarImpl calendar) {
             super(source, false);
             this.calendar = calendar;
         }
 
-        public Calendar getCalendar() {
+        public CalendarImpl getCalendar() {
             return calendar;
         }
     }
 
     public static class EditEvent extends CalendarForm.CalendarFormEvent {
-        EditEvent(CalendarForm source, Calendar calendar) {
+        EditEvent(CalendarForm source, CalendarImpl calendar) {
             super(source, calendar);
         }
     }
 
     public static class SaveEvent extends CalendarForm.CalendarFormEvent {
-        SaveEvent(CalendarForm source, Calendar calendar) {
+        SaveEvent(CalendarForm source, CalendarImpl calendar) {
             super(source, calendar);
         }
     }
 
     public static class DeleteEvent extends CalendarForm.CalendarFormEvent {
-        DeleteEvent(CalendarForm source, Calendar calendar) {
+        DeleteEvent(CalendarForm source, CalendarImpl calendar) {
             super(source, calendar);
         }
 

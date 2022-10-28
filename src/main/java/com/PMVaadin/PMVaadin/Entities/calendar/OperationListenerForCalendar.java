@@ -1,12 +1,10 @@
-package com.PMVaadin.PMVaadin.Entities.Calendar;
+package com.PMVaadin.PMVaadin.Entities.calendar;
 
 import javax.persistence.PostLoad;
-import javax.persistence.PrePersist;
-import java.util.UUID;
 
 public class OperationListenerForCalendar {
     @PostLoad
-    public void postLoad(Calendar calendar) {
+    public void postLoad(CalendarImpl calendar) {
         calendar.setSetting(calendar.getSetting());
     }
 }

@@ -1,6 +1,6 @@
 package com.PMVaadin.PMVaadin.Repositories;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.DayOfWeekSettings;
+import com.PMVaadin.PMVaadin.Entities.calendar.DayOfWeekSettings;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

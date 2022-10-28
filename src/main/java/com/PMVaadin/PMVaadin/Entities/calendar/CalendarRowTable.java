@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.Entities.Calendar;
+package com.PMVaadin.PMVaadin.Entities.calendar;
 
 public interface CalendarRowTable {
 

@@ -1,6 +1,6 @@
 package com.PMVaadin.PMVaadin.Entities.ProjectTask;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.CalendarImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -67,7 +67,7 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
 //    private new BigDecimal duration;
     @ManyToOne
     @JoinColumn(name = "calendar_id")
-    private Calendar calendar;
+    private CalendarImpl calendar;
 
     @Override
     public boolean equals(Object o) {

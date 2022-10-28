@@ -1,4 +1,4 @@
-package com.PMVaadin.PMVaadin.Entities.Calendar;
+package com.PMVaadin.PMVaadin.Entities.calendar;
 
 import javax.persistence.PostLoad;
 

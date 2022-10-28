@@ -1,14 +1,15 @@
 package com.PMVaadin.PMVaadin.Repositories;
 
-import com.PMVaadin.PMVaadin.Entities.Calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.Calendar;
+import com.PMVaadin.PMVaadin.Entities.calendar.CalendarImpl;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface CalendarRepository extends JpaRepository<Calendar, Integer> {
+public interface CalendarRepository extends JpaRepository<CalendarImpl, Integer> {
 
-    List<Calendar> findAll();
+    List<CalendarImpl> findAll();
     @Override
-    Optional<Calendar> findById(Integer id);
+    Optional<CalendarImpl> findById(Integer id);
 }
