@@ -1,27 +1,26 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.Links.Link;
-import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
-import com.PMVaadin.PMVaadin.Tree.TreeItem;
+import com.PMVaadin.PMVaadin.ProjectTasks.Links.Entities.Link;
+import com.PMVaadin.PMVaadin.ProjectTasks.Entity.ProjectTask;
 
 import java.util.List;
 
 public class ProjectDataImpl implements ProjectData {
 
-    private List<ProjectTask> projectTasks;
+    private ProjectTask projectTask;
 
     private List<Link> links;
 
-    public ProjectDataImpl(List<ProjectTask> projectTasks, List<Link> links) {
+    public ProjectDataImpl(ProjectTask projectTask, List<Link> links) {
 
-        this.projectTasks = projectTasks;
+        this.projectTask = projectTask;
         this.links = links;
 
     }
 
     @Override
-    public List<ProjectTask> getProjectTasks() {
-        return projectTasks;
+    public ProjectTask getProjectTask() {
+        return projectTask;
     }
 
     @Override

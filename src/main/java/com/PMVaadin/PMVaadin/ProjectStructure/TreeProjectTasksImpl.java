@@ -1,10 +1,10 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
-import com.PMVaadin.PMVaadin.Tree.SimpleTree;
-import com.PMVaadin.PMVaadin.Tree.SimpleTreeItem;
-import com.PMVaadin.PMVaadin.Tree.Tree;
-import com.PMVaadin.PMVaadin.Tree.TreeItem;
+import com.PMVaadin.PMVaadin.ProjectTasks.Entity.ProjectTask;
+import com.PMVaadin.PMVaadin.CommonObjects.Tree.SimpleTree;
+import com.PMVaadin.PMVaadin.CommonObjects.Tree.SimpleTreeItem;
+import com.PMVaadin.PMVaadin.CommonObjects.Tree.Tree;
+import com.PMVaadin.PMVaadin.CommonObjects.Tree.TreeItem;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 

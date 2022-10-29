@@ -1,14 +1,13 @@
 package com.PMVaadin.PMVaadin.ProjectStructure;
 
-import com.PMVaadin.PMVaadin.Entities.Links.Link;
-import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
-import com.PMVaadin.PMVaadin.Tree.TreeItem;
+import com.PMVaadin.PMVaadin.ProjectTasks.Links.Entities.Link;
+import com.PMVaadin.PMVaadin.ProjectTasks.Entity.ProjectTask;
 
 import java.util.List;
 
 public interface ProjectData {
 
-    List<ProjectTask> getProjectTasks();
+    ProjectTask getProjectTask();
     List<Link> getLinks();
 
 }

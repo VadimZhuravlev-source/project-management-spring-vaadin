@@ -1,13 +1,13 @@
 package com.PMVaadin.PMVaadin;
 
-import com.PMVaadin.PMVaadin.CalendarsView.CalendarsView;
-import com.PMVaadin.PMVaadin.ProjectView.ProjectTasksView;
-import com.PMVaadin.PMVaadin.Services.SecurityService;
+import com.PMVaadin.PMVaadin.Calendars.CalendarsView.CalendarsView;
+import com.PMVaadin.PMVaadin.ProjectView.ProjectTreeView;
+import com.PMVaadin.PMVaadin.security.Services.SecurityService;
 import com.PMVaadin.PMVaadin.security.AdminUsersView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.H6;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -25,7 +25,7 @@ public class MainLayout extends AppLayout {
     }
 
     private void createHeader() {
-        H1 logo = new H1("Project management");
+        H6 logo = new H6("Project management");
         logo.addClassNames("text-l", "m-m");
 
         Button logout = new Button("Log out",  click ->
@@ -43,7 +43,7 @@ public class MainLayout extends AppLayout {
     }
 
     private void createDrawer() {
-        RouterLink projectTasksLink = new RouterLink("Project", ProjectTasksView.class);
+        RouterLink projectTasksLink = new RouterLink("Project", ProjectTreeView.class);
         projectTasksLink.setHighlightCondition(HighlightConditions.sameLocation());
 
         RouterLink calendarsLink = new RouterLink("Calendars", CalendarsView.class);

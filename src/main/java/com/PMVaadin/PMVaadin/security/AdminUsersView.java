@@ -1,7 +1,7 @@
 package com.PMVaadin.PMVaadin.security;
 
 import com.PMVaadin.PMVaadin.MainLayout;
-import com.PMVaadin.PMVaadin.Services.UserService;
+import com.PMVaadin.PMVaadin.security.Services.UserService;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;

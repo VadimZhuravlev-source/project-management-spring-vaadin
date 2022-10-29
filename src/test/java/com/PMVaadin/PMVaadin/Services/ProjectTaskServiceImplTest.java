@@ -1,9 +1,10 @@
 package com.PMVaadin.PMVaadin.Services;
 
-import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTask;
-import com.PMVaadin.PMVaadin.Entities.ProjectTask.ProjectTaskImpl;
-import com.PMVaadin.PMVaadin.Tree.TreeItem;
-import com.PMVaadin.PMVaadin.Repositories.ProjectTaskRepository;
+import com.PMVaadin.PMVaadin.ProjectTasks.Entity.ProjectTask;
+import com.PMVaadin.PMVaadin.ProjectTasks.Entity.ProjectTaskImpl;
+import com.PMVaadin.PMVaadin.ProjectTasks.Services.ProjectTaskService;
+import com.PMVaadin.PMVaadin.CommonObjects.Tree.TreeItem;
+import com.PMVaadin.PMVaadin.ProjectTasks.Repositories.ProjectTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
