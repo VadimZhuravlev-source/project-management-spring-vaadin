@@ -9,12 +9,17 @@ import java.util.Set;
 public interface ProjectTaskService {
 
     List<ProjectTask> getTreeProjectTasks();
-    ProjectTask saveTask(ProjectTask projectTask);
-    void deleteTasks(List<? extends ProjectTask> projectTasks);
+    ProjectTask save(ProjectTask projectTask, boolean validate, boolean recalculateTerms);
+    void delete(List<? extends ProjectTask> projectTasks);
     void recalculateProject();
-    void setNewParentOfTheTasks(Set<? extends ProjectTask> projectTasks, ProjectTask parent);
-    List<ProjectTask> swapTasks(Map<ProjectTask, ProjectTask> swappedTasks);
+    void changeParent(Set<? extends ProjectTask> projectTasks, ProjectTask parent);
+    List<? extends ProjectTask> swap(Map<? extends ProjectTask, ? extends ProjectTask> swappedTasks);
+    ProjectTask sync(ProjectTask projectTask);
+    boolean validate(ProjectTask projectTask);
+    Map<Integer, ProjectTask> getProjectTasksWithWbs(List<Integer> ids);
 
-    ProjectTask refreshTask(ProjectTask projectTask);
+    int getChildrenCount(ProjectTask projectTask);
+    boolean hasChildren(ProjectTask projectTask);
+    List<ProjectTask> fetchChildren(ProjectTask projectTask);
 
 }

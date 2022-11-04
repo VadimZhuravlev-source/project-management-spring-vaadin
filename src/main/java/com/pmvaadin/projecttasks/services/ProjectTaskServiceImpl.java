@@ -52,7 +52,20 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public ProjectTask saveTask(ProjectTask projectTask) {
+    public ProjectTask save(ProjectTask projectTask, boolean validate, boolean recalculateTerms) {
+
+        if (validate && !validate(projectTask)) return projectTask;
+        ProjectTask savedProjectTask = projectTaskRepository.save(projectTask);
+        if (!recalculateTerms) {
+            return savedProjectTask;
+        }
+        recalculateTerms();
+        return savedProjectTask;
+
+    }
+
+    @Override
+    public boolean validate(ProjectTask projectTask) {
 
         // Validate parent existence
         Integer parentId = projectTask.getParentId();
@@ -60,7 +73,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             Optional<ProjectTask> foundParentValue = projectTaskRepository.findById(projectTask.getParentId());
             ProjectTask foundParent = foundParentValue.orElse(null);
             if (foundParent == null)
-                throw new StandardError("Unable to persist object. Parent of task don't exist. Update project and try again.");
+                throw new StandardError("Unable to persist the object. A Parent of the task does not exist. Update the project and try again.");
         }
 
         if (projectTask.isNew()) {
@@ -75,20 +88,20 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             projectTask.setLevelOrder(++levelOrder);
         } else {
             if (projectTask.getId().equals(projectTask.getParentId()))
-                throw new StandardError("Unable to persist object. Update project and try again.");
+                throw new StandardError("Unable to persist the object. Update the project and try again.");
             Optional<ProjectTask> foundValue = projectTaskRepository.findById(projectTask.getId());
             ProjectTask foundTask = foundValue.orElse(null);
-            if (foundTask == null) throw new StandardError("Unable to persist object. Update project and try again.");
+            if (foundTask == null) throw new StandardError("Unable to persist the object. Update the project and try again.");
             if (!foundTask.getVersion().equals(projectTask.getVersion()))
-                throw new StandardError("Unable to persist object. Object was changed a another user. Update project and try again.");
+                throw new StandardError("Unable to persist the object. The object was changed by an another user. Update the project and try again.");
         }
 
-        return projectTaskRepository.save(projectTask);
+        return true;
 
     }
 
     @Override
-    public void deleteTasks(List<? extends ProjectTask> projectTasks) {
+    public void delete(List<? extends ProjectTask> projectTasks) {
 
         List<?> parentIds = projectTasks.stream().map(ProjectTask::getParentId).toList();
         List<ProjectTask> projectTaskForDeletion = getProjectTasksToDeletion(projectTasks);
@@ -113,7 +126,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public void setNewParentOfTheTasks(Set<? extends ProjectTask> projectTasks, ProjectTask parent) {
+    public void changeParent(Set<? extends ProjectTask> projectTasks, ProjectTask parent) {
 
         List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
         projectTaskList.add(parent);
@@ -124,15 +137,15 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
                 projectTaskRepository.findAllById(ids).stream().collect(Collectors.toMap(p -> p, p -> p));
 
         if (foundProjectTasks.size() != projectTaskList.size())
-            throw new StandardError("Incorrect data. Should update project and try again.");
+            throw new StandardError("Incorrect data. Should update the project and try again.");
 
         ProjectTask parentInBase = foundProjectTasks.get(parent);
 
         if (parentInBase == null)
-            throw new StandardError("Incorrect data. Should update project and try again.");
+            throw new StandardError("Incorrect data. Should update the project and try again.");
 
         if (!parent.getVersion().equals(parentInBase.getVersion()))
-            throw new StandardError("The task " + parent + " has been changed by another user. Should update project and try again.");
+            throw new StandardError("The task " + parent + " has been changed by an another user. Should update the project and try again.");
 
         Map<ProjectTask, ProjectTask> parentsOfParentMap = entityManagerService.getParentsOfParent(parentInBase).stream().collect(
                 Collectors.toMap(p -> p, p -> p));
@@ -144,10 +157,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         for (ProjectTask projectTask: projectTaskList) {
             if (parentsOfParentMap.get(projectTask) != null)
                 // Detected circle in tree
-                throw new StandardError("Project structure has been changed. Should update project and try again.");
+                throw new StandardError("Project structure has been changed. Should update the project and try again.");
             ProjectTask projectTasksInBase = foundProjectTasks.get(projectTask);
             if (!projectTask.getVersion().equals(projectTasksInBase.getVersion()))
-                throw new StandardError("The task " + projectTask + " has been changed by another user. Should update project and try again.");
+                throw new StandardError("The task " + projectTask + " has been changed by an another user. Should update the project and try again.");
             parentIds.add(projectTask.getParentId());
             projectTask.setParentId(parent.getId());
             projectTask.setLevelOrder(++levelOrder);
@@ -158,10 +171,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public List<ProjectTask> swapTasks(Map<ProjectTask, ProjectTask> swappedTasks) {
+    public List<? extends ProjectTask> swap(Map<? extends ProjectTask, ? extends ProjectTask> swappedTasks) {
 
         ProjectTask projectTask1 = null, projectTask2 = null;
-        for (Map.Entry<ProjectTask, ProjectTask> kv: swappedTasks.entrySet()) {
+        for (Map.Entry<? extends ProjectTask, ? extends ProjectTask> kv: swappedTasks.entrySet()) {
             projectTask1 = kv.getKey();
             projectTask2 = kv.getValue();
             break;
@@ -185,7 +198,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         if (!projectTask1InBase.getVersion().equals(projectTask1.getVersion()) ||
         !projectTask2InBase.getVersion().equals(projectTask2.getVersion())) {
-            throw new StandardError("Roaming tasks are changed another user. Should update project and try again.");
+            throw new StandardError("Roaming tasks are changed by an another user. Should update the project and try again.");
         }
 
         Integer levelOrder = projectTask1InBase.getLevelOrder();
@@ -207,8 +220,61 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public ProjectTask refreshTask(ProjectTask projectTask) {
+    public ProjectTask sync(ProjectTask projectTask) {
         return projectTaskRepository.findById(projectTask.getId()).orElse(null);
+    }
+
+    @Override
+    public int getChildrenCount(ProjectTask projectTask) {
+        if (Objects.isNull(projectTask) || Objects.isNull(projectTask.getId())) {
+            return projectTaskRepository.getChildrenCount();
+        }
+        return projectTaskRepository.getChildrenCount(projectTask.getId());
+    }
+
+    @Override
+    public boolean hasChildren(ProjectTask projectTask) {
+        return getChildrenCount(projectTask) != 0;
+    }
+
+    @Override
+    public List<ProjectTask> fetchChildren(ProjectTask projectTask) {
+
+        List<ProjectTask> projectTasks = null;
+        if (Objects.isNull(projectTask) || Objects.isNull(projectTask.getId())) {
+            projectTasks = projectTaskRepository.findByParentIdIsNullOrderByLevelOrderAsc();
+        } else {
+            projectTasks = projectTaskRepository.findByParentIdOrderByLevelOrderAsc(projectTask.getId());
+        }
+        fillWbs(projectTasks, projectTask);
+        return projectTasks;
+    }
+
+    @Override
+    public Map<Integer, ProjectTask> getProjectTasksWithWbs(List<Integer> ids) {
+
+        if (ids.size() == 0) return new HashMap<>();
+
+        List<ProjectTask> projectTasks = entityManagerService.getParentsOfParent(ids);
+        treeProjectTasks.populateTreeByList(projectTasks);
+        treeProjectTasks.fillWbs();
+        return projectTasks.stream().
+                filter(projectTask -> ids.contains(projectTask.getId())).
+                collect(Collectors.toMap(ProjectTask::getId, p -> p));
+//
+    }
+
+    private void fillWbs(List<ProjectTask> children, ProjectTask projectTask) {
+
+        String wbs = "";
+        if (!Objects.isNull(projectTask)) wbs = projectTask.getWbs() + ".";
+        final String parentWbs = wbs;
+        children.forEach(child -> child.setWbs(parentWbs + child.getLevelOrder()));
+
+    }
+
+    private void recalculateTerms() {
+        // TODO recalculate term
     }
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {

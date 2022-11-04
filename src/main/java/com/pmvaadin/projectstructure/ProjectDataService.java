@@ -14,10 +14,6 @@ public interface ProjectDataService {
     ProjectTask saveTask(ProjectTask projectTask);
     void deleteTasks(List<? extends ProjectTask> projectTasks);
     void setNewParentOfTheTasks(Set<? extends ProjectTask> projectTasks, ProjectTask parent);
-    List<ProjectTask> swapTasks(Map<ProjectTask, ProjectTask> swappedTasks);
-    ProjectTask refreshTask(ProjectTask projectTask);
-
-    // Links
-    List<Link> getLinks(ProjectTask projectTask);
+    List<? extends ProjectTask> swapTasks(Map<? extends ProjectTask, ? extends ProjectTask> swappedTasks);
 
 }

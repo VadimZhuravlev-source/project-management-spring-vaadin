@@ -4,6 +4,7 @@ import com.pmvaadin.calendars.view.CalendarsView;
 import com.pmvaadin.projectview.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;
 import com.pmvaadin.security.AdminUsersView;
+import com.pmvaadin.test_elements.TestElementsView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
@@ -52,10 +53,14 @@ public class MainLayout extends AppLayout {
         RouterLink usersLink = new RouterLink("Users", AdminUsersView.class);
         calendarsLink.setHighlightCondition(HighlightConditions.sameLocation());
 
+        RouterLink tests = new RouterLink("Tests", TestElementsView.class);
+        tests.setHighlightCondition(HighlightConditions.sameLocation());
+
         addToDrawer(new VerticalLayout(
                 projectTasksLink,
                 calendarsLink,
-                usersLink
+                usersLink,
+                tests
         ));
     }
 

@@ -44,6 +44,11 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     Date getFinishDate();
     void setFinishDate(Date finishDate);
 
+    int getLinksCheckSum();
+    void setLinksCheckSum(int linksCheckSum);
 
+    default String getLinkPresentation() {
+        return getName() + " 'wbs:' " + getWbs();
+    }
 
 }

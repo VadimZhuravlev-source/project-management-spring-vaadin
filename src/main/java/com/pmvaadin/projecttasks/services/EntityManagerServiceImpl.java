@@ -39,7 +39,9 @@ public class EntityManagerServiceImpl implements EntityManagerService {
     }
 
     @Override
-    public List<ProjectTask> getParentsOfParent(List<? extends ProjectTask> projectTasks) {
+    public List<ProjectTask> getParentsOfParent(List<Integer> ids) {
+
+        if (ids.size() == 0) return new ArrayList<>();
 
         EntityManager entityManager = entityManagerFactory.createEntityManager();
 
@@ -47,8 +49,8 @@ public class EntityManagerServiceImpl implements EntityManagerService {
                 ProjectTaskImpl.class);
         query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
 
-        List<Integer> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
-        String parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
+        //List<Integer> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
+        String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
         query.setParameter(1, parameterValue);
         query.execute();
 
@@ -59,9 +61,9 @@ public class EntityManagerServiceImpl implements EntityManagerService {
     @Override
     public List<ProjectTask> getParentsOfParent(ProjectTask projectTask) {
 
-        List<ProjectTask> projectTasks = new ArrayList<>(1);
-        projectTasks.add(projectTask);
-        return getParentsOfParent(projectTasks);
+        List<Integer> ids = new ArrayList<>(1);
+        ids.add(projectTask.getId());
+        return getParentsOfParent(ids);
 
     }
 

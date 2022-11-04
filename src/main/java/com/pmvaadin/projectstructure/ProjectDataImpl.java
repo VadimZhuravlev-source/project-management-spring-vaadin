@@ -9,9 +9,9 @@ public class ProjectDataImpl implements ProjectData {
 
     private ProjectTask projectTask;
 
-    private List<Link> links;
+    private List<? extends Link> links;
 
-    public ProjectDataImpl(ProjectTask projectTask, List<Link> links) {
+    public ProjectDataImpl(ProjectTask projectTask, List<? extends Link> links) {
 
         this.projectTask = projectTask;
         this.links = links;
@@ -24,7 +24,7 @@ public class ProjectDataImpl implements ProjectData {
     }
 
     @Override
-    public List<Link> getLinks() {
+    public List<? extends Link> getLinks() {
         return links;
     }
 }

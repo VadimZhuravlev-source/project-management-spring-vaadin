@@ -33,39 +33,29 @@ public class ProjectDataServiceImpl implements ProjectDataService {
 
     @Override
     public ProjectData getProjectData(ProjectTask projectTask) {
-        return new ProjectDataImpl(projectTaskService.refreshTask(projectTask),
+        return new ProjectDataImpl(projectTaskService.sync(projectTask),
                 linkService.getLinks(projectTask));
     }
 
     @Override
     public ProjectTask saveTask(ProjectTask projectTask) {
 
-        return projectTaskService.saveTask(projectTask);
+        return projectTaskService.save(projectTask, true, false);
 
     }
 
     @Override
     public void deleteTasks(List<? extends ProjectTask> projectTasks) {
-        projectTaskService.deleteTasks(projectTasks);
+        projectTaskService.delete(projectTasks);
     }
 
     @Override
     public void setNewParentOfTheTasks(Set<? extends ProjectTask> projectTasks, ProjectTask parent) {
-        projectTaskService.setNewParentOfTheTasks(projectTasks, parent);
+        projectTaskService.changeParent(projectTasks, parent);
     }
     @Override
-    public List<ProjectTask> swapTasks(Map<ProjectTask, ProjectTask> swappedTasks) {
-        return projectTaskService.swapTasks(swappedTasks);
-    }
-
-    @Override
-    public ProjectTask refreshTask(ProjectTask projectTask) {
-        return projectTaskService.refreshTask(projectTask);
-    }
-
-    @Override
-    public List<Link> getLinks(ProjectTask projectTask) {
-        return linkService.getLinks(projectTask);
+    public List<? extends ProjectTask> swapTasks(Map<? extends ProjectTask, ? extends ProjectTask> swappedTasks) {
+        return projectTaskService.swap(swappedTasks);
     }
 
 }

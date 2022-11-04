@@ -1,5 +1,6 @@
 package com.pmvaadin.projecttasks.links.entities;
 
+import com.pmvaadin.projecttasks.entity.ProjectTask;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,29 +26,27 @@ public class LinkImpl implements Link {
 
     @Setter
     @Column(name = "row_order", nullable = false)
-    private Integer order;
+    private Integer sort;
 
     // main fields
     @Setter
     @Column(name = "project_task")
     private Integer projectTaskId;
 
-//    @Setter
-//    @ManyToOne
-//    @JoinColumn(name = "project_task")
-//    private ProjectTask projectTask;
-
     @Setter
     @Column(name = "linked_project_task")
     private Integer linkedProjectTaskId;
 
-//    @Setter
-//    @ManyToOne
-//    @JoinColumn(name = "linked_project_task")
-//    private ProjectTask linkedProjectTask;
-
     @Setter
     @Column(name = "link_type")
     private LinkType linkType;
+
+    @Setter
+    @Transient
+    private ProjectTask linkedProjectTask;
+
+    @Setter
+    @Transient
+    private String representation;
 
 }

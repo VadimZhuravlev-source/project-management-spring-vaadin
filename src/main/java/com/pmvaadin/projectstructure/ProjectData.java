@@ -8,6 +8,6 @@ import java.util.List;
 public interface ProjectData {
 
     ProjectTask getProjectTask();
-    List<Link> getLinks();
+    List<? extends Link> getLinks();
 
 }

@@ -66,6 +66,14 @@ public class ObjectGrid<T> extends VerticalLayout {
         initialSettings();
     }
 
+    public ChangedTableData<T> getChanges() {
+        return new ChangedTableDataImpl<>(
+            new ArrayList<>(addedItems),
+            new ArrayList<>(changedItems.keySet()),
+            new ArrayList<>(deletedItems.keySet())
+        );
+    }
+
     public HorizontalLayout getToolBar() {
         return toolBar;
     }
@@ -116,10 +124,9 @@ public class ObjectGrid<T> extends VerticalLayout {
         addedItems.clear();
         deletedItems.clear();
         changedItems.clear();
-        grid.setItems(new ArrayList<>());
     }
 
-    public void setItems(Collection<T> items) {
+    public void setItems(List<T> items) {
         grid.setItems(items);
     }
 
@@ -129,10 +136,6 @@ public class ObjectGrid<T> extends VerticalLayout {
         this.countCallback = countCallback;
         grid.setItems(this::getGridFetchCallBack, this::getGridCountCallback);
 
-    }
-
-    public Changes<T> getChanges() {
-        return new Changes<>(addedItems, deletedItems, changedItems);
     }
 
     public void setSizeFull() {
@@ -179,14 +182,11 @@ public class ObjectGrid<T> extends VerticalLayout {
         add(toolBar, grid);
         initializeObjectGrid();
         customizeGrid();
-        editor.addCloseListener(event -> {
-            T item = event.getItem();
+
+        binder.addValueChangeListener(event -> {
+            T item = binder.getBean();
             if (item == null || addedItems.contains(item)) return;
             changedItems.put(item, true);
-            isItemChanged = false;
-        });
-        binder.addValueChangeListener(event -> {
-            isItemChanged = true;
         });
     }
 
@@ -259,8 +259,16 @@ public class ObjectGrid<T> extends VerticalLayout {
                 changedItems.remove(item);
             });
 
+            T selectedItem = selectedItems.stream().reduce((t, t2) -> t2).orElse(null);
+            T nextSelectedItem = null;
+            if (selectedItem != null) {
+                nextSelectedItem = grid.getListDataView().getNextItem(selectedItem).orElse(null);
+            }
+
             grid.getListDataView().removeItems(selectedItems);
             grid.getSelectionModel().deselectAll();
+
+            if (nextSelectedItem != null) grid.select(nextSelectedItem);
 
             Iterator<T> iterator = addedItems.iterator();
             while (iterator.hasNext()) {
@@ -277,30 +285,6 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     public interface InlineEditor<T> {
         void customize(Binder<T> binder, Editor<T> editor);
-    }
-
-    public static class Changes<T> {
-        private List<T> addedItems;
-        private Map<T, Boolean> deletedItems;
-        private Map<T, Boolean> changedItems;
-
-        Changes(List<T> addedItems, Map<T, Boolean> deletedItems, Map<T, Boolean> changedItems) {
-            this.addedItems = addedItems;
-            this.deletedItems = deletedItems;
-            this.changedItems = changedItems;
-        }
-
-        public List<T> getAddedItems() {
-            return addedItems;
-        }
-
-        public Map<T, Boolean> getDeletedItems() {
-            return deletedItems;
-        }
-
-        public Map<T, Boolean> getChangedItems() {
-            return changedItems;
-        }
     }
 
 }

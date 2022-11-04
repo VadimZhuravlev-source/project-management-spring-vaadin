@@ -22,7 +22,7 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     ProjectTask save(ProjectTask projectTask);
 
-    List<ProjectTask> saveAll(Iterable<ProjectTask> ids);
+    List<ProjectTask> saveAll(Iterable<ProjectTask> projectTasks);
 
     @Query(value = "SELECT MAX(level_order) FROM project_tasks WHERE parent_id = :parentId", nativeQuery = true)
     <I, L> L findMaxOrderIdOnParentLevel(@Param("parentId") I parentId);
@@ -31,11 +31,20 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
     <L> L findMaxOrderIdOnParentLevelWhereParentNull();
 
     List<ProjectTask> findByParentIdInOrderByLevelOrderAsc(Collection<?> ids);
+    List<ProjectTask> findByParentIdOrderByLevelOrderAsc(Integer id);
+
+    List<ProjectTask> findByParentIdIsNullOrderByLevelOrderAsc();
 
     @Query(value = "SELECT * FROM project_tasks WHERE parent_id IS NULL\n" +
             "UNION\n" +
             "SELECT * FROM project_tasks WHERE parent_id in (:parentIds)\n" +
             "ORDER BY level_order ASC", nativeQuery = true)
     List<ProjectTaskImpl> findByParentIdInWithNullOrderByLevelOrderAsc(@Param("parentIds") Iterable<?> ids);
+
+    @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parent_id = :parentId")
+    int getChildrenCount(@Param("parentId") Integer parentId);
+
+    @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parent_id IS NULL")
+    int getChildrenCount();
 
 }

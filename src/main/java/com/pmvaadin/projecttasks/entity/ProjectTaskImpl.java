@@ -1,5 +1,6 @@
 package com.pmvaadin.projecttasks.entity;
 
+import com.pmvaadin.calendars.entity.Calendar;
 import com.pmvaadin.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -62,6 +63,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Setter
     @Column(name = "finish_date")
     private Date finishDate;
+
+    @Setter
+    @Column(name = "links_check_sum")
+    private int linksCheckSum;
+
     //    @Setter
 //    @Column(name = "duration")
 //    private new BigDecimal duration;

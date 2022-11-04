@@ -283,7 +283,7 @@ public class ProjectTreeView extends VerticalLayout {
 
         if (projectTasks2 == null) return;
 
-        List<ProjectTask> replacedTasks;
+        List<? extends ProjectTask> replacedTasks;
         try {
             Map<ProjectTask, ProjectTask> swappedTasks = new HashMap<>();
             swappedTasks.put(projectTasks1, projectTasks2);
