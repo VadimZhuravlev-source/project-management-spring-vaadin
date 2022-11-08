@@ -6,6 +6,11 @@ import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.calendars.exceptiondays.ExceptionDays;
 
 public interface Calendar {
+
+    static String getHeaderName() {
+        return "Name";
+    }
+
     Integer getId();
 
     void setId(Integer id);
