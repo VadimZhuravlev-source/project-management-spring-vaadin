@@ -1,5 +1,7 @@
 package com.pmvaadin.projecttasks.views;
 
+import com.pmvaadin.calendars.view.CalendarSelectionForm;
+import com.pmvaadin.commonobjects.SelectableTextField;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.data.ProjectTaskDataImpl;
 import com.pmvaadin.projecttasks.links.entities.Link;
@@ -35,12 +37,14 @@ public class ProjectTaskForm extends Dialog {
     private ProjectTask projectTask;
     private final ProjectTaskDataService projectTaskDataService;
     private final LinksProjectTask linksGrid;
+    private final CalendarSelectionForm calendarSelectionForm;
 
     private final TextField version = new TextField(ProjectTask.getHeaderVersion());
     private final DatePicker dateOfCreation = new DatePicker(ProjectTask.getHeaderDateOfCreation());
     private final DatePicker updateDate = new DatePicker(ProjectTask.getHeaderUpdateDate());
     private final TextField name = new TextField();
     private final TextField wbs = new TextField();
+    private final SelectableTextField calendar = new SelectableTextField();
     private final DatePicker startDate = new DatePicker();
     private final DatePicker finishDate = new DatePicker();
     private final Binder<ProjectTask> binder = new BeanValidationBinder<>(ProjectTask.class);
@@ -56,12 +60,14 @@ public class ProjectTaskForm extends Dialog {
     private final Button close = new Button("Cancel");
     private final Icon refresh = new Icon("lumo", "reload");
 
-    public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid) {
+    public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
+                           CalendarSelectionForm calendarSelectionForm) {
 
         super();
 
         this.projectTaskDataService = projectTaskDataService;
         this.linksGrid = linksGrid;
+        this.calendarSelectionForm = calendarSelectionForm;
 
         customizeForm();
         customizeHeader();
@@ -113,6 +119,7 @@ public class ProjectTaskForm extends Dialog {
         FormLayout formLayout = new FormLayout();
         formLayout.addFormItem(name, ProjectTask.getHeaderName());
         formLayout.addFormItem(wbs, ProjectTask.getHeaderWbs());
+        formLayout.addFormItem(calendar, ProjectTask.getHeaderCalendar());
         formLayout.addFormItem(startDate, ProjectTask.getHeaderStartDate());
         formLayout.addFormItem(finishDate, ProjectTask.getHeaderFinishDate());
 
@@ -126,6 +133,16 @@ public class ProjectTaskForm extends Dialog {
         dateOfCreation.setEnabled(false);
         updateDate.setEnabled(false);
         name.setAutofocus(true);
+        calendar.setSelectable(true);
+        calendar.addSelectionListener(event -> {
+            calendarSelectionForm.addSelectionListener(
+                    selectedProjectTask -> {
+                        calendar.setValue(selectedProjectTask);
+                        calendar.refreshTextValue();
+                        calendar.setReadOnly(true);
+                    });
+            calendarSelectionForm.open();
+        });
         dateOfCreation.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         updateDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         version.addThemeVariants(TextFieldVariant.LUMO_SMALL);
