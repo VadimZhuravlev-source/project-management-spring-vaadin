@@ -1,5 +1,7 @@
 package com.pmvaadin.projecttasks.views;
 
+import com.pmvaadin.calendars.entity.Calendar;
+import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.calendars.view.CalendarSelectionForm;
 import com.pmvaadin.commonobjects.SelectableTextField;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
@@ -25,7 +27,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
@@ -44,21 +45,21 @@ public class ProjectTaskForm extends Dialog {
     private final DatePicker updateDate = new DatePicker(ProjectTask.getHeaderUpdateDate());
     private final TextField name = new TextField();
     private final TextField wbs = new TextField();
-    private final SelectableTextField calendar = new SelectableTextField();
+    private final SelectableTextField<Calendar> calendar = new SelectableTextField<>();
     private final DatePicker startDate = new DatePicker();
     private final DatePicker finishDate = new DatePicker();
     private final Binder<ProjectTask> binder = new BeanValidationBinder<>(ProjectTask.class);
 
+    private final Tabs tabs = new Tabs();
     private final VerticalLayout content = new VerticalLayout();
-    private final Tab mainDataTab = new Tab("Main data");
+    private final Tab mainDataTab = new Tab("Main");
     private final VerticalLayout mainDataLayout = new VerticalLayout();
-    private final Tab linksTab = new Tab("Links");
+    private final Tab linksTab = new Tab("Predecessors");
     private final VerticalLayout linksLayout = new VerticalLayout();
 
     private final Button save = new Button("Save");
-    private final Button delete = new Button("Delete");
     private final Button close = new Button("Cancel");
-    private final Icon refresh = new Icon("lumo", "reload");
+    private final Button sync = new Button("Refresh", new Icon("lumo", "reload"));
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
                            CalendarSelectionForm calendarSelectionForm) {
@@ -74,17 +75,15 @@ public class ProjectTaskForm extends Dialog {
         customizeTabs();
         customizeFields();
         createButtons();
+        addTabs();
 
         binder.bindInstanceFields(this);
 
         VerticalLayout mainLayout = new VerticalLayout();
         mainLayout.setSpacing(false);
 
-        //mainLayout.getElement().setAttribute("gap", "0");
-        //getElement().setAttribute("gap", "0");
-
         content.add(mainDataLayout);
-        mainLayout.add(getMetadataFields(), getTabs(), content);
+        mainLayout.add(getMetadataFields(), tabs, content);
 
         add(mainLayout);
 
@@ -92,18 +91,33 @@ public class ProjectTaskForm extends Dialog {
 
     public void setProjectTask(ProjectTask projectTask) {
         this.projectTask = projectTask;
-        setHeaderTitle("Project task: " + projectTask.getName());
+        refreshHeader();
         linksGrid.setProjectTask(projectTask);
         binder.readBean(projectTask);
         name.focus();
     }
 
-    private Tabs getTabs() {
+    private void customizeForm() {
 
-        Tabs tabs = new Tabs(mainDataTab, linksTab);
+        setWidth("80%");
+        setHeight("80%");
+        setDraggable(true);
+        setResizable(true);
+        addClassName("project-task-form");
+        addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+
+    }
+
+    private void refreshHeader() {
+        String projectTaskName = projectTask.getName();
+        if (projectTaskName == null) projectTaskName = "";
+        setHeaderTitle("Project task: " + projectTaskName);
+    }
+
+    private void addTabs() {
+
+        tabs.add(mainDataTab, linksTab);
         tabs.addSelectedChangeListener(this::tabsSelectedListener);
-
-        return tabs;
 
     }
 
@@ -153,15 +167,6 @@ public class ProjectTaskForm extends Dialog {
 
     }
 
-    private void customizeForm() {
-
-        setDraggable(true);
-        setResizable(true);
-        addClassName("project-task-form");
-        addThemeVariants(DialogVariant.LUMO_NO_PADDING);
-
-    }
-
     private void tabsSelectedListener(Tabs.SelectedChangeEvent selectedChangeEvent) {
         content.removeAll();
         if (selectedChangeEvent.getSelectedTab() == mainDataTab) {
@@ -182,7 +187,6 @@ public class ProjectTaskForm extends Dialog {
 
     private FormLayout getMetadataFields() {
         FormLayout formLayout = new FormLayout();
-        formLayout.add(refresh);
         formLayout.add(version);
         formLayout.add(dateOfCreation);
         formLayout.add(updateDate);
@@ -192,9 +196,14 @@ public class ProjectTaskForm extends Dialog {
         return formLayout;
     }
 
-    private void validateAndSave() {
+    private boolean validateAndSave() {
         try {
             binder.writeBean(projectTask);
+            boolean isOk = linksGrid.validate();
+            if (!isOk) {
+                tabs.setSelectedTab(linksTab);
+                return false;
+            }
             ProjectTaskData projectTaskData = new ProjectTaskDataImpl(
                     projectTask,
                     linksGrid.getChanges(),
@@ -202,38 +211,54 @@ public class ProjectTaskForm extends Dialog {
             );
             ProjectTaskData savedData = projectTaskDataService.save(projectTaskData);
             readData(savedData);
-        } catch (ValidationException e) {
-            e.printStackTrace();
+        } catch (Throwable e) {
+            NotificationDialogs.notifyValidationErrors(e.getMessage());
+            return false;
         }
+
+        return true;
+
     }
 
-    private void refreshData() {
-        if (projectTask.isNew()) return;
-        ProjectTaskData projectTaskData = projectTaskDataService.read(projectTask);
-        readData(projectTaskData);
+    private void syncData() {
+        try {
+
+            if (projectTask.isNew()) return;
+            ProjectTaskData projectTaskData = projectTaskDataService.read(projectTask);
+            readData(projectTaskData);
+
+        } catch (Throwable e) {
+            NotificationDialogs.notifyValidationErrors(e.getMessage());
+        }
+
     }
 
     private void readData(ProjectTaskData projectTaskData) {
-        binder.readBean(projectTaskData.getProjectTask());
+        this.projectTask = projectTaskData.getProjectTask();
+        binder.readBean(projectTask);
         linksGrid.setItems((List<Link>) (projectTaskData.getLinks()));
+        refreshHeader();
     }
 
     private void createButtons() {
 
         save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        delete.addThemeVariants(ButtonVariant.LUMO_ERROR);
         close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
-//        save.addClickShortcut(Key.ENTER);
-//        close.addClickShortcut(Key.ESCAPE);
+        save.addClickListener(event -> {
 
-        save.addClickListener(event -> validateAndSave());
-        delete.addClickListener(event -> fireEvent(new DeleteEvent(this, projectTask)));
+            boolean validationDone = validateAndSave();
+            if (!validationDone) return;
+            fireEvent(new SaveEvent(this, projectTask));
+
+        });
+//        save.getStyle().set("margin-right", "auto");
+        sync.addClickListener(event -> syncData());
+        sync.getStyle().set("margin-right", "auto");
         close.addClickListener(event -> fireEvent(new CloseEvent(this)));
-        refresh.addClickListener(event -> refreshData());
 
         binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
-        getFooter().add(save, delete, close);
+        getFooter().add(save, sync, close);
 
     }
 
@@ -253,12 +278,6 @@ public class ProjectTaskForm extends Dialog {
 
     public static class SaveEvent extends ProjectTaskFormEvent {
         SaveEvent(ProjectTaskForm source, ProjectTask projectTask) {
-            super(source, projectTask);
-        }
-    }
-
-    public static class DeleteEvent extends ProjectTaskFormEvent {
-        DeleteEvent(ProjectTaskForm source, ProjectTask projectTask) {
             super(source, projectTask);
         }
     }

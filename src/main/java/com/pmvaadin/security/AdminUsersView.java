@@ -2,7 +2,6 @@ package com.pmvaadin.security;
 
 import com.pmvaadin.MainLayout;
 import com.pmvaadin.security.services.UserService;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -16,28 +15,28 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @Route(value = "users", layout = MainLayout.class)
 @PageTitle("Users | PM")
-@PermitAll
+@RolesAllowed({"ADMIN"})
 @Transactional
 public class AdminUsersView extends VerticalLayout {
 
     private final UserService userService;
     private final Grid<User> grid = new Grid<>(User.class, false);
-    private TextField userName = new TextField("First name");
-    private TextField userLastName = new TextField("Last name");
-    private TextField phoneNumber = new TextField("Phone number");
-    private TextField password = new TextField("Password");
-    private TextField address = new TextField("Address");
-    private Checkbox active = new Checkbox("Active");
-    private ComboBox<Role> roleComboBox = new ComboBox<>("Role");
+    private final TextField userName = new TextField("First name");
+    private final TextField userLastName = new TextField("Last name");
+    private final TextField phoneNumber = new TextField("Phone number");
+    private final TextField password = new TextField("Password");
+    private final TextField address = new TextField("Address");
+    private final Checkbox active = new Checkbox("Active");
+    private final ComboBox<Role> roleComboBox = new ComboBox<>("Role");
     private Dialog dialog;
 
-    public AdminUsersView(UserService userService, Component... components) {
+    public AdminUsersView(UserService userService) {
 
         this.userService = userService;
         addClassName("calendar-list-view");
@@ -122,7 +121,7 @@ public class AdminUsersView extends VerticalLayout {
         dialog = new Dialog();
         dialog.setHeaderTitle("Edit user");
 
-        Integer selectedID = ((User)grid.getSelectionModel().getSelectedItems()
+        Integer selectedID = (grid.getSelectionModel().getSelectedItems()
                 .stream().findFirst().orElse(new User())).getId();
         System.out.println(selectedID);
         User user = userService.getUserById(selectedID);
@@ -137,7 +136,7 @@ public class AdminUsersView extends VerticalLayout {
     }
 
     private void deleteUser() {
-        User user = (User) grid.getSelectionModel().getSelectedItems()
+        User user = grid.getSelectionModel().getSelectedItems()
                 .stream().findFirst().orElseThrow();
         try {
             userService.deleteUser(user);

@@ -240,7 +240,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Override
     public List<ProjectTask> fetchChildren(ProjectTask projectTask) {
 
-        List<ProjectTask> projectTasks = null;
+        List<ProjectTask> projectTasks;
         if (Objects.isNull(projectTask) || Objects.isNull(projectTask.getId())) {
             projectTasks = projectTaskRepository.findByParentIdIsNullOrderByLevelOrderAsc();
         } else {
@@ -261,7 +261,81 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         return projectTasks.stream().
                 filter(projectTask -> ids.contains(projectTask.getId())).
                 collect(Collectors.toMap(ProjectTask::getId, p -> p));
+
+    }
+
+    @Override
+    @Transactional
+    public void increaseTaskLevel(Set<ProjectTask> projectTasks) {
+
+        if (projectTasks.size() == 0) return;
+
+        // do only for one task
+        var projectTask = projectTasks.stream().findFirst().orElse(null);
+        if (projectTask == null) return;
+
+        var syncProjectTask = projectTaskRepository.findById(projectTask.getId()).orElse(null);
+        if (syncProjectTask == null) return; // TODO throw exception
+        if (!syncProjectTask.getVersion().equals(projectTask.getVersion())) return; // TODO throw exception
+
+        var parentId = syncProjectTask.getParentId();
+        if (parentId == null) return;
+        var parent = projectTaskRepository.findById(parentId).orElse(null);
+
+        // TODO validate links
+
+        if (parent == null) return;
+        var parentOfParentId = parent.getParentId();
+
+        var maxLevelOrder = 0;
+        if (parentOfParentId == null) maxLevelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
+        else maxLevelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentOfParentId);
+
+        syncProjectTask.setParentId(parentOfParentId);
+        syncProjectTask.setLevelOrder(++maxLevelOrder);
+
+        projectTaskRepository.save(syncProjectTask);
+
+        // TODO change parent for all selected tasks
+//        var ids = projectTasks.stream().map(ProjectTask::getId).toList();
+//        var syncedProjectTasks = projectTaskRepository.findAllById(ids).stream()
+//                .filter(projectTask -> projectTask.getParentId() != null)
+//                .collect(Collectors.toMap(p -> p, p -> p));
+//        validateVersion(projectTasks, syncedProjectTasks);
 //
+//        validateLinks();
+//        recalculateTerms();
+//
+//        var parentIds = syncedProjectTasks.keySet().stream().map(ProjectTask::getParentId).toList();
+//
+//        var parents = projectTaskRepository.findAllById(parentIds);
+//
+//        var parentsOfParentsHighLevel = parents.stream()
+//                .filter(projectTask -> projectTask.getParentId() == null).toList();
+//        var parentsOfParents = parents.stream().filter(projectTask -> projectTask.getParentId() != null).toList();
+//
+//
+//        var groupedTasks = syncedProjectTasks.keySet().stream().c
+
+    }
+
+    @Override
+    public void decreaseTaskLevel(Set<ProjectTask> projectTasks) {
+
+        validateLinks();
+        recalculateTerms();
+
+    }
+
+    private void validateVersion(Collection<ProjectTask> projectTasks, Map<ProjectTask, ProjectTask> projectTasksInBase) {
+
+        projectTasks.forEach(projectTask -> {
+            ProjectTask projectTaskInBase = projectTasksInBase.getOrDefault(projectTask, null);
+            if (projectTaskInBase == null) return;
+            if (!projectTask.getVersion().equals(projectTaskInBase.getVersion()))
+                throw new StandardError("The task " + projectTask + " has been changed by an another user. Should update the project and try again.");
+        });
+
     }
 
     private void fillWbs(List<ProjectTask> children, ProjectTask projectTask) {
@@ -274,7 +348,11 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     private void recalculateTerms() {
-        // TODO recalculate term
+        // TODO recalculate terms
+    }
+
+    private void validateLinks() {
+        // TODO validate terms
     }
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {

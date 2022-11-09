@@ -1,16 +1,13 @@
 package com.pmvaadin.projecttasks.views;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
-import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalDataProvider;
@@ -23,10 +20,7 @@ import java.util.stream.Stream;
 @SpringComponent
 public class ProjectSelectionForm extends Dialog {
 
-    private ProjectTaskService projectTaskService;
-
-    private final HorizontalLayout toolBar = new HorizontalLayout();
-    private final Button selectionAction = new Button("Select");
+    private final ProjectTaskService projectTaskService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
 
     private Consumer<ProjectTask> selection;
@@ -34,15 +28,17 @@ public class ProjectSelectionForm extends Dialog {
     public ProjectSelectionForm(ProjectTaskService projectTaskService) {
         super();
         this.projectTaskService = projectTaskService;
+
+        Button selectionAction = new Button("Select");
         selectionAction.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-//        toolBar.add(selectionAction);
         getFooter().add(selectionAction);
         selectionAction.getStyle().set("margin-right", "auto");
         customizeTreeGrid();
         customizeHeader();
         add(treeGrid);
 
-        setSizeFull();
+        setWidth("70%");
+        setHeight("70%");
         treeGrid.setSizeFull();
         setDraggable(true);
         setResizable(true);
@@ -52,6 +48,9 @@ public class ProjectSelectionForm extends Dialog {
         selectionAction.addClickListener(event -> {
             ProjectTask selectedTask = treeGrid.getSelectedItems().stream().findFirst().orElse(null);
             selectItem(selectedTask);
+        });
+        addOpenedChangeListener(event -> {
+            if (event.isOpened()) treeGrid.getDataProvider().refreshAll();
         });
     }
 
@@ -98,7 +97,7 @@ public class ProjectSelectionForm extends Dialog {
 
     private HierarchicalDataProvider<ProjectTask, Void> getDataProvider() {
 
-        return new AbstractBackEndHierarchicalDataProvider<ProjectTask, Void>() {
+        return new AbstractBackEndHierarchicalDataProvider<>() {
 
             @Override
             public int getChildCount(HierarchicalQuery<ProjectTask, Void> query) {

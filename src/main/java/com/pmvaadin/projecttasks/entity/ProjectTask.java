@@ -37,6 +37,10 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
         return "Finish date";
     }
 
+    static String getHeaderCalendar() {
+        return "Calendar";
+    }
+
     String getName();
     void setName(String name);
     Date getStartDate();

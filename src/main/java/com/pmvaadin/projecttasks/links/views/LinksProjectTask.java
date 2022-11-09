@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.links.views;
 
 import com.pmvaadin.commonobjects.ObjectGrid;
 import com.pmvaadin.commonobjects.SelectableTextField;
+import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.entities.LinkImpl;
 import com.pmvaadin.projecttasks.links.entities.LinkType;
@@ -9,13 +10,14 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.views.ProjectSelectionForm;
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @SpringComponent
 public class LinksProjectTask extends ObjectGrid<Link> {
@@ -43,6 +45,53 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         setItems(links);
     }
 
+    public boolean validate() {
+
+        Map<Integer, Boolean> mapIdentity = new HashMap<>();
+        boolean isOk = true;
+        String message = "";
+        Link tableRow = null;
+
+        for (Link link: getGrid().getListDataView().getItems().toList()) {
+            if (link.getLinkedProjectTaskId() == null) {
+                isOk = false;
+                tableRow = link;
+                message = getTextErrorNotFilledProjectTask();
+                break;
+            }
+            if (link.getLinkType() == null) {
+                isOk = false;
+                tableRow = link;
+                message = getTextErrorNotFilledLinkType();
+                break;
+            }
+            if (mapIdentity.getOrDefault(link.getLinkedProjectTaskId(), false)) {
+                isOk = false;
+                tableRow = link;
+                message = getTextErrorDuplicatedTasks();
+                break;
+            }
+            mapIdentity.put(link.getLinkedProjectTaskId(), true);
+        }
+
+        if (!isOk) {
+            NotificationDialogs.notifyValidationErrors(message);
+            getGrid().deselectAll();
+            getGrid().select(tableRow);
+        }
+
+        return isOk;
+
+    }
+
+    private String getTextErrorNotFilledProjectTask() {
+        return "In the predecessors, the project task is not filled";
+    }
+
+    private String getTextErrorNotFilledLinkType() {
+        return "In the predecessors, the link type is not filled";
+    }
+
     private void customizeLinks() {
 
         Grid.Column<Link> linkedProjectTaskIdColumn = addColumn(Link::getRepresentation).
@@ -61,7 +110,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
         setInlineEditor((linkBinder, editor) -> {
 
-            SelectableTextField<Link> ptField = new SelectableTextField();
+            SelectableTextField<Link> ptField = new SelectableTextField<>();
             ptField.setMapValueToText(Link::getRepresentation);
             ptField.setReadOnly(true);
             ptField.setSelectable(true);
@@ -74,10 +123,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
                             ptField.getValue().setLinkedProjectTask(selectedProjectTask);
                             ptField.getValue().setLinkedProjectTaskId(selectedProjectTask.getId());
                             ptField.getValue().setRepresentation(selectedProjectTask.getLinkPresentation());
-                            ptField.setReadOnly(false);
                             ptField.refreshTextValue();
-                            //ptField.setValue(selectedProjectTask);
-                            ptField.setReadOnly(true);
                         });
                 projectSelectionForm.open();
             });
@@ -86,16 +132,10 @@ public class LinksProjectTask extends ObjectGrid<Link> {
             linkBinder.forField(ptField)
                     .asRequired(getTextErrorEmptyProjectTask())
                     .bind(link -> {
-                        //ProjectTask pt = link.getLinkedProjectTask();
-                        ptField.setReadOnly(false);
                         ptField.setValue(link);
-                        ptField.setReadOnly(true);
                         return link;
                             },
-                            (link, pt) -> {
-                                //link.setLinkedProjectTaskId(pt.getId());
-                                //link.setLinkedProjectTask(pt);
-                            });
+                            (link, pt) -> {});
             linkedProjectTaskIdColumn.setEditorComponent(ptField);
 
             Select<LinkType> linkTypeField = new Select<>();
@@ -104,7 +144,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
             addCloseHandler(linkTypeField, editor);
             linkBinder.forField(linkTypeField)
                     .asRequired("Field link type must not be empty")
-                    .bind(link -> link.getLinkType(), Link::setLinkType);
+                    .bind(Link::getLinkType, Link::setLinkType);
             linkTypeColumn.setEditorComponent(linkTypeField);
 
         });
@@ -114,7 +154,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
     private boolean isAddable(ProjectTask projectTask) {
 
         if (this.projectTask.equals(projectTask)) {
-            notifyValidationErrors(getTextErrorEqualsThis());
+            NotificationDialogs.notifyValidationErrors(getTextErrorEqualsThis());
             return false;
         }
 
@@ -127,11 +167,11 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         });
 
         if (isContainedAlready) {
-            notifyValidationErrors(getTextErrorDuplicatedTasks());
+            NotificationDialogs.notifyValidationErrors(getTextErrorDuplicatedTasks());
             return false;
         }
 
-
+        // TODO check circle dependency
 
         return true;
     }
@@ -147,9 +187,10 @@ public class LinksProjectTask extends ObjectGrid<Link> {
     }
 
     private String getTextErrorDuplicatedTasks() {
-        return "An error occurred while establishing a connection between tasks.\n" +
-                "\n" +
-                "A double link from a predecessor task to a single successor task is not allowed.";
+        return """
+                An error occurred while establishing a connection between tasks.
+
+                A double link from a predecessor task to a single successor task is not allowed.""";
     }
 
     private String getTextErrorEmptyProjectTask() {
@@ -158,12 +199,6 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     private String getTextErrorEqualsThis() {
         return "Cannot link to current task";
-    }
-
-    private void notifyValidationErrors(String errorMessage) {
-        Dialog dialog = new Dialog();
-        dialog.add(errorMessage);
-        dialog.open();
     }
 
 }
