@@ -15,7 +15,7 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 import java.util.function.Consumer;
 
 @SpringComponent
-public class CalendarSelectionForm extends Dialog {
+public class CalendarSelectionForm extends Dialog implements SelectionForm<Calendar>{
     private CalendarService calendarService;
 
     private final HorizontalLayout toolBar = new HorizontalLayout();
