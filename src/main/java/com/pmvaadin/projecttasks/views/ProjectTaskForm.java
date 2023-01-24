@@ -192,7 +192,7 @@ public class ProjectTaskForm extends Dialog {
         formLayout.add(updateDate);
         //formLayout.add(version, dateOfCreation, updateDate);
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("300px", 4));
+                new FormLayout.ResponsiveStep("300px", 3));
         return formLayout;
     }
 

@@ -16,4 +16,6 @@ public interface ProjectTreeService {
     void increaseTaskLevel(Set<ProjectTask> projectTasks);
     void decreaseTaskLevel(Set<ProjectTask> projectTasks);
 
+    void createTestCase();
+
 }

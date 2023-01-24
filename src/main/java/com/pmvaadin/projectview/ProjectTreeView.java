@@ -2,6 +2,7 @@ package com.pmvaadin.projectview;
 
 import com.pmvaadin.MainLayout;
 import com.pmvaadin.commonobjects.ConfirmDialog;
+import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projectstructure.ProjectTreeService;
@@ -169,11 +170,15 @@ public class ProjectTreeView extends VerticalLayout {
         Button changeLevelDown = new Button("Decrease task level");
         changeLevelDown.addClickListener(this::decreaseTaskLevel);
 
+        Button createTestCase = new Button("Create test case");
+        createTestCase.addClickListener(this::createTestCase);
+
         HorizontalLayout toolbar = new HorizontalLayout(
                 //filterText,
                 addProjectTask, deleteProjectTask, updateTreeData,
                 changeLevelUp,
                 //changeLevelDown,
+                createTestCase,
                 moveUp, moveDown, expandAll, collapseAll);
 
         toolbar.addClassName("toolbar");
@@ -197,6 +202,13 @@ public class ProjectTreeView extends VerticalLayout {
     }
 
     private void decreaseTaskLevel(ClickEvent<Button> clickEvent) {
+
+    }
+
+    private void createTestCase(ClickEvent<Button> clickEvent) {
+
+        projectTreeService.createTestCase();
+        updateTreeGrid();
 
     }
 

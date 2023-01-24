@@ -4,18 +4,18 @@ import com.pmvaadin.commonobjects.ChangedTableData;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 
 import java.util.List;
 
-@Data
+@Getter
 @AllArgsConstructor
 public class ProjectTaskDataImpl implements ProjectTaskData {
 
-    private ProjectTask projectTask;
+    private final ProjectTask projectTask;
 
     // Links
-    private ChangedTableData<? extends Link> linksChangedTableData;
-    private List<? extends Link> links;
+    private final ChangedTableData<? extends Link> linksChangedTableData;
+    private final List<Link> links;
 
 }

@@ -9,12 +9,7 @@ import java.util.List;
 public interface ProjectTaskData {
 
     ProjectTask getProjectTask();
-    void setProjectTask(ProjectTask projectTask);
     ChangedTableData<? extends Link> getLinksChangedTableData();
-    void setLinksChangedTableData(ChangedTableData<? extends Link> linksChangedTableData);
-
-    List<? extends Link> getLinks();
-
-    void setLinks(List<? extends Link> links);
+    List<Link> getLinks();
 
 }

@@ -2,9 +2,11 @@ package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -55,6 +57,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     public ProjectTask save(ProjectTask projectTask, boolean validate, boolean recalculateTerms) {
 
         if (validate && !validate(projectTask)) return projectTask;
+        fillNecessaryFieldsIfIsNew(projectTask);
         ProjectTask savedProjectTask = projectTaskRepository.save(projectTask);
         if (!recalculateTerms) {
             return savedProjectTask;
@@ -67,31 +70,12 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Override
     public boolean validate(ProjectTask projectTask) {
 
-        // Validate parent existence
-        Integer parentId = projectTask.getParentId();
-        if (parentId != null) {
-            Optional<ProjectTask> foundParentValue = projectTaskRepository.findById(projectTask.getParentId());
-            ProjectTask foundParent = foundParentValue.orElse(null);
-            if (foundParent == null)
-                throw new StandardError("Unable to persist the object. A Parent of the task does not exist. Update the project and try again.");
-        }
-
-        if (projectTask.isNew()) {
-            parentId = projectTask.getParentId();
-            Integer levelOrder;
-            if (parentId == null) {
-                levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
-            } else {
-                levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentId);
-            }
-            if (levelOrder == null) levelOrder = 0;
-            projectTask.setLevelOrder(++levelOrder);
-        } else {
+        if (!projectTask.isNew()) {
             if (projectTask.getId().equals(projectTask.getParentId()))
                 throw new StandardError("Unable to persist the object. Update the project and try again.");
             Optional<ProjectTask> foundValue = projectTaskRepository.findById(projectTask.getId());
             ProjectTask foundTask = foundValue.orElse(null);
-            if (foundTask == null) throw new StandardError("Unable to persist the object. Update the project and try again.");
+            if (foundTask == null) throw new StandardError("The project task was deleted.");
             if (!foundTask.getVersion().equals(projectTask.getVersion()))
                 throw new StandardError("Unable to persist the object. The object was changed by an another user. Update the project and try again.");
         }
@@ -101,6 +85,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
+    @Transactional
     public void delete(List<? extends ProjectTask> projectTasks) {
 
         List<?> parentIds = projectTasks.stream().map(ProjectTask::getParentId).toList();
@@ -108,7 +93,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         Map<?, Boolean> parentIdsForDeletion =
                 projectTaskForDeletion.stream().collect(Collectors.toMap(ProjectTask::getId, projectTask -> true));
         parentIds = parentIds.stream().filter(parentId -> Objects.isNull(parentIdsForDeletion.get(parentId))).collect(Collectors.toList());
-        List<?> projectTaskIds = projectTaskForDeletion.stream().map(ProjectTask::getId).toList();
+        List<?> projectTaskIds = projectTaskForDeletion.stream()
+                .sorted(Comparator.comparing(ProjectTaskOrderedHierarchy::getWbs).reversed())
+                .map(ProjectTask::getId).toList();
 
         transactionalDeletionAndRecalculation(projectTaskIds, parentIds);
 
@@ -251,15 +238,16 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public Map<Integer, ProjectTask> getProjectTasksWithWbs(List<Integer> ids) {
+    public Map<?, ProjectTask> getProjectTasksWithFilledWbs(List<?> ids) {
 
         if (ids.size() == 0) return new HashMap<>();
 
         List<ProjectTask> projectTasks = entityManagerService.getParentsOfParent(ids);
         treeProjectTasks.populateTreeByList(projectTasks);
         treeProjectTasks.fillWbs();
+        Map<?, ?> filter = ids.stream().collect(Collectors.toMap(id -> id, id -> null));
         return projectTasks.stream().
-                filter(projectTask -> ids.contains(projectTask.getId())).
+                filter(projectTask -> filter.containsKey(projectTask.getId())).
                 collect(Collectors.toMap(ProjectTask::getId, p -> p));
 
     }
@@ -324,6 +312,39 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         validateLinks();
         recalculateTerms();
+
+    }
+
+    @Override
+    public void createTestCase() {
+        TestCase.createTestCase(this);
+    }
+
+    private void fillNecessaryFieldsIfIsNew(ProjectTask projectTask) {
+
+        if (!projectTask.isNew()) return;
+
+        var parentId = projectTask.getParentId();
+
+        if (parentId != null) {
+            // Validate parent existence
+            ProjectTask foundParent = projectTaskRepository.findById(parentId).orElse(null);
+            if (foundParent == null) {
+                projectTask.setParentId(null);
+                parentId = null;
+                //throw new StandardError("Unable to persist the object. A Parent of the task does not exist. Update the project and try again.");
+
+            }
+        }
+
+        Integer levelOrder;
+        if (parentId == null) {
+            levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
+        } else {
+            levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentId);
+        }
+        if (levelOrder == null) levelOrder = 0;
+        projectTask.setLevelOrder(++levelOrder);
 
     }
 
@@ -393,7 +414,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    @Transactional
     private void transactionalDeletionAndRecalculation(List<?> projectTaskIds, List<?> parentIds) {
 
         projectTaskRepository.deleteAllById(projectTaskIds);
@@ -414,6 +434,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
         treeProjectTasks.populateTreeByList(allHierarchyElements);
+        treeProjectTasks.fillWbs();
         TreeItem<ProjectTask> rootItem = treeProjectTasks.getRootItem();
 
         List<ProjectTask> projectTaskIds = new ArrayList<>(allHierarchyElements.size());
