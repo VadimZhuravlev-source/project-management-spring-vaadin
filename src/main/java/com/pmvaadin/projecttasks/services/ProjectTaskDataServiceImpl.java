@@ -65,7 +65,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
     private void fillLinksByChanges(ProjectTaskData projectTaskData) {
 
-        if (projectTaskData.getLinks() != null) return;
+        if (projectTaskData.getLinksChangedTableData() == null && projectTaskData.getLinks() != null) return;
 
         linkService.fillLinksByChanges(projectTaskData);
 

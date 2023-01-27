@@ -245,7 +245,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         List<ProjectTask> projectTasks = entityManagerService.getParentsOfParent(ids);
         treeProjectTasks.populateTreeByList(projectTasks);
         treeProjectTasks.fillWbs();
-        Map<?, ?> filter = ids.stream().collect(Collectors.toMap(id -> id, id -> null));
+        Map<?, ?> filter = ids.stream().collect(Collectors.toMap(id -> id, id -> id));
         return projectTasks.stream().
                 filter(projectTask -> filter.containsKey(projectTask.getId())).
                 collect(Collectors.toMap(ProjectTask::getId, p -> p));

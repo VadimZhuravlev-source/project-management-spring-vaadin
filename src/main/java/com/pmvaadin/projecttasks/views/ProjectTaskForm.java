@@ -30,6 +30,7 @@ import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @SpringComponent
@@ -207,7 +208,7 @@ public class ProjectTaskForm extends Dialog {
             ProjectTaskData projectTaskData = new ProjectTaskDataImpl(
                     projectTask,
                     linksGrid.getChanges(),
-                    null
+                    new ArrayList<>()
             );
             ProjectTaskData savedData = projectTaskDataService.save(projectTaskData);
             readData(savedData);

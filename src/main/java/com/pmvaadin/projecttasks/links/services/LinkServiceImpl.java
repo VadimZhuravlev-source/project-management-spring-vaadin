@@ -16,13 +16,11 @@ import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.projecttasks.services.EntityManagerService;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 public class LinkServiceImpl implements LinkService {
@@ -83,6 +81,7 @@ public class LinkServiceImpl implements LinkService {
         projectTaskLinks.addAll(newLinks);
 //        projectTaskLinks.addAll(changedLinks);
 
+        if (projectTaskData.getLinks() == null) projectTaskData.setLinks(new ArrayList<>());
         projectTaskData.getLinks().addAll(projectTaskLinks);
 
     }

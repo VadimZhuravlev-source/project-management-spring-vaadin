@@ -11,5 +11,6 @@ public interface ProjectTaskData {
     ProjectTask getProjectTask();
     ChangedTableData<? extends Link> getLinksChangedTableData();
     List<Link> getLinks();
+    void setLinks(List<Link> links);
 
 }
