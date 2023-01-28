@@ -8,8 +8,8 @@ SELECT
 FROM
 	project_tasks p
 WHERE
-	--p.id = ANY('{4101}')
-	p.id = ANY('{54242}') -- created circle looping
+	p.id = ANY('{4101}')
+	--p.id = ANY('{54242}') -- created circle looping
 	
 UNION ALL
 
@@ -25,6 +25,7 @@ JOIN project_tasks p
 	ON pop.pid = p.id
 		AND NOT pop.circle
 ),
+
 proceed_excution AS (
 SELECT 
 	NOT bool_or(p.circle) proceed
@@ -32,7 +33,7 @@ FROM
 	parents_of_parents p	
 ),
 
-predecessor AS (
+task_predecessor AS (
 SELECT 
 	p.id
 FROM
@@ -40,6 +41,7 @@ FROM
 JOIN project_tasks p
 	ON proceed_excution.proceed
 		AND p.id = ANY('{4102}')
+		--AND p.id = ANY('{4102,3618}') -- 3618 - id of parent task
 /*WHERE
 	CASE 
 		WHEN proceed_excution.proceed 
@@ -47,6 +49,40 @@ JOIN project_tasks p
 		ELSE FALSE
 	END
 */
+),
+
+--if the task's predecessors refer to one of the task's parents, then a collision occurs
+are_parents_in_predecessors AS (
+SELECT 
+	COUNT(tp.id) > 0 are_in
+FROM 
+	task_predecessor tp
+JOIN parents_of_parents pop
+	ON tp.id = POP.id
+),
+
+proceed_excution2 AS (
+SELECT 
+	pe.proceed AND NOT pp.are_in proceed
+FROM 
+	proceed_excution pe,
+	are_parents_in_predecessors pp 
 )
 
-select * from predecessor;
+WITH RECURSIVE hier AS (
+		  SELECT
+			links.*
+		  FROM
+			links
+		  WHERE
+			links.project_task = ANY(p_t_ids::INT[])
+		UNION ALL
+		  SELECT
+			l.*
+		  FROM
+			hier
+		  JOIN links l
+			ON l.project_task = hier.linked_project_task
+			AND NOT (l.project_task = ANY(p_t_ids::INT[]))) -- Protection from looping
+
+select * from proceed_excution2;
