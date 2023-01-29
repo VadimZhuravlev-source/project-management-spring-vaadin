@@ -67,22 +67,49 @@ SELECT
 FROM 
 	proceed_excution pe,
 	are_parents_in_predecessors pp 
-)
+),
 
-WITH RECURSIVE hier AS (
+hier AS (
 		  SELECT
-			links.*
+			pop.id,
+			ANY('{4102}') checked_predecessors,
+			pop.path path,
+			FALSE circle,
+			NULL link_id,
+			TRUE first_iteration
 		  FROM
-			links
-		  WHERE
-			links.project_task = ANY(p_t_ids::INT[])
+			parents_of_parents pop
+		  JOIN procees_excution2
+			ON proceed_execution2.proceed
+	
 		UNION ALL
+	
 		  SELECT
-			l.*
+			CASE
+				WHEN links.id = NULL THEN project_tasks.id ELSE links.project_task
+			END,		
+			hier.checked_predecessors,
+			CASE
+				WHEN links.id = NULL THEN hier.path || project_tasks.id ELSE hier.path || links.project_task
+			END, 
+			CASE
+				WHEN links.id = NULL THEN project_tasks.id ELSE links.project_task
+			END		
+			CASE
+				WHEN links.id = NULL 
+				THEN project_tasks.id = ANY(pop.path) || project_tasks.id = ANY(hier.checked_predecessors)
+				ELSE links.project_task = ANY(pop.path) || links.project_task = ANY(hier.checked_predecessors)
+			END,
+			links.id,
+			FALSE
 		  FROM
 			hier
-		  JOIN links l
-			ON l.project_task = hier.linked_project_task
-			AND NOT (l.project_task = ANY(p_t_ids::INT[]))) -- Protection from looping
+		  LEFT JOIN links
+			ON links.linked_project_task = hier.id
+				AND NOT hier.circle
+		  LEFT JOIN project_tasks
+			ON project_tasks.parent_id = hier.id
+				AND NOT hier.circle
+				AND NOT hier.first_iteration
 
 select * from proceed_excution2;
