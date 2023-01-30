@@ -1,15 +1,16 @@
-WITH RECURSIVE parents_of_parents AS (
+WITH RECURSIVE 
+parents_of_parents AS (
 SELECT 
 	p.id,
 	p.parent_id pid,
 	0 level,
 	ARRAY[id] path,
-	FALSE circle
+	FALSE is_cycle
 FROM
 	project_tasks p
 WHERE
-	p.id = ANY('{4101}')
-	--p.id = ANY('{54242}') -- created circle looping
+	p.id = 4101
+	--p.id = ANY('{54242}') -- created cycle looping
 	
 UNION ALL
 
@@ -23,23 +24,40 @@ FROM
 	parents_of_parents pop
 JOIN project_tasks p
 	ON pop.pid = p.id
-		AND NOT pop.circle
+		AND NOT pop.is_cycle
 ),
 
-proceed_excution AS (
+proceed_execution AS (
 SELECT 
-	NOT bool_or(p.circle) proceed
+	NOT bool_or(p.is_cycle) proceed
 FROM	
 	parents_of_parents p	
+),
+
+max_path_parents_of_parents2 AS (
+SELECT 
+	MAX(pop.path) path
+FROM
+	parents_of_parents pop
+),
+
+parents_of_parents_with_max_path AS (
+SELECT
+	pop.id,
+	pop_max_path.path
+FROM
+	parents_of_parents pop,
+	max_path_parents_of_parents2 pop_max_path
+
 ),
 
 task_predecessor AS (
 SELECT 
 	p.id
 FROM
-	proceed_excution
+	proceed_execution
 JOIN project_tasks p
-	ON proceed_excution.proceed
+	ON proceed_execution.proceed
 		AND p.id = ANY('{4102}')
 		--AND p.id = ANY('{4102,3618}') -- 3618 - id of parent task
 /*WHERE
@@ -61,55 +79,67 @@ JOIN parents_of_parents pop
 	ON tp.id = POP.id
 ),
 
-proceed_excution2 AS (
+proceed_execution2 AS (
 SELECT 
 	pe.proceed AND NOT pp.are_in proceed
 FROM 
-	proceed_excution pe,
+	proceed_execution pe,
 	are_parents_in_predecessors pp 
 ),
 
 hier AS (
 		  SELECT
-			pop.id,
-			ANY('{4102}') checked_predecessors,
+			pop.id pt_id,
+			0 pt_link_id,
+			--Array(4102) checked_predecessors,
 			pop.path path,
-			FALSE circle,
-			NULL link_id,
-			TRUE first_iteration
+			FALSE is_cycle,
+			0 link_id,
+			TRUE first_iteration,
+			0 level
 		  FROM
-			parents_of_parents pop
-		  JOIN procees_excution2
+			parents_of_parents_with_max_path pop
+		  JOIN proceed_execution2
 			ON proceed_execution2.proceed
 	
 		UNION ALL
 	
 		  SELECT
+			/*CASE
+				WHEN links.id IS NULL THEN project_tasks.parent_id ELSE links.project_task
+			END,*/
+			project_tasks.parent_id,
+			links.project_task,
+			--hier.checked_predecessors,
 			CASE
-				WHEN links.id = NULL THEN project_tasks.id ELSE links.project_task
-			END,		
-			hier.checked_predecessors,
-			CASE
-				WHEN links.id = NULL THEN hier.path || project_tasks.id ELSE hier.path || links.project_task
+				WHEN links.id IS NOT NULL 
+				THEN hier.path || links.project_task
+				WHEN project_tasks.parent_id IS NOT NULL 
+				THEN hier.path || project_tasks.parent_id
 			END, 
 			CASE
-				WHEN links.id = NULL THEN project_tasks.id ELSE links.project_task
-			END		
-			CASE
-				WHEN links.id = NULL 
-				THEN project_tasks.id = ANY(pop.path) || project_tasks.id = ANY(hier.checked_predecessors)
-				ELSE links.project_task = ANY(pop.path) || links.project_task = ANY(hier.checked_predecessors)
+				WHEN links.id IS NULL 
+				THEN project_tasks.parent_id = ANY(hier.path) OR project_tasks.id = ANY('{4102}')
+				ELSE links.project_task = ANY(hier.path) OR links.project_task = ANY('{4102}')
 			END,
 			links.id,
-			FALSE
+			FALSE,
+			hier.level + 1
 		  FROM
 			hier
 		  LEFT JOIN links
-			ON links.linked_project_task = hier.id
-				AND NOT hier.circle
+			ON hier.pt_id IS NOT NULL AND hier.pt_id = links.linked_project_task
+				OR hier.pt_link_id IS NOT NULL AND hier.pt_link_id = links.linked_project_task
+				--AND NOT hier.is_cycle
 		  LEFT JOIN project_tasks
-			ON project_tasks.parent_id = hier.id
-				AND NOT hier.circle
+			ON (hier.pt_id IS NOT NULL AND hier.pt_id = project_tasks.id
+				OR hier.pt_link_id IS NOT NULL AND hier.pt_link_id = project_tasks.id)
+				--AND NOT hier.is_cycle
 				AND NOT hier.first_iteration
+		  WHERE
+			(links.id IS NOT NULL OR project_tasks.id IS NOT NULL)
+			AND NOT hier.is_cycle
+			AND hier.level < 20
+)
 
-select * from proceed_excution2;
+select hier.*, p.name, p1.name from hier LEFT JOIN project_tasks p ON hier.pt_id = p.id LEFT JOIN project_tasks p1 ON hier.pt_link_id = p1.id;
