@@ -34,23 +34,6 @@ FROM
 	parents_of_parents p	
 ),
 
-max_path_parents_of_parents2 AS (
-SELECT 
-	MAX(pop.path) path
-FROM
-	parents_of_parents pop
-),
-
-parents_of_parents_with_max_path AS (
-SELECT
-	pop.id,
-	pop_max_path.path
-FROM
-	parents_of_parents pop,
-	max_path_parents_of_parents2 pop_max_path
-
-),
-
 task_predecessor AS (
 SELECT 
 	p.id
@@ -60,13 +43,6 @@ JOIN project_tasks p
 	ON proceed_execution.proceed
 		AND p.id = ANY('{4102}')
 		--AND p.id = ANY('{4102,3618}') -- 3618 - id of parent task
-/*WHERE
-	CASE 
-		WHEN proceed_excution.proceed 
-		THEN p.id = ANY('{4102}')
-		ELSE FALSE
-	END
-*/
 ),
 
 --if the task's predecessors refer to one of the task's parents, then a collision occurs
@@ -90,28 +66,25 @@ FROM
 hier AS (
 		  SELECT
 			pop.id pt_id,
-			0 pt_link_id,
-			--Array(4102) checked_predecessors,
-			pop.path path,
+			NULL::INT pt_link_id,
+			ARRAY[id] path,
 			FALSE is_cycle,
-			0 link_id,
-			TRUE first_iteration,
-			0 level
+			NULL::INT AS link_id,
+			TRUE first_iteration
+			--,0 level
 		  FROM
-			parents_of_parents_with_max_path pop
+			parents_of_parents pop
 		  JOIN proceed_execution2
 			ON proceed_execution2.proceed
 	
 		UNION ALL
 	
 		  SELECT
-			/*CASE
-				WHEN links.id IS NULL THEN project_tasks.parent_id ELSE links.project_task
-			END,*/
 			project_tasks.parent_id,
 			links.project_task,
-			--hier.checked_predecessors,
 			CASE
+				WHEN links.id IS NOT NULL AND project_tasks.parent_id IS NOT NULL
+				THEN hier.path || links.project_task || project_tasks.parent_id			
 				WHEN links.id IS NOT NULL 
 				THEN hier.path || links.project_task
 				WHEN project_tasks.parent_id IS NOT NULL 
@@ -123,23 +96,21 @@ hier AS (
 				ELSE links.project_task = ANY(hier.path) OR links.project_task = ANY('{4102}')
 			END,
 			links.id,
-			FALSE,
-			hier.level + 1
+			FALSE
+			--,hier.level + 1
 		  FROM
 			hier
 		  LEFT JOIN links
-			ON hier.pt_id IS NOT NULL AND hier.pt_id = links.linked_project_task
-				OR hier.pt_link_id IS NOT NULL AND hier.pt_link_id = links.linked_project_task
-				--AND NOT hier.is_cycle
+			ON hier.pt_id = links.linked_project_task
+				OR hier.pt_link_id = links.linked_project_task
 		  LEFT JOIN project_tasks
-			ON (hier.pt_id IS NOT NULL AND hier.pt_id = project_tasks.id
-				OR hier.pt_link_id IS NOT NULL AND hier.pt_link_id = project_tasks.id)
-				--AND NOT hier.is_cycle
+			ON (hier.pt_id = project_tasks.id
+				OR hier.pt_link_id = project_tasks.id)
 				AND NOT hier.first_iteration
 		  WHERE
-			(links.id IS NOT NULL OR project_tasks.id IS NOT NULL)
+			(links.project_task IS NOT NULL OR project_tasks.parent_id IS NOT NULL)
 			AND NOT hier.is_cycle
-			AND hier.level < 20
+			--AND hier.level < 20
 )
 
 select hier.*, p.name, p1.name from hier LEFT JOIN project_tasks p ON hier.pt_id = p.id LEFT JOIN project_tasks p1 ON hier.pt_link_id = p1.id;
