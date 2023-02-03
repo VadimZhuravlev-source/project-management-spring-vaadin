@@ -63,17 +63,23 @@ FROM
 	are_parents_in_predecessors pp 
 ),
 
+task_predecessor_array AS (
+SELECT 
+	ARRAY(SELECT id FROM task_predecessor) ids
+),
+
 hier AS (
 		  SELECT
 			pop.id pt_id,
 			NULL::INT pt_link_id,
-			ARRAY[id] path,
+			ARRAY[id] || task_predecessor_array.ids path,
 			FALSE is_cycle,
 			NULL::INT AS link_id,
 			TRUE first_iteration
 			--,0 level
 		  FROM
-			parents_of_parents pop
+			parents_of_parents pop,
+			task_predecessor_array
 		  JOIN proceed_execution2
 			ON proceed_execution2.proceed
 	
@@ -84,16 +90,19 @@ hier AS (
 			links.project_task,
 			CASE
 				WHEN links.id IS NOT NULL AND project_tasks.parent_id IS NOT NULL
-				THEN hier.path || links.project_task || project_tasks.parent_id			
-				WHEN links.id IS NOT NULL 
+				THEN hier.path || links.project_task || project_tasks.parent_id
+				WHEN links.id IS NOT NULL
 				THEN hier.path || links.project_task
-				WHEN project_tasks.parent_id IS NOT NULL 
+				WHEN project_tasks.parent_id IS NOT NULL
 				THEN hier.path || project_tasks.parent_id
 			END, 
 			CASE
-				WHEN links.id IS NULL 
-				THEN project_tasks.parent_id = ANY(hier.path) OR project_tasks.id = ANY('{4102}')
-				ELSE links.project_task = ANY(hier.path) OR links.project_task = ANY('{4102}')
+				WHEN links.id IS NOT NULL AND project_tasks.parent_id IS NOT NULL
+				THEN project_tasks.parent_id = ANY(hier.path) OR links.project_task = ANY(hier.path)
+				WHEN links.id IS NOT NULL
+				THEN links.project_task = ANY(hier.path)
+				WHEN project_tasks.parent_id IS NOT NULL
+				THEN project_tasks.parent_id = ANY(hier.path)
 			END,
 			links.id,
 			FALSE
@@ -112,5 +121,5 @@ hier AS (
 			AND NOT hier.is_cycle
 			--AND hier.level < 20
 )
-
-select hier.*, p.name, p1.name from hier LEFT JOIN project_tasks p ON hier.pt_id = p.id LEFT JOIN project_tasks p1 ON hier.pt_link_id = p1.id;
+select * from hier
+--select hier.*, p.name, p1.name from hier LEFT JOIN project_tasks p ON hier.pt_id = p.id LEFT JOIN project_tasks p1 ON hier.pt_link_id = p1.id;
