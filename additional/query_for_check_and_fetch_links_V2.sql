@@ -2,7 +2,7 @@ WITH RECURSIVE
 all_dependencies AS (
 SELECT
 	p.id id,
-	ARRAY[p.id] || ('{4102}') path,--ARRAY(SELECT id FROM task_predecessor) path,
+	ARRAY[p.id] || ('{4102}') path,
 	FALSE is_cycle,
 	NULL::INT AS link_id,
 	FALSE complete_execution
