@@ -81,6 +81,20 @@ public class EntityManagerServiceImpl implements EntityManagerService {
 
     }
 
+    private List<Object> getDependencies(Integer pid, List<?> checkedIds) {
+
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        Query query = entityManager
+                .createQuery("SELECT c, s, u FROM get_all_dependencies(:pid, :checkedIds) dep, ProjectTaskImpl p, LinkImpl l"
+                        + " WHERE dep.id = p.id AND dep.link_id = l.id");
+        query.setParameter("pid", pid);
+        String parameterValue = String.valueOf(checkedIds).replace('[', '{').replace(']', '}');
+        query.setParameter("checkedIds", parameterValue);
+
+        return query.getResultList();
+
+    }
+
     private StoredProcedureQuery executeQueryByProcedureName(String procedureName, Class resultClasses, List<?> ids) {
 
         EntityManager entityManager = entityManagerFactory.createEntityManager();
