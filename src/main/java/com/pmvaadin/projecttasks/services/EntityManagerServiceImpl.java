@@ -4,12 +4,15 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.entities.LinkImpl;
+import org.hibernate.Session;
+import org.hibernate.type.StandardBasicTypes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class EntityManagerServiceImpl implements EntityManagerService {
@@ -70,28 +73,52 @@ public class EntityManagerServiceImpl implements EntityManagerService {
     }
 
     @Override
-    public List<Link> getLinksInDepth(List<?> ids) {
+    public <I> List<Link> getAllDependencies(I parentId, List<?> ids) {
 
         if (ids.size() == 0) return new ArrayList<>();
 
         // TODO if it will work, then do the same for above two methods
-        StoredProcedureQuery query = executeQueryByProcedureName("get_links_in_depth", LinkImpl.class, ids);
+        //StoredProcedureQuery query = executeQueryByProcedureName("get_links_in_depth", LinkImpl.class, ids);
+        //return query.getResultList();
 
-        return query.getResultList();
+        List<Object[]> dependencies = getDependencies(parentId, ids);
 
+        for (Object[] dependency: dependencies) {
+            ProjectTask projectTask = (ProjectTask) dependency[0];
+            Link link = (Link) dependency[1];
+        }
+
+        return new ArrayList<>();
     }
 
-    private List<Object> getDependencies(Integer pid, List<?> checkedIds) {
+    private <I> List<Object[]> getDependencies(I pid, List<?> checkedIds) {
 
         EntityManager entityManager = entityManagerFactory.createEntityManager();
-        Query query = entityManager
-                .createQuery("SELECT c, s, u FROM get_all_dependencies(:pid, :checkedIds) dep, ProjectTaskImpl p, LinkImpl l"
-                        + " WHERE dep.id = p.id AND dep.link_id = l.id");
-        query.setParameter("pid", pid);
+        Session session = entityManager.unwrap(Session.class);
+//        Query query = session
+//                .createNativeQuery("SELECT * FROM get_all_dependencies(:pid, :checkedIds)", Object[].class);// dep, ProjectTaskImpl p, LinkImpl l"
+//                       // + " WHERE dep.id = p.id AND dep.link_id = l.id");
+        //StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_all_dependencies");
+//        query.setParameter("pid", pid);
         String parameterValue = String.valueOf(checkedIds).replace('[', '{').replace(']', '}');
-        query.setParameter("checkedIds", parameterValue);
+//        query.setParameter("checkedIds", parameterValue);
+        //query.registerStoredProcedureParameter(1, Integer.class, ParameterMode.IN);
+        //query.registerStoredProcedureParameter(2, String.class, ParameterMode.IN);
+//        query.setParameter(1, pid);
+//        query.setParameter(2, parameterValue);
+        //query.execute();
 
-        return query.getResultList();
+        List<ProjectTaskImpl> result = session
+//                .createNativeQuery("SELECT * FROM get_all_dependencies(:pid, :checkedIds)", Object[].class)
+                .createNativeQuery("SELECT p.* FROM project_tasks p JOIN get_all_dependencies(:pid, :checkedIds) dep ON dep.id = p.id", ProjectTaskImpl.class)
+//                .addScalar("id", StandardBasicTypes.INTEGER)
+//                .addScalar("name", StandardBasicTypes.STRING)
+                .setParameter("pid", pid)
+                .setParameter("checkedIds", parameterValue)
+                .list();
+        //List<Object[]> result = query.getResultList();
+
+        return new ArrayList<>();
 
     }
 

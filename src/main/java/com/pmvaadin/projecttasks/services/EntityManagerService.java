@@ -11,6 +11,6 @@ public interface EntityManagerService {
     List<ProjectTask> getParentsOfParent(List<?> projectTasks);
     List<ProjectTask> getParentsOfParent(ProjectTask projectTask);
 
-    List<Link> getLinksInDepth(List<?> projectTasksIds);
+    <I> List<Link> getAllDependencies(I parentId, List<?> ids);
 
 }

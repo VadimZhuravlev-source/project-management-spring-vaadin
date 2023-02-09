@@ -151,18 +151,21 @@ public class LinkServiceImpl implements LinkService {
 
         List<? extends Link> links = projectTaskData.getLinks();
 
-        if (projectTaskData.getProjectTask().isNew() || links.size() == 0) return new RespondCheckedLinks(new ArrayList<>(0), new HashSet<>(0));
+        var projectTask = projectTaskData.getProjectTask();
+        if (projectTask.isNew() & Objects.isNull(projectTask.getParentId()) || links.size() == 0)
+            return new RespondCheckedLinks(new ArrayList<>(0), new HashSet<>(0));
 
         var projectTasksIds = links.stream().map(Link::getLinkedProjectTaskId).toList();
-
+        var parentId = projectTask.getId();
+        if (projectTask.isNew()) parentId = projectTask.getParentId();
         // Check looping
-        return getRespondCheckedCycleLinks(projectTasksIds);
+        return getRespondCheckedCycleLinks(parentId, projectTasksIds);
 
     }
 
-    private RespondCheckedLinks getRespondCheckedCycleLinks(List<?> ids) {
+    private <I> RespondCheckedLinks getRespondCheckedCycleLinks(I parentId, List<?> ids) {
 
-        List<Link> linksInDepth = entityManagerService.getLinksInDepth(ids);
+        List<Link> linksInDepth = entityManagerService.getAllDependencies(parentId, ids);
 
         Tree<Link> tree = new SimpleTree<>(linksInDepth, Link::getLinkedProjectTaskId, Link::getProjectTaskId);
 
