@@ -12,7 +12,7 @@ public interface LinkRepository extends Repository<LinkImpl, Integer> {
 
     <I> List<Link> findAllByProjectTaskIdOrderBySortAsc(I id);
 
-    List<Link> findAllById(Iterable<Integer> ids);
+    List<Link> findAllById(Iterable<?> ids);
 
     List<Link> saveAll(Iterable<? extends Link> links);
 

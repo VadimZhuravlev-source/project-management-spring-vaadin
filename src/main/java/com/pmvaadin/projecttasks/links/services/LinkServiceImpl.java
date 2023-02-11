@@ -6,6 +6,7 @@ import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.Unloopable;
 import com.pmvaadin.projectstructure.UnloopableImpl;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
+import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.links.LinkValidation;
 import com.pmvaadin.projecttasks.links.LinkValidationImpl;
 import com.pmvaadin.projecttasks.links.LinkValidationMessage;
@@ -13,7 +14,7 @@ import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
-import com.pmvaadin.projecttasks.services.EntityManagerService;
+import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +29,7 @@ public class LinkServiceImpl implements LinkService {
     private LinkRepository linkRepository;
     private ProjectTaskRepository projectTaskRepository;
     private ProjectTaskService projectTaskService;
-    private EntityManagerService entityManagerService;
+    private DependenciesService dependenciesService;
 
     @Autowired
     public void setLinkRepository(LinkRepository linkRepository) {
@@ -41,8 +42,8 @@ public class LinkServiceImpl implements LinkService {
     }
 
     @Autowired
-    public void setEntityManagerService(EntityManagerService entityManagerService){
-        this.entityManagerService = entityManagerService;
+    public void setEntityManagerService(DependenciesService dependenciesService){
+        this.dependenciesService = dependenciesService;
     }
 
     @Autowired
@@ -165,7 +166,7 @@ public class LinkServiceImpl implements LinkService {
 
     private <I> RespondCheckedLinks getRespondCheckedCycleLinks(I parentId, List<?> ids) {
 
-        List<Link> linksInDepth = entityManagerService.getAllDependencies(parentId, ids);
+        DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(parentId, ids);
 
         Tree<Link> tree = new SimpleTree<>(linksInDepth, Link::getLinkedProjectTaskId, Link::getProjectTaskId);
 

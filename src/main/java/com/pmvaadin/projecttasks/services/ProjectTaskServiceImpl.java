@@ -4,6 +4,7 @@ import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
+import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     private ProjectTaskRepository projectTaskRepository;
-    private EntityManagerService entityManagerService;
+    private DependenciesService dependenciesService;
     private TreeProjectTasks treeProjectTasks;
 
     @Autowired
@@ -28,8 +29,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Autowired
-    public void setEntityManagerService(EntityManagerService entityManagerService){
-        this.entityManagerService = entityManagerService;
+    public void setEntityManagerService(DependenciesService dependenciesService){
+        this.dependenciesService = dependenciesService;
     }
 
     @Autowired
@@ -134,7 +135,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         if (!parent.getVersion().equals(parentInBase.getVersion()))
             throw new StandardError("The task " + parent + " has been changed by an another user. Should update the project and try again.");
 
-        Map<ProjectTask, ProjectTask> parentsOfParentMap = entityManagerService.getParentsOfParent(parentInBase).stream().collect(
+        Map<ProjectTask, ProjectTask> parentsOfParentMap = dependenciesService.getParentsOfParent(parentInBase).stream().collect(
                 Collectors.toMap(p -> p, p -> p));
 
         var parentIds = new ArrayList<>();
@@ -242,7 +243,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         if (ids.size() == 0) return new HashMap<>();
 
-        List<ProjectTask> projectTasks = entityManagerService.getParentsOfParent(ids);
+        List<ProjectTask> projectTasks = dependenciesService.getParentsOfParent(ids);
         treeProjectTasks.populateTreeByList(projectTasks);
         treeProjectTasks.fillWbs();
         Map<?, ?> filter = ids.stream().collect(Collectors.toMap(id -> id, id -> id));
@@ -430,7 +431,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             return new ArrayList<>();
         }
 
-        List<ProjectTask> allHierarchyElements = entityManagerService.getElementsChildrenInDepth(projectTasks);
+        List<ProjectTask> allHierarchyElements = dependenciesService.getElementsChildrenInDepth(projectTasks);
 
         //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
         treeProjectTasks.populateTreeByList(allHierarchyElements);
