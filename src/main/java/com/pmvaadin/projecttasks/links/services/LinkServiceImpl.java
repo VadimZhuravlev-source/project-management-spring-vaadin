@@ -1,12 +1,9 @@
 package com.pmvaadin.projecttasks.links.services;
 
-import com.pmvaadin.commonobjects.tree.SimpleTree;
-import com.pmvaadin.commonobjects.tree.Tree;
 import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.projectstructure.Unloopable;
-import com.pmvaadin.projectstructure.UnloopableImpl;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
+import com.pmvaadin.projecttasks.dependencies.DependenciesSetImpl;
 import com.pmvaadin.projecttasks.links.LinkValidation;
 import com.pmvaadin.projecttasks.links.LinkValidationImpl;
 import com.pmvaadin.projecttasks.links.LinkValidationMessage;
@@ -21,7 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class LinkServiceImpl implements LinkService {
@@ -97,10 +93,10 @@ public class LinkServiceImpl implements LinkService {
             return false;
         }
 
-        RespondCheckedLinks respondData = checkCircleDependency(projectTaskData);
+        DependenciesSet dependenciesSet = checkCycleDependency(projectTaskData);
 
-        if (!respondData.cycledLinks.isEmpty()) {
-            String message = getCycleLinkMessage(projectTaskData.getLinks(), respondData.cycledLinks);
+        if (dependenciesSet.isCycle()) {
+            String message = getCycleLinkMessage(dependenciesSet);
             throw new StandardError(message);
         }
 
@@ -139,7 +135,7 @@ public class LinkServiceImpl implements LinkService {
         if (links.size() == 0) return;
 
         List<?> projectTasksIds = links.stream().map(Link::getLinkedProjectTaskId).toList();
-        Map<?, ProjectTask> projectTaskMap = projectTaskService.getProjectTasksWithFilledWbs(projectTasksIds);
+        Map<?, ProjectTask> projectTaskMap = projectTaskService.getProjectTasksByIdWithFilledWbs(projectTasksIds);
         links.forEach(link -> {
             ProjectTask projectTask = projectTaskMap.getOrDefault(link.getLinkedProjectTaskId(), null);
             if (projectTask == null) return;
@@ -148,100 +144,69 @@ public class LinkServiceImpl implements LinkService {
         });
     }
 
-    private RespondCheckedLinks checkCircleDependency(ProjectTaskData projectTaskData) {
+    private DependenciesSet checkCycleDependency(ProjectTaskData projectTaskData) {
 
         List<? extends Link> links = projectTaskData.getLinks();
 
         var projectTask = projectTaskData.getProjectTask();
         if (projectTask.isNew() & Objects.isNull(projectTask.getParentId()) || links.size() == 0)
-            return new RespondCheckedLinks(new ArrayList<>(0), new HashSet<>(0));
+            return new DependenciesSetImpl();
 
         var projectTasksIds = links.stream().map(Link::getLinkedProjectTaskId).toList();
         var parentId = projectTask.getId();
         if (projectTask.isNew()) parentId = projectTask.getParentId();
         // Check looping
-        return getRespondCheckedCycleLinks(parentId, projectTasksIds);
+        return dependenciesService.getAllDependencies(parentId, projectTasksIds);
 
     }
 
-    private <I> RespondCheckedLinks getRespondCheckedCycleLinks(I parentId, List<?> ids) {
+    private String getCycleLinkMessage(DependenciesSet dependenciesSet) {
 
-        DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(parentId, ids);
+        List<ProjectTask> projectTasks = dependenciesSet.getProjectTasks();
 
-        Tree<Link> tree = new SimpleTree<>(linksInDepth, Link::getLinkedProjectTaskId, Link::getProjectTaskId);
-
-        Unloopable unloopable = new UnloopableImpl();
-
-        Set<Link> cycledLinks = unloopable.detectCycle(tree.getTreeItems());
-
-        return new RespondCheckedLinks(linksInDepth, cycledLinks);
-
-    }
-
-    private String getCycleLinkMessage(List<Link> links, Set<Link> cycledLinks) {
-
-        List<?> projectTaskIds = cycledLinks.stream().map(Link::getLinkedProjectTaskId).distinct().toList();
-
-        Map<?, ProjectTask> projectTaskMap = projectTaskService.getProjectTasksWithFilledWbs(projectTaskIds);
-
-        cycledLinks.forEach(link -> {
-            ProjectTask projectTask = projectTaskMap.getOrDefault(link.getLinkedProjectTaskId(), null);
-            if (projectTask == null) return;
-            link.setRepresentation(projectTask.getLinkPresentation());
-        });
-
-        Map<Link, Set<Link>> cycledLinkMap = new HashMap<>();
-        Map<?, Link> mappedCycledLinks = cycledLinks.stream().collect(Collectors.toMap(Link::getProjectTaskId, link -> link));
-        links.forEach(link -> {
-            if (!cycledLinks.contains(link)) return;
-            Set<Link> chainedLinks = findChainedLinks(link, mappedCycledLinks);
-            cycledLinkMap.put(link, chainedLinks);
-        });
+//        List<?> projectTaskIds = cycledLinks.stream().map(Link::getLinkedProjectTaskId).distinct().toList();
+//
+//        Map<?, ProjectTask> projectTaskMap = projectTaskService.getProjectTasksWithFilledWbs(projectTaskIds);
+//
+//        cycledLinks.forEach(link -> {
+//            ProjectTask projectTask = projectTaskMap.getOrDefault(link.getLinkedProjectTaskId(), null);
+//            if (projectTask == null) return;
+//            link.setRepresentation(projectTask.getLinkPresentation());
+//        });
+//
+//        Map<Link, Set<Link>> cycledLinkMap = new HashMap<>();
+//        Map<?, Link> mappedCycledLinks = cycledLinks.stream().collect(Collectors.toMap(Link::getProjectTaskId, link -> link));
+//        links.forEach(link -> {
+//            if (!cycledLinks.contains(link)) return;
+//            Set<Link> chainedLinks = findChainedLinks(link, mappedCycledLinks);
+//            cycledLinkMap.put(link, chainedLinks);
+//        });
 
         StringBuilder stringBuilder = new StringBuilder();
         String patternCycledPredecessors = "The task %s have predecessors: %s";
 
-        for (Map.Entry<Link, Set<Link>> me: cycledLinkMap.entrySet()) {
+        projectTasks.forEach(projectTask -> {
+            stringBuilder.append(projectTask.getLinkPresentation());
+            stringBuilder.append(" -> ");
+        });
 
-            Link cycledLink = me.getKey();
-            List<String> representations = me.getValue().stream().map(Link::getRepresentation).toList();
-            String cycledLinksString = String.join(" -> ", representations);
+//        for (Map.Entry<Link, Set<Link>> me: cycledLinkMap.entrySet()) {
+//
+//            Link cycledLink = me.getKey();
+//            List<String> representations = me.getValue().stream().map(Link::getRepresentation).toList();
+//            String cycledLinksString = String.join(" -> ", representations);
+//
+//            String linksForPredecessor =
+//                    String.format(patternCycledPredecessors, cycledLink.getRepresentation(), cycledLinksString);
+//
+//            stringBuilder.append(linksForPredecessor);
+//
+//        }
 
-            String linksForPredecessor =
-                    String.format(patternCycledPredecessors, cycledLink.getRepresentation(), cycledLinksString);
-
-            stringBuilder.append(linksForPredecessor);
-
-        }
-
-        String message = "The cycle links has detected for predecessors: " + "\n";
+        String message = "The cycle links has detected for predecessors: " + stringBuilder + "\n";
 
 
         return message;
-
-    }
-
-    private Set<Link> findChainedLinks(Link link, Map<?, Link> mappedCycledLinks) {
-
-        Link current = link;
-        Set<Link> chainedLinks = new HashSet<>();
-        Link next = mappedCycledLinks.getOrDefault(current.getLinkedProjectTaskId(), null);
-
-        while (next != null && !chainedLinks.contains(current)) {
-            chainedLinks.add(current);
-            current = next;
-            next = mappedCycledLinks.getOrDefault(current.getLinkedProjectTaskId(), null);
-        }
-
-        return chainedLinks;
-
-    }
-
-    @AllArgsConstructor
-    private class RespondCheckedLinks {
-
-        private final List<Link> linksInDepth;
-        private final Set<Link> cycledLinks;
 
     }
 

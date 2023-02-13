@@ -7,10 +7,6 @@ import java.util.List;
 
 public interface DependenciesService {
 
-    List<ProjectTask> getElementsChildrenInDepth(List<? extends ProjectTask> projectTasks);
-    List<ProjectTask> getParentsOfParent(List<?> projectTasks);
-    List<ProjectTask> getParentsOfParent(ProjectTask projectTask);
-
     <I, L> DependenciesSet getAllDependencies(I parentId, List<?> ids);
 
 }

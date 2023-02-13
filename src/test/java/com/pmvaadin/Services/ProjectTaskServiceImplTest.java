@@ -57,7 +57,7 @@ class ProjectTaskServiceImplTest {
 //        }
 //        assertEquals(projectTaskList, projectTasks);
 //
-//        // get circle in list
+//        // get cycle in list
 //        projectTask12.setParentId(7);
 //
 //        try {

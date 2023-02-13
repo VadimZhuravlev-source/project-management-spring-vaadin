@@ -12,7 +12,7 @@ public interface ProjectTaskService extends ProjectTreeService {
     ProjectTask save(ProjectTask projectTask, boolean validate, boolean recalculateTerms);
     void recalculateProject();
     boolean validate(ProjectTask projectTask);
-    Map<?, ProjectTask> getProjectTasksWithFilledWbs(List<?> ids);
+    Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(List<?> ids);
 
     int getChildrenCount(ProjectTask projectTask);
     boolean hasChildren(ProjectTask projectTask);

@@ -4,7 +4,6 @@ import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
-import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
@@ -20,7 +19,7 @@ import java.util.stream.Collectors;
 public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     private ProjectTaskRepository projectTaskRepository;
-    private DependenciesService dependenciesService;
+    private HierarchyService hierarchyService;
     private TreeProjectTasks treeProjectTasks;
 
     @Autowired
@@ -29,8 +28,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Autowired
-    public void setEntityManagerService(DependenciesService dependenciesService){
-        this.dependenciesService = dependenciesService;
+    public void setHierarchyService(HierarchyService hierarchyService){
+        this.hierarchyService = hierarchyService;
     }
 
     @Autowired
@@ -98,7 +97,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
                 .sorted(Comparator.comparing(ProjectTaskOrderedHierarchy::getWbs).reversed())
                 .map(ProjectTask::getId).toList();
 
-        transactionalDeletionAndRecalculation(projectTaskIds, parentIds);
+        projectTaskRepository.deleteAllById(projectTaskIds);
+        List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
+        projectTaskRepository.saveAll(savedElements);
 
     }
 
@@ -114,7 +115,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public void changeParent(Set<? extends ProjectTask> projectTasks, ProjectTask parent) {
+    public void changeParent(Set<ProjectTask> projectTasks, ProjectTask parent) {
 
         List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
         projectTaskList.add(parent);
@@ -135,7 +136,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         if (!parent.getVersion().equals(parentInBase.getVersion()))
             throw new StandardError("The task " + parent + " has been changed by an another user. Should update the project and try again.");
 
-        Map<ProjectTask, ProjectTask> parentsOfParentMap = dependenciesService.getParentsOfParent(parentInBase).stream().collect(
+        Map<ProjectTask, ProjectTask> parentsOfParentMap = hierarchyService.getParentsOfParent(parentInBase).stream().collect(
                 Collectors.toMap(p -> p, p -> p));
 
         var parentIds = new ArrayList<>();
@@ -159,10 +160,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public List<? extends ProjectTask> swap(Map<? extends ProjectTask, ? extends ProjectTask> swappedTasks) {
+    public List<ProjectTask> swap(Map<ProjectTask, ProjectTask> swappedTasks) {
 
         ProjectTask projectTask1 = null, projectTask2 = null;
-        for (Map.Entry<? extends ProjectTask, ? extends ProjectTask> kv: swappedTasks.entrySet()) {
+        for (Map.Entry<ProjectTask, ProjectTask> kv: swappedTasks.entrySet()) {
             projectTask1 = kv.getKey();
             projectTask2 = kv.getValue();
             break;
@@ -239,11 +240,11 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public Map<?, ProjectTask> getProjectTasksWithFilledWbs(List<?> ids) {
+    public Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(List<?> ids) {
 
         if (ids.size() == 0) return new HashMap<>();
 
-        List<ProjectTask> projectTasks = dependenciesService.getParentsOfParent(ids);
+        List<ProjectTask> projectTasks = hierarchyService.getParentsOfParent(ids);
         treeProjectTasks.populateTreeByList(projectTasks);
         treeProjectTasks.fillWbs();
         Map<?, ?> filter = ids.stream().collect(Collectors.toMap(id -> id, id -> id));
@@ -415,14 +416,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private void transactionalDeletionAndRecalculation(List<?> projectTaskIds, List<?> parentIds) {
-
-        projectTaskRepository.deleteAllById(projectTaskIds);
-        List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
-        projectTaskRepository.saveAll(savedElements);
-
-    }
-
     private List<ProjectTask> getProjectTasksToDeletion(List<? extends ProjectTask> projectTasks) {
 
         projectTasks = projectTasks.stream().distinct().collect(Collectors.toList());
@@ -431,7 +424,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             return new ArrayList<>();
         }
 
-        List<ProjectTask> allHierarchyElements = dependenciesService.getElementsChildrenInDepth(projectTasks);
+        List<ProjectTask> allHierarchyElements = hierarchyService.getElementsChildrenInDepth(projectTasks);
 
         //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
         treeProjectTasks.populateTreeByList(allHierarchyElements);
