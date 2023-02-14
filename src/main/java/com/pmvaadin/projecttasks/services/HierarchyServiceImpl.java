@@ -1,5 +1,6 @@
 package com.pmvaadin.projecttasks.services;
 
+import com.pmvaadin.projecttasks.dependencies.DependenciesSetImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,17 +25,27 @@ public class HierarchyServiceImpl implements HierarchyService {
     public List<ProjectTask> getElementsChildrenInDepth(List<? extends ProjectTask> projectTasks) {
 
         EntityManager entityManager = entityManagerFactory.createEntityManager();
-
-        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_children_in_depth_fast",
-                ProjectTaskImpl.class);
-        query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
-
         List<?> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
-        String parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
-        query.setParameter(1, parameterValue);
-        query.execute();
+        String parameterValue =
+                String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
 
-        return (List<ProjectTask>) query.getResultList();
+        List<ProjectTask> projectTasksList;
+        try {
+            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_children_in_depth_fast",
+                    ProjectTaskImpl.class);
+            query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
+            query.setParameter(1, parameterValue);
+            query.execute();
+
+            projectTasksList = (List<ProjectTask>) query.getResultList();
+
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            entityManager.close();
+        }
+
+        return projectTasksList;
 
     }
 
@@ -44,17 +55,25 @@ public class HierarchyServiceImpl implements HierarchyService {
         if (ids.size() == 0) return new ArrayList<>();
 
         EntityManager entityManager = entityManagerFactory.createEntityManager();
-
-        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_parents_in_depth",
-                ProjectTaskImpl.class);
-        query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
-
-        //List<Integer> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
         String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
-        query.setParameter(1, parameterValue);
-        query.execute();
 
-        return (List<ProjectTask>) query.getResultList();
+        List<ProjectTask> projectTasks;
+        try {
+            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_parents_in_depth",
+                    ProjectTaskImpl.class);
+            query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
+            query.setParameter(1, parameterValue);
+            query.execute();
+
+            projectTasks = (List<ProjectTask>) query.getResultList();
+
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            entityManager.close();
+        }
+
+        return projectTasks;
 
     }
 

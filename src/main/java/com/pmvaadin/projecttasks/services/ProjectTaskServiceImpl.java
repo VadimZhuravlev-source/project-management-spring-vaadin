@@ -244,6 +244,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         if (ids.size() == 0) return new HashMap<>();
 
+        ids = ids.stream().distinct().toList();
+
         List<ProjectTask> projectTasks = hierarchyService.getParentsOfParent(ids);
         treeProjectTasks.populateTreeByList(projectTasks);
         treeProjectTasks.fillWbs();

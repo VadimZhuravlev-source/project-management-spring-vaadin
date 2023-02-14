@@ -13,7 +13,6 @@ import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -73,7 +72,7 @@ public class LinkServiceImpl implements LinkService {
             if (deletedLinkIds.size() == 0)
                 projectTaskLinks = linkRepository.findAllByProjectTaskIdOrderBySortAsc(projectTask.getId());
             else
-                projectTaskLinks = linkRepository.findAllByProjectTaskIdAndNotIdIn(projectTask.getId(), deletedLinkIds);
+                projectTaskLinks = linkRepository.findAllByProjectTaskIdAndIdNotInIds(projectTask.getId(), deletedLinkIds);
 
         projectTaskLinks.addAll(newLinks);
 //        projectTaskLinks.addAll(changedLinks);
@@ -164,47 +163,17 @@ public class LinkServiceImpl implements LinkService {
 
         List<ProjectTask> projectTasks = dependenciesSet.getProjectTasks();
 
-//        List<?> projectTaskIds = cycledLinks.stream().map(Link::getLinkedProjectTaskId).distinct().toList();
-//
-//        Map<?, ProjectTask> projectTaskMap = projectTaskService.getProjectTasksWithFilledWbs(projectTaskIds);
-//
-//        cycledLinks.forEach(link -> {
-//            ProjectTask projectTask = projectTaskMap.getOrDefault(link.getLinkedProjectTaskId(), null);
-//            if (projectTask == null) return;
-//            link.setRepresentation(projectTask.getLinkPresentation());
-//        });
-//
-//        Map<Link, Set<Link>> cycledLinkMap = new HashMap<>();
-//        Map<?, Link> mappedCycledLinks = cycledLinks.stream().collect(Collectors.toMap(Link::getProjectTaskId, link -> link));
-//        links.forEach(link -> {
-//            if (!cycledLinks.contains(link)) return;
-//            Set<Link> chainedLinks = findChainedLinks(link, mappedCycledLinks);
-//            cycledLinkMap.put(link, chainedLinks);
-//        });
-
         StringBuilder stringBuilder = new StringBuilder();
-        String patternCycledPredecessors = "The task %s have predecessors: %s";
 
+        String delimiter = " -> ";
         projectTasks.forEach(projectTask -> {
             stringBuilder.append(projectTask.getLinkPresentation());
-            stringBuilder.append(" -> ");
+            stringBuilder.append(delimiter);
         });
 
-//        for (Map.Entry<Link, Set<Link>> me: cycledLinkMap.entrySet()) {
-//
-//            Link cycledLink = me.getKey();
-//            List<String> representations = me.getValue().stream().map(Link::getRepresentation).toList();
-//            String cycledLinksString = String.join(" -> ", representations);
-//
-//            String linksForPredecessor =
-//                    String.format(patternCycledPredecessors, cycledLink.getRepresentation(), cycledLinksString);
-//
-//            stringBuilder.append(linksForPredecessor);
-//
-//        }
+        stringBuilder.replace(stringBuilder.length()  - delimiter.length(), stringBuilder.length(), "");
 
-        String message = "The cycle links has detected for predecessors: " + stringBuilder + "\n";
-
+        String message = "The cycle has detected: " + stringBuilder + "\n";
 
         return message;
 

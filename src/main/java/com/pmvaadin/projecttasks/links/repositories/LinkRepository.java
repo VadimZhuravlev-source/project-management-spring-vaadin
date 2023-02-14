@@ -21,7 +21,7 @@ public interface LinkRepository extends Repository<LinkImpl, Integer> {
     @Query(value = "SELECT MAX(sort) FROM LinkImpl WHERE projectTaskId = :projectTaskId")
     <I, L> L findMaxSortOnProjectTask(@Param("projectTaskId") I projectTaskId);
 
-    @Query(value = "SELECT * FROM links WHERE projectTaskId = :projectTaskId AND NOT id IN(:ids) ORDER BY row_order ASC", nativeQuery = true)
-    <I> List<Link> findAllByProjectTaskIdAndNotIdIn(@Param("projectTaskId") I projectTaskId, @Param("ids") Iterable<?> ids);
+    @Query(value = "SELECT * FROM links WHERE project_task = :projectTaskId AND id NOT IN (:ids) ORDER BY row_order ASC", nativeQuery = true)
+    <I> List<Link> findAllByProjectTaskIdAndIdNotInIds(@Param("projectTaskId") I projectTaskId, @Param("ids") Iterable<?> ids);
 
 }

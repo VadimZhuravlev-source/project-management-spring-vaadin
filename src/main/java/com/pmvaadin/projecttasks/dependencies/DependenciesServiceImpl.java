@@ -2,7 +2,6 @@ package com.pmvaadin.projecttasks.dependencies;
 
 import com.pmvaadin.AppConfiguration;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
@@ -42,22 +41,30 @@ public class DependenciesServiceImpl implements DependenciesService {
 
     public  <I, L> DependenciesSet getAllDependencies(I pid, List<?> checkedIds) {
 
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-
         String parameterValue = String.valueOf(checkedIds).replace('[', '{').replace(']', '}');
 
-        Query query = entityManager.createNativeQuery(
-                "SELECT " +
-                        " dep.id," +
-                        " array_to_string(dep.path, ',') path," +
-                        " dep.is_cycle," +
-                        " dep.link_id" +
-                        " FROM get_all_dependencies(:pid, :checkedIds) dep"
-        )
-                .setParameter("pid", pid)
-                .setParameter("checkedIds", parameterValue);
+        List<Object[]> rows;
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
 
-        List<Object[]> rows = query.getResultList();
+            Query query = entityManager.createNativeQuery(
+                            "SELECT " +
+                                    " dep.id," +
+                                    " array_to_string(dep.path, ',') path," +
+                                    " dep.is_cycle," +
+                                    " dep.link_id" +
+                                    " FROM get_all_dependencies(:pid, :checkedIds) dep"
+                    )
+                    .setParameter("pid", pid)
+                    .setParameter("checkedIds", parameterValue);
+
+            rows = query.getResultList();
+
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            entityManager.close();
+        }
 
         List<I> projectTaskIds = new ArrayList<>(rows.size());
         List<L> linkIds = new ArrayList<>();
@@ -89,19 +96,6 @@ public class DependenciesServiceImpl implements DependenciesService {
         List<Link> links = linkRepository.findAllById(linkIds);
 
         DependenciesSet dependenciesSet = new DependenciesSetImpl(projectTasks, links, isCycle);
-
-//        Session session = entityManager.unwrap(Session.class);
-
-//        List<Object> result = session
-//                .createNativeQuery(
-//                        "SELECT {p.*}, {l.*} FROM get_all_dependencies(:pid, :checkedIds) dep " +
-//                                "JOIN project_tasks p ON dep.id = p.id" +
-//                                "JOIN links l ON dep.id = l.id", Object.class)
-//                .setParameter("pid", pid)
-//                .setParameter("checkedIds", parameterValue)
-//                .addEntity("p", ProjectTaskImpl.class)
-//                .addEntity("l", LinkImpl.class)
-//                .getResultList();
 
         return dependenciesSet;
 
