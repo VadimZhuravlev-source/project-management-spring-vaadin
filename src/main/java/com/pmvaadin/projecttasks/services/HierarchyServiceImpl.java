@@ -1,6 +1,5 @@
 package com.pmvaadin.projecttasks.services;
 
-import com.pmvaadin.projecttasks.dependencies.DependenciesSetImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +23,12 @@ public class HierarchyServiceImpl implements HierarchyService {
     @Override
     public List<ProjectTask> getElementsChildrenInDepth(List<? extends ProjectTask> projectTasks) {
 
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
         List<?> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
         String parameterValue =
                 String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
 
         List<ProjectTask> projectTasksList;
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_children_in_depth_fast",
                     ProjectTaskImpl.class);
@@ -54,10 +53,10 @@ public class HierarchyServiceImpl implements HierarchyService {
 
         if (ids.size() == 0) return new ArrayList<>();
 
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
         String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
 
         List<ProjectTask> projectTasks;
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
             StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_parents_in_depth",
                     ProjectTaskImpl.class);

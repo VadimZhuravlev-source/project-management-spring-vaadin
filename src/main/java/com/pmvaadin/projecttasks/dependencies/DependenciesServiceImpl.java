@@ -1,10 +1,8 @@
 package com.pmvaadin.projecttasks.dependencies;
 
 import com.pmvaadin.AppConfiguration;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
-import com.pmvaadin.projecttasks.services.ProjectTaskService;
+import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -13,7 +11,6 @@ import org.springframework.stereotype.Service;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class DependenciesServiceImpl implements DependenciesService {
@@ -21,7 +18,7 @@ public class DependenciesServiceImpl implements DependenciesService {
     @PersistenceUnit
     private EntityManagerFactory entityManagerFactory;
 
-    private ProjectTaskService projectTaskService;
+    private ProjectTaskRepository projectTaskRepository;
     private LinkRepository linkRepository;
 
     @Autowired
@@ -30,8 +27,8 @@ public class DependenciesServiceImpl implements DependenciesService {
     }
 
     @Autowired
-    public void setProjectTaskService(ProjectTaskService projectTaskService) {
-        this.projectTaskService = projectTaskService;
+    public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository) {
+        this.projectTaskRepository = projectTaskRepository;
     }
 
     @Autowired
@@ -39,7 +36,8 @@ public class DependenciesServiceImpl implements DependenciesService {
         this.linkRepository = linkRepository;
     }
 
-    public  <I, L> DependenciesSet getAllDependencies(I pid, List<?> checkedIds) {
+    @Override
+    public  <I, L> DependenciesSet getAllDependencies(I pid, List<I> checkedIds) {
 
         String parameterValue = String.valueOf(checkedIds).replace('[', '{').replace(']', '}');
 
@@ -91,9 +89,10 @@ public class DependenciesServiceImpl implements DependenciesService {
             projectTaskIds = idConversion.convert(path);
         }
 
-        Map<?, ProjectTask> projectTasksMap = projectTaskService.getProjectTasksByIdWithFilledWbs(projectTaskIds);
-        List<ProjectTask> projectTasks = projectTasksMap.values().stream().toList();
-        List<Link> links = linkRepository.findAllById(linkIds);
+        projectTaskIds.removeAll(checkedIds);
+
+        var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
+        var links = linkRepository.findAllById(linkIds);
 
         DependenciesSet dependenciesSet = new DependenciesSetImpl(projectTasks, links, isCycle);
 

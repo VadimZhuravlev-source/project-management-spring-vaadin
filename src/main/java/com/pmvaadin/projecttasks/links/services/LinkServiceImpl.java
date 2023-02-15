@@ -92,7 +92,7 @@ public class LinkServiceImpl implements LinkService {
             return false;
         }
 
-        DependenciesSet dependenciesSet = checkCycleDependency(projectTaskData);
+        DependenciesSet dependenciesSet = getAllDependencies(projectTaskData);
 
         if (dependenciesSet.isCycle()) {
             String message = getCycleLinkMessage(dependenciesSet);
@@ -143,9 +143,9 @@ public class LinkServiceImpl implements LinkService {
         });
     }
 
-    private DependenciesSet checkCycleDependency(ProjectTaskData projectTaskData) {
+    private DependenciesSet getAllDependencies(ProjectTaskData projectTaskData) {
 
-        List<? extends Link> links = projectTaskData.getLinks();
+        List<Link> links = projectTaskData.getLinks();
 
         var projectTask = projectTaskData.getProjectTask();
         if (projectTask.isNew() & Objects.isNull(projectTask.getParentId()) || links.size() == 0)
@@ -154,7 +154,15 @@ public class LinkServiceImpl implements LinkService {
         var projectTasksIds = links.stream().map(Link::getLinkedProjectTaskId).toList();
         var parentId = projectTask.getId();
         if (projectTask.isNew()) parentId = projectTask.getParentId();
-        // Check looping
+
+        DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(parentId, projectTasksIds);
+        List<ProjectTask> projectTasks = dependenciesSet.getProjectTasks();
+        var cycledPTIds = projectTasks.stream().map(ProjectTask::getId).toList();
+        Map<?, ProjectTask> projectTasksMap = projectTaskService.getProjectTasksByIdWithFilledWbs(cycledPTIds);
+        var projectTasksWithWbs = projectTasksMap.values().stream().toList();
+        projectTasks.clear();
+        projectTasks.addAll(projectTasksWithWbs);
+
         return dependenciesService.getAllDependencies(parentId, projectTasksIds);
 
     }

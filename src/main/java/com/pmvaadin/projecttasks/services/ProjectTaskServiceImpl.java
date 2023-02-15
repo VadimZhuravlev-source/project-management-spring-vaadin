@@ -246,10 +246,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         ids = ids.stream().distinct().toList();
 
-        List<ProjectTask> projectTasks = hierarchyService.getParentsOfParent(ids);
+        var projectTasks = hierarchyService.getParentsOfParent(ids);
         treeProjectTasks.populateTreeByList(projectTasks);
         treeProjectTasks.fillWbs();
-        Map<?, ?> filter = ids.stream().collect(Collectors.toMap(id -> id, id -> id));
+        Map<?, ?> filter = ids.stream().collect(Collectors.toMap(id -> id, id -> false));
         return projectTasks.stream().
                 filter(projectTask -> filter.containsKey(projectTask.getId())).
                 collect(Collectors.toMap(ProjectTask::getId, p -> p));
