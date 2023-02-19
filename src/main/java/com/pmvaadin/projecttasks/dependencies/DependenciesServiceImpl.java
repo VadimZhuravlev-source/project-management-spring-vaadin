@@ -100,4 +100,38 @@ public class DependenciesServiceImpl implements DependenciesService {
 
     }
 
+    @Override
+    public <I> DependenciesSet checkCycleDependencies(I pid, List<I> childrenIds) {
+
+        String parameterValue = String.valueOf(childrenIds).replace('[', '{').replace(']', '}');
+
+        List<Object[]> rows;
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
+
+            Query query = entityManager.createNativeQuery(
+                            "SELECT " +
+                                    " dep.id," +
+                                    " array_to_string(dep.path, ',') path," +
+                                    " dep.is_cycle," +
+                                    " dep.link_id" +
+                                    " FROM get_all_dependencies(:pid, :checkedIds) dep"
+                    )
+                    .setParameter("pid", pid)
+                    .setParameter("checkedIds", parameterValue);
+
+            rows = query.getResultList();
+
+        } catch (Exception e) {
+            throw e;
+        } finally {
+            entityManager.close();
+        }
+
+        DependenciesSet dependenciesSet = new DependenciesSetImpl(projectTasks, links, isCycle);
+
+        return dependenciesSet;
+
+    }
+
 }

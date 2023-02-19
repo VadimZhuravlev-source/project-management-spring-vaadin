@@ -55,11 +55,13 @@ public class LinkImpl implements Link {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof LinkImpl that)) return false;
+        if (getId() == null && that.getId() == null) return false;
         return Objects.equals(getId(), that.getId());
     }
 
     @Override
     public int hashCode() {
+        if (getId() == null) return super.hashCode();
         return Objects.hash(getId());
     }
 

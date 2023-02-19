@@ -4,6 +4,8 @@ import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
+import com.pmvaadin.projecttasks.dependencies.DependenciesService;
+import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
@@ -22,6 +24,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private HierarchyService hierarchyService;
     private TreeProjectTasks treeProjectTasks;
 
+    private DependenciesService dependenciesService;
+
     @Autowired
     public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository){
         this.projectTaskRepository = projectTaskRepository;
@@ -36,6 +40,12 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     public void setTreeProjectTasks(TreeProjectTasks treeProjectTasks){
         this.treeProjectTasks = treeProjectTasks;
     }
+
+    @Autowired
+    public void setDependenciesService(DependenciesService dependenciesService){
+        this.dependenciesService = dependenciesService;
+    }
+
 
     @Override
     public List<ProjectTask> getTreeProjectTasks() {
@@ -115,6 +125,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
+    @Transactional
     public void changeParent(Set<ProjectTask> projectTasks, ProjectTask parent) {
 
         List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
@@ -122,21 +133,13 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         List<?> ids = projectTaskList.stream().map(ProjectTask::getId).collect(Collectors.toList());
 
+        List<ProjectTask> projectTasksInBase = projectTaskRepository.findAllById(ids);
         Map<ProjectTask, ProjectTask> foundProjectTasks =
-                projectTaskRepository.findAllById(ids).stream().collect(Collectors.toMap(p -> p, p -> p));
+                projectTasksInBase.stream().collect(Collectors.toMap(p -> p, p -> p));
 
-        if (foundProjectTasks.size() != projectTaskList.size())
-            throw new StandardError("Incorrect data. Should update the project and try again.");
+        validateVersion(projectTaskList, foundProjectTasks);
 
-        ProjectTask parentInBase = foundProjectTasks.get(parent);
-
-        if (parentInBase == null)
-            throw new StandardError("Incorrect data. Should update the project and try again.");
-
-        if (!parent.getVersion().equals(parentInBase.getVersion()))
-            throw new StandardError("The task " + parent + " has been changed by an another user. Should update the project and try again.");
-
-        Map<ProjectTask, ProjectTask> parentsOfParentMap = hierarchyService.getParentsOfParent(parentInBase).stream().collect(
+        Map<ProjectTask, ProjectTask> parentsOfParentMap = hierarchyService.getParentsOfParent(parent).stream().collect(
                 Collectors.toMap(p -> p, p -> p));
 
         var parentIds = new ArrayList<>();
@@ -147,15 +150,21 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             if (parentsOfParentMap.get(projectTask) != null)
                 // Detected circle in tree
                 throw new StandardError("Project structure has been changed. Should update the project and try again.");
-            ProjectTask projectTasksInBase = foundProjectTasks.get(projectTask);
-            if (!projectTask.getVersion().equals(projectTasksInBase.getVersion()))
+            ProjectTask projectTaskInBase = foundProjectTasks.get(projectTask);
+            if (!projectTask.getVersion().equals(projectTaskInBase.getVersion()))
                 throw new StandardError("The task " + projectTask + " has been changed by an another user. Should update the project and try again.");
             parentIds.add(projectTask.getParentId());
             projectTask.setParentId(parent.getId());
             projectTask.setLevelOrder(++levelOrder);
         }
 
-        transactionalSaveAndRecalculation(projectTaskList, parentIds);
+        projectTaskRepository.saveAll(projectTaskList);
+
+        DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(parent.getId(), );
+
+
+        List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
+        projectTaskRepository.saveAll(savedElements);
 
     }
 
@@ -354,6 +363,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     private void validateVersion(Collection<ProjectTask> projectTasks, Map<ProjectTask, ProjectTask> projectTasksInBase) {
 
+        if (projectTasks.size() != projectTasksInBase.size())
+            throw new StandardError("Incorrect data. Should update the project and try again.");
+
         projectTasks.forEach(projectTask -> {
             ProjectTask projectTaskInBase = projectTasksInBase.getOrDefault(projectTask, null);
             if (projectTaskInBase == null) return;
@@ -406,15 +418,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
         return treeProjectTasks.recalculateLevelOrderForProjectTasks(foundProjectTasks);
-
-    }
-
-    @Transactional
-    private void transactionalSaveAndRecalculation(List<ProjectTask> projectTaskList, List<?> parentIds) {
-
-        projectTaskRepository.saveAll(projectTaskList);
-        List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
-        projectTaskRepository.saveAll(savedElements);
 
     }
 
