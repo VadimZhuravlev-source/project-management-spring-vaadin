@@ -19,7 +19,7 @@ select
 
 --select * from all_children_ids
 
- 
+  
  SELECT 
  	dep.id,
  	array_to_string(dep.path, ',') path,
