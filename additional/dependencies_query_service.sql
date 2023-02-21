@@ -1,29 +1,32 @@
-WITH all_children_ids AS (
-	
+WITH all_children_ids AS (	
 	SELECT id
-	FROM get_children_in_depth_fast('{3619}')
-	
+	FROM get_children_in_depth_fast('{3619}')	
 ),
 
 all_checked_ids AS (
-select distinct 
+SELECT DISTINCT 
 	id
-from all_children_ids
+FROM all_children_ids
 
-union
+UNION
 	
-select
-	linked_project_task from links where project_task = any( array(select id from all_children_ids) )
+SELECT
+	linked_project_task
+FROM links 
+WHERE 
+	project_task = ANY( 
+		ARRAY(SELECT 
+			  id 
+			  FROM all_children_ids
+			 ) 
+	)
 	
 )
 
---select * from all_children_ids
-
-  
- SELECT 
+SELECT 
  	dep.id,
  	array_to_string(dep.path, ',') path,
  	dep.is_cycle,
  	dep.link_id
- FROM get_all_dependencies(3618, '{' + array_to_string(array(select id from all_checked_ids) + '}', ',', '')) dep
+FROM get_all_dependencies(3618, ARRAY(SELECT id FROM all_checked_ids)) dep
  

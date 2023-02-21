@@ -45,21 +45,12 @@ public class DependenciesServiceImpl implements DependenciesService {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
 
-            Query query = entityManager.createNativeQuery(
-                            "SELECT " +
-                                    " dep.id," +
-                                    " array_to_string(dep.path, ',') path," +
-                                    " dep.is_cycle," +
-                                    " dep.link_id" +
-                                    " FROM get_all_dependencies(:pid, :checkedIds) dep"
-                    )
+            Query query = entityManager.createNativeQuery(getQueryTextForDependencies())
                     .setParameter("pid", pid)
                     .setParameter("checkedIds", parameterValue);
 
             rows = query.getResultList();
 
-        } catch (Exception e) {
-            throw e;
         } finally {
             entityManager.close();
         }
@@ -67,16 +58,20 @@ public class DependenciesServiceImpl implements DependenciesService {
         List<I> projectTaskIds = new ArrayList<>(rows.size());
         List<L> linkIds = new ArrayList<>();
         String path = "";
-        boolean isCycle = false;
+        var projectTaskIdIndex = 0;
+        var pathIndex = 1;
+        var isCycleIndex = 2;
+        var linkIdIndex = 3;
+        var isCycle = false;
         for (Object[] row: rows) {
-            I id = (I) row[0];
-            L linkId = (L) row[3];
+            I id = (I) row[projectTaskIdIndex];
+            L linkId = (L) row[linkIdIndex];
             if (linkId != null) linkIds.add(linkId);
             projectTaskIds.add(id);
 
-            isCycle = isCycle || (boolean) row[2];
+            isCycle = (boolean) row[isCycleIndex];
             if (isCycle) {
-                path = (String) row[1];
+                path = (String) row[pathIndex];
                 break;
             }
         }
@@ -94,9 +89,7 @@ public class DependenciesServiceImpl implements DependenciesService {
         var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
         var links = linkRepository.findAllById(linkIds);
 
-        DependenciesSet dependenciesSet = new DependenciesSetImpl(projectTasks, links, isCycle);
-
-        return dependenciesSet;
+        return new DependenciesSetImpl(projectTasks, links, isCycle);
 
     }
 
@@ -109,28 +102,91 @@ public class DependenciesServiceImpl implements DependenciesService {
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
 
-            Query query = entityManager.createNativeQuery(
-                            "SELECT " +
-                                    " dep.id," +
-                                    " array_to_string(dep.path, ',') path," +
-                                    " dep.is_cycle," +
-                                    " dep.link_id" +
-                                    " FROM get_all_dependencies(:pid, :checkedIds) dep"
-                    )
+            Query query = entityManager.createNativeQuery(getQueryTextForCheckCycle())
                     .setParameter("pid", pid)
-                    .setParameter("checkedIds", parameterValue);
+                    .setParameter("childrenIds", parameterValue);
 
             rows = query.getResultList();
 
-        } catch (Exception e) {
-            throw e;
         } finally {
             entityManager.close();
         }
 
-        DependenciesSet dependenciesSet = new DependenciesSetImpl(projectTasks, links, isCycle);
+        String path = "";
+        var pathIndex = 0;
+        var isCycleIndex = 1;
+        var isCycle = false;
+        for (Object[] row: rows) {
+            isCycle = (boolean) row[isCycleIndex];
+            if (isCycle) {
+                path = (String) row[pathIndex];
+                break;
+            }
+        }
 
-        return dependenciesSet;
+        List<I> projectTaskIds = new ArrayList<>(0);
+        if (isCycle) {
+            ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
+            ProjectTasksIdConversion idConversion = context.getBean(ProjectTasksIdConversion.class);
+            projectTaskIds = idConversion.convert(path);
+        }
+
+        projectTaskIds.removeAll(childrenIds);
+
+        var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
+
+        return new DependenciesSetImpl(projectTasks, new ArrayList<>(0), isCycle);
+
+    }
+
+    private String getQueryTextForDependencies() {
+        return
+        """
+        SELECT\s
+            dep.id,
+            array_to_string(dep.path, ',') path,
+            dep.is_cycle,
+            dep.link_id
+        FROM get_all_dependencies(:pid, :checkedIds) dep
+        """;
+
+    }
+
+    private String getQueryTextForCheckCycle() {
+
+        return
+        """
+        WITH all_children_ids AS (
+            SELECT id
+            FROM get_children_in_depth_fast(:childrenIds)
+        ),
+                        
+        all_checked_ids AS (
+        SELECT DISTINCT\s
+            id
+        FROM all_children_ids
+                        
+        UNION
+            
+        SELECT
+            linked_project_task
+        FROM links\s
+        WHERE\s
+            project_task = ANY(\s
+                ARRAY(SELECT\s
+                      id\s
+                      FROM all_children_ids
+                     )\s
+            )
+            
+        )
+                        
+        SELECT\s
+            array_to_string(dep.path, ',') path,
+            dep.is_cycle
+        FROM get_all_dependencies(:pid, ARRAY(SELECT id FROM all_checked_ids)) dep
+        WHERE dep.is_cycle
+        """;
 
     }
 

@@ -2,12 +2,12 @@ DROP FUNCTION IF EXISTS get_children_of_parent_in_depth(array_parent_id TEXT);
 DROP FUNCTION IF EXISTS get_parents_of_parent(array_parent_id TEXT);
 --DROP FUNCTION IF EXISTS get_all_dependencies(pid INT, linked_p_t_ids TEXT);
 
-CREATE FUNCTION get_children_in_depth_fast(ids TEXT) RETURNS SETOF project_tasks AS
+CREATE FUNCTION get_children_in_depth_fast(ids INT[]) RETURNS TABLE(id INT) AS
 $BODY$
 BEGIN
 	RETURN QUERY
 		WITH RECURSIVE
-		hier AS (
+		hierarchy AS (
 		  SELECT
 			ARRAY[project_tasks.id] id$
 		  FROM
@@ -22,59 +22,52 @@ BEGIN
 			  FROM
 				project_tasks
 			  WHERE
-				project_tasks.parent_id = ANY(hier.id$)
+				project_tasks.parent_id = ANY(hierarchy.id$)
 				AND NOT (project_tasks.id = ANY(ids::INT[])) -- Protection from looping
 			) id$
 		  FROM
-			hier
+			hierarchy
 		  WHERE
 			COALESCE(id$, '{}') <> '{}' -- loop exit condition - empty array
 		),
 
-		uniq_ids AS (
-        SELECT DISTINCT
+		SELECT DISTINCT
 			UNNEST(id$) id
 		FROM
-			hier)
+			hierarchy
 
-        SELECT
-            project_tasks.*
-        FROM project_tasks
-        JOIN uniq_ids
-            ON project_tasks.id = uniq_ids.id
-        ORDER BY level_order ASC;
 END;
 $BODY$
 
 LANGUAGE plpgsql;
 
-CREATE FUNCTION get_parents_in_depth(ids TEXT) RETURNS SETOF project_tasks AS
+CREATE FUNCTION get_parents_in_depth(ids INT[]) RETURNS TABLE(id INT) AS
 $BODY$
 BEGIN
 	RETURN QUERY
-		WITH RECURSIVE hier AS (
+		WITH RECURSIVE hierarchy AS (
 		  SELECT
-			project_tasks.*
+			project_tasks.parent_id id
 		  FROM
 			project_tasks
 		  WHERE
 			project_tasks.id = ANY(ids::INT[])
 		UNION ALL
 		  SELECT
-			p.*
+			p.parent_id
 		  FROM
-			hier
+			hierarchy
 		  JOIN project_tasks p
-			ON p.id = hier.parent_id
+			ON p.id = hierarchy.id
 			AND NOT (p.id = ANY(ids::INT[]))) -- Protection from looping
 
-		SELECT DISTINCT * FROM hier;
+		SELECT DISTINCT * FROM hierarchy;
 END;
 $BODY$
 
 LANGUAGE plpgsql;
 
-CREATE FUNCTION get_all_dependencies(pid INT, linked_p_t_ids TEXT) RETURNS
+CREATE FUNCTION get_all_dependencies(pid INT, dependencies_ids INT[]) RETURNS
 	TABLE(id INT, path INT[], is_cycle BOOLEAN, link_id INT, complete_execution BOOLEAN) AS
 $BODY$
 BEGIN
@@ -83,7 +76,7 @@ BEGIN
         all_dependencies AS (
         SELECT
         	p.id id,
-        	ARRAY[p.id] || (linked_p_t_ids::INT[]) path,
+        	ARRAY[p.id] || (dependencies_ids::INT[]) path,
         	FALSE is_cycle,
         	NULL::INT AS link_id,
         	FALSE complete_execution

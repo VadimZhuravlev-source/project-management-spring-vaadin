@@ -160,7 +160,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         projectTaskRepository.saveAll(projectTaskList);
 
-        DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(parent.getId(), );
+        var checkedIds = projectTasks.stream().map(ProjectTask::getId).toList();
+        DependenciesSet dependenciesSet = dependenciesService.checkCycleDependencies(parent.getId(), checkedIds);
 
 
         List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
@@ -350,13 +351,13 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             }
         }
 
-        Integer levelOrder;
+        int levelOrder;
         if (parentId == null) {
             levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
         } else {
             levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentId);
         }
-        if (levelOrder == null) levelOrder = 0;
+        //if (levelOrder == null) levelOrder = 0;
         projectTask.setLevelOrder(++levelOrder);
 
     }

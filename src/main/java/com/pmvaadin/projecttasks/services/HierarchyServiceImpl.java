@@ -30,17 +30,18 @@ public class HierarchyServiceImpl implements HierarchyService {
         List<ProjectTask> projectTasksList;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_children_in_depth_fast",
-                    ProjectTaskImpl.class);
-            query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
-            query.setParameter(1, parameterValue);
-            query.execute();
+//            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_children_in_depth_fast",
+//                    ProjectTaskImpl.class);
+//            query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
+//            query.setParameter(1, parameterValue);
+//            query.execute();
+
+            Query query = entityManager.createNativeQuery(getQueryTextForChildrenInDepth(),  ProjectTaskImpl.class)
+                    .setParameter("ids", parameterValue);
 
             projectTasksList = (List<ProjectTask>) query.getResultList();
 
-        } catch (Exception e) {
-            throw e;
-        } finally {
+        }finally {
             entityManager.close();
         }
 
@@ -58,17 +59,18 @@ public class HierarchyServiceImpl implements HierarchyService {
         List<ProjectTask> projectTasks;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_parents_in_depth",
-                    ProjectTaskImpl.class);
-            query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
-            query.setParameter(1, parameterValue);
-            query.execute();
+//            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_parents_in_depth",
+//                    ProjectTaskImpl.class);
+//            query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
+//            query.setParameter(1, parameterValue);
+//            query.execute();
+
+            Query query = entityManager.createNativeQuery(getQueryTextForParentsInDepth(),  ProjectTaskImpl.class)
+                    .setParameter("ids", parameterValue);
 
             projectTasks = (List<ProjectTask>) query.getResultList();
 
-        } catch (Exception e) {
-            throw e;
-        } finally {
+        }finally {
             entityManager.close();
         }
 
@@ -79,10 +81,30 @@ public class HierarchyServiceImpl implements HierarchyService {
     @Override
     public List<ProjectTask> getParentsOfParent(ProjectTask projectTask) {
 
-        List<Integer> ids = new ArrayList<>(1);
+        List<Object> ids = new ArrayList<>(1);
         ids.add(projectTask.getId());
         return getParentsOfParent(ids);
 
+    }
+
+    private String getQueryTextForChildrenInDepth() {
+        return
+                """
+                SELECT
+                    *
+                FROM project_tasks
+                WHERE project_tasks.id = ANY(ARRAY(SELECT id FROM get_children_in_depth_fast(:ids)))
+                """;
+    }
+
+    private String getQueryTextForParentsInDepth() {
+        return
+                """
+                SELECT
+                    *
+                FROM project_tasks
+                WHERE project_tasks.id = ANY(ARRAY(SELECT id FROM get_parents_in_depth(:ids)))
+                """;
     }
 
 }
