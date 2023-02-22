@@ -95,7 +95,7 @@ public class LinkServiceImpl implements LinkService {
         DependenciesSet dependenciesSet = getAllDependencies(projectTaskData);
 
         if (dependenciesSet.isCycle()) {
-            String message = getCycleLinkMessage(dependenciesSet);
+            String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
             throw new StandardError(message);
         }
 
@@ -156,34 +156,16 @@ public class LinkServiceImpl implements LinkService {
         if (projectTask.isNew()) parentId = projectTask.getParentId();
 
         DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(parentId, projectTasksIds);
-        List<ProjectTask> projectTasks = dependenciesSet.getProjectTasks();
-        var cycledPTIds = projectTasks.stream().map(ProjectTask::getId).toList();
-        Map<?, ProjectTask> projectTasksMap = projectTaskService.getProjectTasksByIdWithFilledWbs(cycledPTIds);
-        var projectTasksWithWbs = projectTasksMap.values().stream().toList();
-        projectTasks.clear();
-        projectTasks.addAll(projectTasksWithWbs);
 
-        return dependenciesService.getAllDependencies(parentId, projectTasksIds);
+        if (dependenciesSet.isCycle()) {
+            var projectTasks = dependenciesSet.getProjectTasks();
+            var cycledPTIds = projectTasks.stream().map(ProjectTask::getId).toList();
+            Map<?, ProjectTask> projectTasksMap = projectTaskService.getProjectTasksByIdWithFilledWbs(cycledPTIds);
+            projectTasks.clear();
+            projectTasks.addAll(projectTasksMap.values());
+        }
 
-    }
-
-    private String getCycleLinkMessage(DependenciesSet dependenciesSet) {
-
-        List<ProjectTask> projectTasks = dependenciesSet.getProjectTasks();
-
-        StringBuilder stringBuilder = new StringBuilder();
-
-        String delimiter = " -> ";
-        projectTasks.forEach(projectTask -> {
-            stringBuilder.append(projectTask.getLinkPresentation());
-            stringBuilder.append(delimiter);
-        });
-
-        stringBuilder.replace(stringBuilder.length()  - delimiter.length(), stringBuilder.length(), "");
-
-        String message = "The cycle has detected: " + stringBuilder + "\n";
-
-        return message;
+        return dependenciesSet;
 
     }
 

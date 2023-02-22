@@ -29,12 +29,12 @@ BEGIN
 			hierarchy
 		  WHERE
 			COALESCE(id$, '{}') <> '{}' -- loop exit condition - empty array
-		),
+		)
 
 		SELECT DISTINCT
 			UNNEST(id$) id
 		FROM
-			hierarchy
+			hierarchy;
 
 END;
 $BODY$
@@ -164,6 +164,3 @@ CREATE INDEX ON links(linked_project_task, project_task, id);
 CREATE INDEX ON project_tasks(id, parent_id);
 CREATE INDEX ON project_tasks(parent_id, id);
 CREATE INDEX ON project_tasks(parent_id, level_order);
-
-
-

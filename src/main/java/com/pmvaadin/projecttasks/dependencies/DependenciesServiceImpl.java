@@ -1,6 +1,7 @@
 package com.pmvaadin.projecttasks.dependencies;
 
 import com.pmvaadin.AppConfiguration;
+import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class DependenciesServiceImpl implements DependenciesService {
@@ -37,17 +39,56 @@ public class DependenciesServiceImpl implements DependenciesService {
     }
 
     @Override
-    public  <I, L> DependenciesSet getAllDependencies(I pid, List<I> checkedIds) {
+    public  <I, L> DependenciesSet getAllDependencies(I pid, List<I> ids) {
 
-        String parameterValue = String.valueOf(checkedIds).replace('[', '{').replace(']', '}');
+        return getAllDependencies(pid, ids, getQueryTextForDependencies());
 
+    }
+
+    @Override
+    public <I> DependenciesSet getAllDependenciesWithCheckedChildren(I pid, List<I> ids) {
+
+        return getAllDependencies(pid, ids, getQueryTextForDependenciesWithCheckedChildren());
+
+    }
+
+    @Override
+    public String getCycleLinkMessage(DependenciesSet dependenciesSet) {
+
+        List<ProjectTask> projectTasks = dependenciesSet.getProjectTasks();
+
+        StringBuilder stringBuilder = new StringBuilder();
+
+        String delimiter = " -> ";
+        projectTasks.forEach(projectTask -> {
+            stringBuilder.append(projectTask.getLinkPresentation());
+            stringBuilder.append(delimiter);
+        });
+
+        stringBuilder.replace(stringBuilder.length()  - delimiter.length(), stringBuilder.length(), "");
+
+        String message = "The cycle has detected: " + stringBuilder + "\n";
+
+        return message;
+
+    }
+
+    private <I, L> DependenciesSet getAllDependencies(I pid, List<I> ids, String queryText) {
+
+        var isNullElement = ids.stream().anyMatch(Objects::isNull);
+
+        if (pid == null || isNullElement) throw new IllegalArgumentException();
+
+        String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
+
+        String queryText1 = queryText.replace("\n", "");
         List<Object[]> rows;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
 
-            Query query = entityManager.createNativeQuery(getQueryTextForDependencies())
+            Query query = entityManager.createNativeQuery(queryText1)
                     .setParameter("pid", pid)
-                    .setParameter("checkedIds", parameterValue);
+                    .setParameter("checkedIds", String.valueOf(ids));
 
             rows = query.getResultList();
 
@@ -84,7 +125,7 @@ public class DependenciesServiceImpl implements DependenciesService {
             projectTaskIds = idConversion.convert(path);
         }
 
-        projectTaskIds.removeAll(checkedIds);
+        projectTaskIds.removeAll(ids);
 
         var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
         var links = linkRepository.findAllById(linkIds);
@@ -93,56 +134,10 @@ public class DependenciesServiceImpl implements DependenciesService {
 
     }
 
-    @Override
-    public <I> DependenciesSet checkCycleDependencies(I pid, List<I> childrenIds) {
-
-        String parameterValue = String.valueOf(childrenIds).replace('[', '{').replace(']', '}');
-
-        List<Object[]> rows;
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
-        try {
-
-            Query query = entityManager.createNativeQuery(getQueryTextForCheckCycle())
-                    .setParameter("pid", pid)
-                    .setParameter("childrenIds", parameterValue);
-
-            rows = query.getResultList();
-
-        } finally {
-            entityManager.close();
-        }
-
-        String path = "";
-        var pathIndex = 0;
-        var isCycleIndex = 1;
-        var isCycle = false;
-        for (Object[] row: rows) {
-            isCycle = (boolean) row[isCycleIndex];
-            if (isCycle) {
-                path = (String) row[pathIndex];
-                break;
-            }
-        }
-
-        List<I> projectTaskIds = new ArrayList<>(0);
-        if (isCycle) {
-            ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
-            ProjectTasksIdConversion idConversion = context.getBean(ProjectTasksIdConversion.class);
-            projectTaskIds = idConversion.convert(path);
-        }
-
-        projectTaskIds.removeAll(childrenIds);
-
-        var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
-
-        return new DependenciesSetImpl(projectTasks, new ArrayList<>(0), isCycle);
-
-    }
-
     private String getQueryTextForDependencies() {
         return
         """
-        SELECT\s
+        SELECT
             dep.id,
             array_to_string(dep.path, ',') path,
             dep.is_cycle,
@@ -152,17 +147,17 @@ public class DependenciesServiceImpl implements DependenciesService {
 
     }
 
-    private String getQueryTextForCheckCycle() {
+    private String getQueryTextForDependenciesWithCheckedChildren() {
 
         return
         """
         WITH all_children_ids AS (
             SELECT id
-            FROM get_children_in_depth_fast(:childrenIds)
+            FROM get_children_in_depth_fast(:checkedIds)
         ),
                         
         all_checked_ids AS (
-        SELECT DISTINCT\s
+        SELECT DISTINCT
             id
         FROM all_children_ids
                         
@@ -170,18 +165,18 @@ public class DependenciesServiceImpl implements DependenciesService {
             
         SELECT
             linked_project_task
-        FROM links\s
-        WHERE\s
-            project_task = ANY(\s
-                ARRAY(SELECT\s
-                      id\s
+        FROM links
+        WHERE
+            project_task = ANY(
+                ARRAY(SELECT
+                      id
                       FROM all_children_ids
-                     )\s
+                     )
             )
             
         )
                         
-        SELECT\s
+        SELECT
             array_to_string(dep.path, ',') path,
             dep.is_cycle
         FROM get_all_dependencies(:pid, ARRAY(SELECT id FROM all_checked_ids)) dep

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class HierarchyServiceImpl implements HierarchyService {
@@ -23,9 +24,14 @@ public class HierarchyServiceImpl implements HierarchyService {
     @Override
     public List<ProjectTask> getElementsChildrenInDepth(List<? extends ProjectTask> projectTasks) {
 
+        if (projectTasks.size() == 0) return new ArrayList<>();
         List<?> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
-        String parameterValue =
-                String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
+
+        var isNullElement = projectTaskIds.stream().anyMatch(Objects::isNull);
+        if (isNullElement) throw new IllegalArgumentException();
+
+        //String parameterValue =
+        //        String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
 
         List<ProjectTask> projectTasksList;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -37,7 +43,7 @@ public class HierarchyServiceImpl implements HierarchyService {
 //            query.execute();
 
             Query query = entityManager.createNativeQuery(getQueryTextForChildrenInDepth(),  ProjectTaskImpl.class)
-                    .setParameter("ids", parameterValue);
+                    .setParameter("ids", projectTaskIds);
 
             projectTasksList = (List<ProjectTask>) query.getResultList();
 
@@ -54,7 +60,10 @@ public class HierarchyServiceImpl implements HierarchyService {
 
         if (ids.size() == 0) return new ArrayList<>();
 
-        String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
+        var isNullElement = ids.stream().anyMatch(Objects::isNull);
+        if (isNullElement) throw new IllegalArgumentException();
+
+        //String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
 
         List<ProjectTask> projectTasks;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -66,7 +75,7 @@ public class HierarchyServiceImpl implements HierarchyService {
 //            query.execute();
 
             Query query = entityManager.createNativeQuery(getQueryTextForParentsInDepth(),  ProjectTaskImpl.class)
-                    .setParameter("ids", parameterValue);
+                    .setParameter("ids", ids);
 
             projectTasks = (List<ProjectTask>) query.getResultList();
 

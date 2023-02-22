@@ -72,7 +72,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         if (!recalculateTerms) {
             return savedProjectTask;
         }
-        recalculateTerms();
+        recalculateTerms(savedProjectTask);
         return savedProjectTask;
 
     }
@@ -161,8 +161,14 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         projectTaskRepository.saveAll(projectTaskList);
 
         var checkedIds = projectTasks.stream().map(ProjectTask::getId).toList();
-        DependenciesSet dependenciesSet = dependenciesService.checkCycleDependencies(parent.getId(), checkedIds);
+        DependenciesSet dependenciesSet = dependenciesService.getAllDependenciesWithCheckedChildren(parent.getId(), checkedIds);
 
+        if (dependenciesSet.isCycle()) {
+            String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
+            throw new StandardError(message);
+        }
+
+        recalculateTerms(dependenciesSet);
 
         List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
         projectTaskRepository.saveAll(savedElements);
@@ -324,8 +330,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Override
     public void decreaseTaskLevel(Set<ProjectTask> projectTasks) {
 
-        validateLinks();
-        recalculateTerms();
+        //validateLinks();
+
+        //recalculateTerms(DependenciesSet dependenciesSet);
 
     }
 
@@ -351,13 +358,13 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             }
         }
 
-        int levelOrder;
+        Integer levelOrder;
         if (parentId == null) {
             levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
         } else {
             levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentId);
         }
-        //if (levelOrder == null) levelOrder = 0;
+        if (levelOrder == null) levelOrder = 0;
         projectTask.setLevelOrder(++levelOrder);
 
     }
@@ -385,12 +392,14 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private void recalculateTerms() {
+    private void recalculateTerms(DependenciesSet dependenciesSet) {
         // TODO recalculate terms
     }
 
-    private void validateLinks() {
-        // TODO validate terms
+    private void recalculateTerms(ProjectTask projectTask) {
+        // TODO recalculate terms
+        // TODO getting dependencies and check changing terms
+        //recalculateTerms(DependenciesSet dependenciesSet);
     }
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {

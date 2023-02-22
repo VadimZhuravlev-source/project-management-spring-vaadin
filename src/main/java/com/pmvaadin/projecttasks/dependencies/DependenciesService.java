@@ -6,6 +6,8 @@ public interface DependenciesService {
 
     <I, L> DependenciesSet getAllDependencies(I parentId, List<I> ids);
 
-    <I> DependenciesSet checkCycleDependencies(I parentId, List<I> childrenIds);
+    <I> DependenciesSet getAllDependenciesWithCheckedChildren(I parentId, List<I> ids);
+
+    String getCycleLinkMessage(DependenciesSet dependenciesSet);
 
 }
