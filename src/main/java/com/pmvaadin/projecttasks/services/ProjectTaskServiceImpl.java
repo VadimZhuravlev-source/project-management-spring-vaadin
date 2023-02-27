@@ -158,7 +158,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             projectTask.setLevelOrder(++levelOrder);
         }
 
-        projectTaskRepository.saveAll(projectTaskList);
+        //projectTaskRepository.saveAll(projectTaskList);
 
         var checkedIds = projectTasks.stream().map(ProjectTask::getId).toList();
         DependenciesSet dependenciesSet = dependenciesService.getAllDependenciesWithCheckedChildren(parent.getId(), checkedIds);

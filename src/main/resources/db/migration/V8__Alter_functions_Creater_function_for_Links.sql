@@ -13,7 +13,7 @@ BEGIN
 		  FROM
 			project_tasks
 		  WHERE
-			project_tasks.id = ANY(ids::INT[])
+			project_tasks.id = ANY(ids)
 		UNION ALL
 		  SELECT
 			ARRAY(
@@ -23,7 +23,7 @@ BEGIN
 				project_tasks
 			  WHERE
 				project_tasks.parent_id = ANY(hierarchy.id$)
-				AND NOT (project_tasks.id = ANY(ids::INT[])) -- Protection from looping
+				AND NOT (project_tasks.id = ANY(ids)) -- Protection from looping
 			) id$
 		  FROM
 			hierarchy
@@ -47,11 +47,11 @@ BEGIN
 	RETURN QUERY
 		WITH RECURSIVE hierarchy AS (
 		  SELECT
-			project_tasks.parent_id id
+			project_tasks.id id
 		  FROM
 			project_tasks
 		  WHERE
-			project_tasks.id = ANY(ids::INT[])
+			project_tasks.id = ANY(ids)
 		UNION ALL
 		  SELECT
 			p.parent_id
@@ -59,7 +59,7 @@ BEGIN
 			hierarchy
 		  JOIN project_tasks p
 			ON p.id = hierarchy.id
-			AND NOT (p.id = ANY(ids::INT[]))) -- Protection from looping
+			AND NOT (p.parent_id = ANY(ids))) -- Protection from looping
 
 		SELECT DISTINCT * FROM hierarchy;
 END;
@@ -76,7 +76,7 @@ BEGIN
         all_dependencies AS (
         SELECT
         	p.id id,
-        	ARRAY[p.id] || (dependencies_ids::INT[]) path,
+        	ARRAY[p.id] || (dependencies_ids) path,
         	FALSE is_cycle,
         	NULL::INT AS link_id,
         	FALSE complete_execution

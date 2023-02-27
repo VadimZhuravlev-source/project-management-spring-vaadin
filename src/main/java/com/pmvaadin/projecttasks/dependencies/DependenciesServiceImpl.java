@@ -80,15 +80,16 @@ public class DependenciesServiceImpl implements DependenciesService {
         if (pid == null || isNullElement) throw new IllegalArgumentException();
 
         String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
+        parameterValue = "'" + parameterValue + "'";
 
-        String queryText1 = queryText.replace("\n", "");
+        String convertedQueryText = queryText.replace(":checkedIds", parameterValue);
         List<Object[]> rows;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
 
-            Query query = entityManager.createNativeQuery(queryText1)
-                    .setParameter("pid", pid)
-                    .setParameter("checkedIds", String.valueOf(ids));
+            Query query = entityManager.createNativeQuery(convertedQueryText)
+                    .setParameter("pid", pid);
+                    //.setParameter("checkedIds", parameterValue);
 
             rows = query.getResultList();
 
@@ -177,10 +178,11 @@ public class DependenciesServiceImpl implements DependenciesService {
         )
                         
         SELECT
+            dep.id,
             array_to_string(dep.path, ',') path,
-            dep.is_cycle
+            dep.is_cycle,
+            dep.link_id
         FROM get_all_dependencies(:pid, ARRAY(SELECT id FROM all_checked_ids)) dep
-        WHERE dep.is_cycle
         """;
 
     }

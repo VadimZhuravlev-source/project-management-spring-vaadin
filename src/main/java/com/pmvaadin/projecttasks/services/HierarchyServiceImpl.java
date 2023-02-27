@@ -30,8 +30,11 @@ public class HierarchyServiceImpl implements HierarchyService {
         var isNullElement = projectTaskIds.stream().anyMatch(Objects::isNull);
         if (isNullElement) throw new IllegalArgumentException();
 
-        //String parameterValue =
-        //        String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
+        String parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
+        parameterValue = "'" + parameterValue + "'";
+
+        String queryText = getQueryTextForChildrenInDepth();
+        queryText = queryText.replace(":ids", parameterValue);
 
         List<ProjectTask> projectTasksList;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -42,8 +45,9 @@ public class HierarchyServiceImpl implements HierarchyService {
 //            query.setParameter(1, parameterValue);
 //            query.execute();
 
-            Query query = entityManager.createNativeQuery(getQueryTextForChildrenInDepth(),  ProjectTaskImpl.class)
-                    .setParameter("ids", projectTaskIds);
+            Query query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class)
+                    //.setParameter("ids", projectTaskIds)
+                    ;
 
             projectTasksList = (List<ProjectTask>) query.getResultList();
 
@@ -63,7 +67,11 @@ public class HierarchyServiceImpl implements HierarchyService {
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
         if (isNullElement) throw new IllegalArgumentException();
 
-        //String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
+        String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
+        parameterValue = "'" + parameterValue + "'";
+
+        String queryText = getQueryTextForParentsInDepth();
+        queryText = queryText.replace(":ids", parameterValue);
 
         List<ProjectTask> projectTasks;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
@@ -74,8 +82,9 @@ public class HierarchyServiceImpl implements HierarchyService {
 //            query.setParameter(1, parameterValue);
 //            query.execute();
 
-            Query query = entityManager.createNativeQuery(getQueryTextForParentsInDepth(),  ProjectTaskImpl.class)
-                    .setParameter("ids", ids);
+            Query query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class)
+                    //.setParameter("ids", ids)
+                    ;
 
             projectTasks = (List<ProjectTask>) query.getResultList();
 

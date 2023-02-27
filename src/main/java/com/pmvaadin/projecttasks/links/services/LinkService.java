@@ -18,7 +18,6 @@ public interface LinkService {
 
     List<Link> getLinksWithProjectTaskRepresentation(ProjectTask projectTask);
 
-
     void fillLinksByChanges(ProjectTaskData projectTaskData);
 
 }
