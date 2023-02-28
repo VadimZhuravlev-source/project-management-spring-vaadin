@@ -128,6 +128,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Transactional
     public void changeParent(Set<ProjectTask> projectTasks, ProjectTask parent) {
 
+        if (projectTasks.contains(parent))
+            throw new IllegalArgumentException("The parent do not has to contain in changed project tasks");
+
         List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
         projectTaskList.add(parent);
 
@@ -164,6 +167,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         DependenciesSet dependenciesSet = dependenciesService.getAllDependenciesWithCheckedChildren(parent.getId(), checkedIds);
 
         if (dependenciesSet.isCycle()) {
+            var idsDep = dependenciesSet.getProjectTasks().stream().map(ProjectTask::getId).toList();
+            dependenciesSet.getProjectTasks().clear();
+            dependenciesSet.getProjectTasks().addAll(getProjectTasksByIdWithFilledWbs(idsDep));
             String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
             throw new StandardError(message);
         }
@@ -278,6 +284,12 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         if (projectTasks.size() == 0) return;
 
+
+        //TODO do through changeParent
+
+
+
+
         // do only for one task
         var projectTask = projectTasks.stream().findFirst().orElse(null);
         if (projectTask == null) return;
@@ -330,6 +342,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Override
     public void decreaseTaskLevel(Set<ProjectTask> projectTasks) {
 
+        //TODO do through changeParent
         //validateLinks();
 
         //recalculateTerms(DependenciesSet dependenciesSet);
@@ -376,8 +389,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         projectTasks.forEach(projectTask -> {
             ProjectTask projectTaskInBase = projectTasksInBase.getOrDefault(projectTask, null);
-            if (projectTaskInBase == null) return;
-            if (!projectTask.getVersion().equals(projectTaskInBase.getVersion()))
+            if (projectTaskInBase == null || !projectTask.getVersion().equals(projectTaskInBase.getVersion()))
                 throw new StandardError("The task " + projectTask + " has been changed by an another user. Should update the project and try again.");
         });
 

@@ -126,8 +126,6 @@ public class DependenciesServiceImpl implements DependenciesService {
             projectTaskIds = idConversion.convert(path);
         }
 
-        projectTaskIds.removeAll(ids);
-
         var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
         var links = linkRepository.findAllById(linkIds);
 
@@ -140,7 +138,7 @@ public class DependenciesServiceImpl implements DependenciesService {
         """
         SELECT
             dep.id,
-            array_to_string(dep.path, ',') path,
+            dep.path,
             dep.is_cycle,
             dep.link_id
         FROM get_all_dependencies(:pid, :checkedIds) dep
@@ -179,7 +177,7 @@ public class DependenciesServiceImpl implements DependenciesService {
                         
         SELECT
             dep.id,
-            array_to_string(dep.path, ',') path,
+            dep.path,
             dep.is_cycle,
             dep.link_id
         FROM get_all_dependencies(:pid, ARRAY(SELECT id FROM all_checked_ids)) dep

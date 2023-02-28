@@ -68,7 +68,7 @@ $BODY$
 LANGUAGE plpgsql;
 
 CREATE FUNCTION get_all_dependencies(pid INT, dependencies_ids INT[]) RETURNS
-	TABLE(id INT, path INT[], is_cycle BOOLEAN, link_id INT, complete_execution BOOLEAN) AS
+	TABLE(id INT, path TEXT, is_cycle BOOLEAN, link_id INT) AS
 $BODY$
 BEGIN
 	RETURN QUERY
@@ -76,9 +76,10 @@ BEGIN
         all_dependencies AS (
         SELECT
         	p.id id,
-        	ARRAY[p.id] || (dependencies_ids) path,
+        	ARRAY[p.id] path,
+        	ARRAY[p.id] || (dependencies_ids) checking_cycle_path,
         	FALSE is_cycle,
-        	NULL::INT AS link_id,
+        	NULL::INT link_id,
         	FALSE complete_execution
         FROM
         	project_tasks p
@@ -91,6 +92,7 @@ BEGIN
         	SELECT
         		all_dependencies.id id,
         		all_dependencies.path,
+        		all_dependencies.checking_cycle_path,
         		all_dependencies.is_cycle,
         		all_dependencies.link_id
         	FROM
@@ -102,8 +104,9 @@ BEGIN
         	dependencies AS (
         	SELECT
         		project_tasks.parent_id id,
-        		all_dependencies_inner.path || project_tasks.parent_id,
-        		project_tasks.parent_id = ANY(all_dependencies_inner.path) is_cycle,
+        		all_dependencies_inner.path || project_tasks.parent_id path,
+        		all_dependencies_inner.checking_cycle_path || project_tasks.parent_id checking_cycle_path,
+        		project_tasks.parent_id = ANY(all_dependencies_inner.checking_cycle_path) is_cycle,
         		NULL::INT AS link_id
         	FROM
         		all_dependencies_inner
@@ -116,8 +119,9 @@ BEGIN
 
         	SELECT
         		links.project_task,
-        		all_dependencies_inner.path || links.project_task,
-        		links.project_task = ANY(all_dependencies_inner.path) is_cycle,
+        		all_dependencies_inner.path || links.project_task path,
+        		all_dependencies_inner.checking_cycle_path || links.project_task checking_cycle_path,
+        		links.project_task = ANY(all_dependencies_inner.checking_cycle_path) is_cycle,
         		links.id AS link_id
         	FROM
         		all_dependencies_inner
@@ -146,7 +150,15 @@ BEGIN
 
         )
 
-        SELECT DISTINCT * FROM all_dependencies;
+        SELECT DISTINCT
+            all_dependencies.id,
+            CASE WHEN all_dependencies.is_cycle
+                THEN array_to_string(all_dependencies.path, ',')
+                ELSE ''
+            END path,
+            all_dependencies.is_cycle,
+            all_dependencies.link_id
+        FROM all_dependencies;
 
 END;
 $BODY$
