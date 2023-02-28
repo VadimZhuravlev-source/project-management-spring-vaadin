@@ -129,7 +129,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     public void changeParent(Set<ProjectTask> projectTasks, ProjectTask parent) {
 
         if (projectTasks.contains(parent))
-            throw new IllegalArgumentException("The parent has not to contain in changed project tasks");
+            throw new IllegalArgumentException("The parent has not to be contained in changed project tasks");
 
         List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
         projectTaskList.add(parent);
