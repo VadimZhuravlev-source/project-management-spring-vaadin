@@ -22,7 +22,6 @@ import java.util.*;
 public class LinkServiceImpl implements LinkService {
 
     private LinkRepository linkRepository;
-    private ProjectTaskRepository projectTaskRepository;
     private ProjectTaskService projectTaskService;
     private DependenciesService dependenciesService;
 
@@ -41,11 +40,6 @@ public class LinkServiceImpl implements LinkService {
         this.dependenciesService = dependenciesService;
     }
 
-    @Autowired
-    public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository){
-        this.projectTaskRepository = projectTaskRepository;
-    }
-
     @Override
     public List<Link> getLinks(ProjectTask projectTask) {
         return linkRepository.findAllByProjectTaskIdOrderBySortAsc(projectTask.getId());
@@ -59,23 +53,23 @@ public class LinkServiceImpl implements LinkService {
 
         // get all project task links
         List<? extends Link> newLinks = linksChangedTableData.getNewItems();
-        //List<? extends Link> changedLinks = linksChangedTableData.getChangedItems();
-        //List<? extends Link> deletedLinks = linksChangedTableData.getDeletedItems();
+        List<? extends Link> changedLinks = linksChangedTableData.getChangedItems();
+        List<? extends Link> deletedLinks = linksChangedTableData.getDeletedItems();
 
-        //var changedLinkIds = new ArrayList<>(changedLinks.size() + deletedLinks.size());
-        //changedLinkIds.addAll(changedLinks.stream().map(Link::getId).toList());
-        //changedLinkIds.addAll(deletedLinks.stream().map(Link::getId).toList());
-        var deletedLinkIds = linksChangedTableData.getDeletedItems().stream().map(Link::getId).toList();
+        var changedLinkIds = new ArrayList<>(changedLinks.size() + deletedLinks.size());
+        changedLinkIds.addAll(changedLinks.stream().map(Link::getId).toList());
+        changedLinkIds.addAll(deletedLinks.stream().map(Link::getId).toList());
+        //var deletedLinkIds = linksChangedTableData.getDeletedItems().stream().map(Link::getId).toList();
 
         List<Link> projectTaskLinks = new ArrayList<>();
         if (!projectTask.isNew())
-            if (deletedLinkIds.size() == 0)
+            if (changedLinkIds.size() == 0)
                 projectTaskLinks = linkRepository.findAllByProjectTaskIdOrderBySortAsc(projectTask.getId());
             else
-                projectTaskLinks = linkRepository.findAllByProjectTaskIdAndIdNotInIds(projectTask.getId(), deletedLinkIds);
+                projectTaskLinks = linkRepository.findAllByProjectTaskIdAndIdNotInIds(projectTask.getId(), changedLinkIds);
 
         projectTaskLinks.addAll(newLinks);
-//        projectTaskLinks.addAll(changedLinks);
+        projectTaskLinks.addAll(changedLinks);
 
         if (projectTaskData.getLinks() == null) projectTaskData.setLinks(new ArrayList<>());
         projectTaskData.getLinks().addAll(projectTaskLinks);
@@ -145,7 +139,7 @@ public class LinkServiceImpl implements LinkService {
 
     private DependenciesSet getAllDependencies(ProjectTaskData projectTaskData) {
 
-        List<Link> links = projectTaskData.getLinks();
+        var links = projectTaskData.getLinks();
 
         var projectTask = projectTaskData.getProjectTask();
         if (projectTask.isNew() & Objects.isNull(projectTask.getParentId()) || links.size() == 0)
@@ -158,11 +152,7 @@ public class LinkServiceImpl implements LinkService {
         DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(parentId, projectTasksIds);
 
         if (dependenciesSet.isCycle()) {
-            var projectTasks = dependenciesSet.getProjectTasks();
-            var cycledPTIds = projectTasks.stream().map(ProjectTask::getId).toList();
-            Map<?, ProjectTask> projectTasksMap = projectTaskService.getProjectTasksByIdWithFilledWbs(cycledPTIds);
-            projectTasks.clear();
-            projectTasks.addAll(projectTasksMap.values());
+            dependenciesSet.fillWbs(projectTaskService);
         }
 
         return dependenciesSet;

@@ -167,9 +167,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         DependenciesSet dependenciesSet = dependenciesService.getAllDependenciesWithCheckedChildren(parent.getId(), checkedIds);
 
         if (dependenciesSet.isCycle()) {
-            var idsDep = dependenciesSet.getProjectTasks().stream().map(ProjectTask::getId).toList();
-            dependenciesSet.getProjectTasks().clear();
-            dependenciesSet.getProjectTasks().addAll(getProjectTasksByIdWithFilledWbs(idsDep));
+            dependenciesSet.fillWbs(this);
             String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
             throw new StandardError(message);
         }
