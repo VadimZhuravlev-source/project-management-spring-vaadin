@@ -169,11 +169,15 @@ public class ProjectTreeView extends VerticalLayout {
         Button changeLevelDown = new Button("Decrease task level");
         changeLevelDown.addClickListener(this::decreaseTaskLevel);
 
+        Button createTestCase = new Button("Create test case");
+        createTestCase.addClickListener(this::createTestCase);
+
         HorizontalLayout toolbar = new HorizontalLayout(
                 //filterText,
                 addProjectTask, deleteProjectTask, updateTreeData,
                 changeLevelUp,
                 //changeLevelDown,
+                createTestCase,
                 moveUp, moveDown, expandAll, collapseAll);
 
         toolbar.addClassName("toolbar");
@@ -197,6 +201,13 @@ public class ProjectTreeView extends VerticalLayout {
     }
 
     private void decreaseTaskLevel(ClickEvent<Button> clickEvent) {
+
+    }
+
+    private void createTestCase(ClickEvent<Button> clickEvent) {
+
+        projectTreeService.createTestCase();
+        updateTreeGrid();
 
     }
 

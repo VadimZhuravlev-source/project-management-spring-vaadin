@@ -2,6 +2,8 @@ package com.pmvaadin;
 
 import com.pmvaadin.projectstructure.TreeProjectTasks;
 import com.pmvaadin.projectstructure.TreeProjectTasksImpl;
+import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversion;
+import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversionWrapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,5 +15,9 @@ public class AppConfiguration {
         return new TreeProjectTasksImpl();
     }
 
+    @Bean
+    public ProjectTasksIdConversion idConversion() {
+        return new ProjectTasksIdConversionWrapper();
+    }
 
 }

@@ -24,7 +24,6 @@ In this section, the following actions are available with project tasks:
 <img src="images/Predecessors.png" alt="Predecessors" width="100%"/>
 
 + + On the "Predecessors" tab, you can set task predecessors.
-(Not all verifications have been done for the possibility of adding predecessors and verifications the possibility of moving tasks within the tree, taking into account predecessors).
 You can add a predecessor by clicking on the Add button,
 in the Project tasks column click on the icon <img src="Images/selection_icon.png" alt="selection_icon" width="25"/>.
 In the selection form that opens, select the required task, either by clicking on the Select button or by double-clicking the mouse.

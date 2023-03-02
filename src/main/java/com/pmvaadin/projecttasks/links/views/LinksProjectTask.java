@@ -3,6 +3,9 @@ package com.pmvaadin.projecttasks.links.views;
 import com.pmvaadin.commonobjects.ObjectGrid;
 import com.pmvaadin.commonobjects.SelectableTextField;
 import com.pmvaadin.projectstructure.NotificationDialogs;
+import com.pmvaadin.projecttasks.links.LinkValidation;
+import com.pmvaadin.projecttasks.links.LinkValidationImpl;
+import com.pmvaadin.projecttasks.links.LinkValidationMessage;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.entities.LinkImpl;
 import com.pmvaadin.projecttasks.links.entities.LinkType;
@@ -47,40 +50,43 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     public boolean validate() {
 
-        Map<Integer, Boolean> mapIdentity = new HashMap<>();
-        boolean isOk = true;
-        String message = "";
-        Link tableRow = null;
+        LinkValidation linkValidation = new LinkValidationImpl();
+        LinkValidationMessage linkValidationMessage = linkValidation.validate(getGrid().getListDataView().getItems().toList());
 
-        for (Link link: getGrid().getListDataView().getItems().toList()) {
-            if (link.getLinkedProjectTaskId() == null) {
-                isOk = false;
-                tableRow = link;
-                message = getTextErrorNotFilledProjectTask();
-                break;
-            }
-            if (link.getLinkType() == null) {
-                isOk = false;
-                tableRow = link;
-                message = getTextErrorNotFilledLinkType();
-                break;
-            }
-            if (mapIdentity.getOrDefault(link.getLinkedProjectTaskId(), false)) {
-                isOk = false;
-                tableRow = link;
-                message = getTextErrorDuplicatedTasks();
-                break;
-            }
-            mapIdentity.put(link.getLinkedProjectTaskId(), true);
-        }
+//        Map<Integer, Boolean> mapIdentity = new HashMap<>();
+//        boolean isOk = true;
+//        String message = "";
+//        Link tableRow = null;
+//
+//        for (Link link: getGrid().getListDataView().getItems().toList()) {
+//            if (link.getLinkedProjectTaskId() == null) {
+//                isOk = false;
+//                tableRow = link;
+//                message = getTextErrorNotFilledProjectTask();
+//                break;
+//            }
+//            if (link.getLinkType() == null) {
+//                isOk = false;
+//                tableRow = link;
+//                message = getTextErrorNotFilledLinkType();
+//                break;
+//            }
+//            if (mapIdentity.getOrDefault(link.getLinkedProjectTaskId(), false)) {
+//                isOk = false;
+//                tableRow = link;
+//                message = getTextErrorDuplicatedTasks();
+//                break;
+//            }
+//            mapIdentity.put(link.getLinkedProjectTaskId(), true);
+//        }
 
-        if (!isOk) {
-            NotificationDialogs.notifyValidationErrors(message);
+        if (!linkValidationMessage.isOk()) {
+            NotificationDialogs.notifyValidationErrors(linkValidationMessage.getMessage());
             getGrid().deselectAll();
-            getGrid().select(tableRow);
+            getGrid().select(linkValidationMessage.getTableRow());
         }
 
-        return isOk;
+        return linkValidationMessage.isOk();
 
     }
 
@@ -99,7 +105,11 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         Grid.Column<Link> linkTypeColumn = addColumn(Link::getLinkType).setHeader("Link type");
 
         setDeletable(true);
-        setInstantiatable(LinkImpl::new);
+        setInstantiatable(() -> {
+            Link newLink = new LinkImpl();
+            newLink.setLinkType(LinkType.STARTFINISH);
+            return newLink;
+        });
         setCopyable(link -> {
             Link newLink = new LinkImpl();
             newLink.setProjectTaskId(link.getProjectTaskId());

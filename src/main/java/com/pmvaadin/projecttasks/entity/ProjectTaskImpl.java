@@ -78,22 +78,14 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof ProjectTask projectTask)) return false;
-
-        boolean equalsId;
-        Integer id = getId();
-        if (id == null) {
-            equalsId = id == projectTask.getId();
-        } else {
-            equalsId = id.equals(projectTask.getId());
-        }
-
-        return equalsId;
-
+        if (!(o instanceof ProjectTaskImpl that)) return false;
+        if (getId() == null && that.getId() == null) return false;
+        return Objects.equals(getId(), that.getId());
     }
 
     @Override
     public int hashCode() {
+        if (getId() == null) return super.hashCode();
         return Objects.hash(getId());
     }
 

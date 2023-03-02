@@ -16,6 +16,6 @@ public class ProjectTaskDataImpl implements ProjectTaskData {
 
     // Links
     private ChangedTableData<? extends Link> linksChangedTableData;
-    private List<? extends Link> links;
+    private List<Link> links;
 
 }

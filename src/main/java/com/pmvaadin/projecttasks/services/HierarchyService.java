@@ -4,10 +4,10 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 
 import java.util.List;
 
-public interface EntityManagerService {
+public interface HierarchyService {
 
     List<ProjectTask> getElementsChildrenInDepth(List<? extends ProjectTask> projectTasks);
-    List<ProjectTask> getParentsOfParent(List<Integer> projectTasks);
+    List<ProjectTask> getParentsOfParent(List<?> projectTasks);
     List<ProjectTask> getParentsOfParent(ProjectTask projectTask);
 
 }
