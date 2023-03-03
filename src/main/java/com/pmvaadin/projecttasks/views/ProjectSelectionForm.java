@@ -25,8 +25,10 @@ public class ProjectSelectionForm extends Dialog {
 
     private Consumer<ProjectTask> selection;
 
+    private boolean isOpenEvent;
+
     public ProjectSelectionForm(ProjectTaskService projectTaskService) {
-        super();
+
         this.projectTaskService = projectTaskService;
 
         Button selectionAction = new Button("Select");
@@ -50,7 +52,9 @@ public class ProjectSelectionForm extends Dialog {
             selectItem(selectedTask);
         });
         addOpenedChangeListener(event -> {
-            if (event.isOpened()) treeGrid.getDataProvider().refreshAll();
+            if (event.isOpened()) {
+                treeGrid.getDataProvider().refreshAll();
+            }
         });
     }
 

@@ -21,8 +21,6 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     private ProjectTaskService projectTaskService;
     private LinkService linkService;
 
-    private boolean increaseCheckSum;
-
     @Autowired
     void setProjectTaskService(ProjectTaskService projectTaskService) {
         this.projectTaskService = projectTaskService;
@@ -44,7 +42,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         fillLinksByChanges(projectTaskData);
 
         validationPass = linkService.validate(projectTaskData);
-        if (!validationPass) return projectTaskData;;
+        if (!validationPass) return projectTaskData;
 
         return saveData(projectTaskData);
 
@@ -85,7 +83,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         ChangedTableData<? extends Link> changedTableData = projectTaskData.getLinksChangedTableData();
         List<? extends Link> newLinks = changedTableData.getNewItems();
         List<? extends Link> deletedLinks = changedTableData.getDeletedItems();
-        increaseCheckSum = newLinks.size() > 0 || deletedLinks.size() > 0;
+        boolean increaseCheckSum = newLinks.size() > 0 || deletedLinks.size() > 0;
         linkService.delete(deletedLinks);
 
         increaseCheckSum = increaseCheckSum || isChangedFields(projectTaskData);

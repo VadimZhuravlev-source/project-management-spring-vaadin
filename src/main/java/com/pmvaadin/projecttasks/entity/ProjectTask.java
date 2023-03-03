@@ -55,4 +55,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
         return getName() + " 'wbs:' " + getWbs();
     }
 
+    int getChildrenCount();
+    void setChildrenCount(int childrenCount);
+
 }

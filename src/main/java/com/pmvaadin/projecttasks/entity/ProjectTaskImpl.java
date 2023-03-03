@@ -5,10 +5,11 @@ import com.pmvaadin.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.annotations.*;
 
 import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.Objects;
@@ -68,6 +69,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Column(name = "links_check_sum")
     private int linksCheckSum;
 
+    @Setter
+    @Column(name = "children_count")
+    @OptimisticLock(excluded = true)
+    private int childrenCount;
+
     //    @Setter
 //    @Column(name = "duration")
 //    private new BigDecimal duration;
@@ -108,6 +114,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Override
     public Integer getNullId() {
         return 0;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        childrenCount = 0;
     }
 
 }
