@@ -29,6 +29,8 @@ public class LinksProjectTask extends ObjectGrid<Link> {
     private final ProjectSelectionForm projectSelectionForm;
     private ProjectTask projectTask;
 
+    private final Link example = new LinkImpl();
+
     LinksProjectTask(LinkService linkService, ProjectSelectionForm projectSelectionForm) {
         super();
         this.linkService = linkService;
@@ -105,18 +107,8 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         Grid.Column<Link> linkTypeColumn = addColumn(Link::getLinkType).setHeader("Link type");
 
         setDeletable(true);
-        setInstantiatable(() -> {
-            Link newLink = new LinkImpl();
-            newLink.setLinkType(LinkType.STARTFINISH);
-            return newLink;
-        });
-        setCopyable(link -> {
-            Link newLink = new LinkImpl();
-            newLink.setProjectTaskId(link.getProjectTaskId());
-            newLink.setLinkType(link.getLinkType());
-            //newLink.setLinkedProjectTaskId(link.getLinkedProjectTaskId());
-            return newLink;
-        });
+        setInstantiatable(example::getInstance);
+        setCopyable(example::copy);
 
         setInlineEditor((linkBinder, editor) -> {
 
@@ -153,7 +145,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
             linkTypeField.setWidthFull();
             addCloseHandler(linkTypeField, editor);
             linkBinder.forField(linkTypeField)
-                    .asRequired("Field link type must not be empty")
+                    .asRequired("The link type has not to be empty")
                     .bind(Link::getLinkType, Link::setLinkType);
             linkTypeColumn.setEditorComponent(linkTypeField);
 

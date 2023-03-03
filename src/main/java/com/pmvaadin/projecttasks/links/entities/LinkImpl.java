@@ -11,7 +11,6 @@ import java.util.Objects;
 
 @Getter
 @Entity
-@NoArgsConstructor
 @Table(name = "links")
 public class LinkImpl implements Link {
 
@@ -50,6 +49,25 @@ public class LinkImpl implements Link {
     @Setter
     @Transient
     private String representation;
+
+    public LinkImpl() {
+        linkType = LinkType.STARTFINISH;
+    }
+
+    public LinkImpl(Link link) {
+        this.projectTaskId = link.getProjectTaskId();
+        this.linkType = link.getLinkType();
+    }
+
+    @Override
+    public Link getInstance() {
+        return new LinkImpl();
+    }
+
+    @Override
+    public Link copy(Link link) {
+        return new LinkImpl(link);
+    }
 
     @Override
     public boolean equals(Object o) {

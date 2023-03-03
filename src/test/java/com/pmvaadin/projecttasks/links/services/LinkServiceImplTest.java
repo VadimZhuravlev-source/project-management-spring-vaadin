@@ -11,15 +11,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class LinkServiceImplTest {
 
+    private final Link example = new LinkImpl();
+
     @Test
     void validate() {
 
         Set<Link> linkSet = new HashSet<>();
-        Link link1 = new LinkImpl();
+        Link link1 = example.getInstance();
         link1.setId(1);
         link1.setRepresentation("1");
         linkSet.add(link1);
-        Link link2 = new LinkImpl();
+        Link link2 = example.getInstance();
         link1.setId(2);
         link2.setRepresentation("2");
         linkSet.add(link2);

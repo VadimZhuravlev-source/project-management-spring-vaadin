@@ -23,4 +23,7 @@ public interface Link {
     LinkType getLinkType();
     void setLinkType(LinkType linkType);
 
+    Link getInstance();
+    Link copy(Link link);
+
 }
