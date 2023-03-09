@@ -234,32 +234,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public int getChildrenCount(ProjectTask projectTask) {
-        if (Objects.isNull(projectTask) || Objects.isNull(projectTask.getId())) {
-            return projectTaskRepository.getChildrenCount();
-        }
-        return projectTaskRepository.getChildrenCount(projectTask.getId());
-    }
-
-    @Override
-    public boolean hasChildren(ProjectTask projectTask) {
-        return getChildrenCount(projectTask) != 0;
-    }
-
-    @Override
-    public List<ProjectTask> fetchChildren(ProjectTask projectTask) {
-
-        List<ProjectTask> projectTasks;
-        if (Objects.isNull(projectTask) || Objects.isNull(projectTask.getId())) {
-            projectTasks = projectTaskRepository.findByParentIdIsNullOrderByLevelOrderAsc();
-        } else {
-            projectTasks = projectTaskRepository.findByParentIdOrderByLevelOrderAsc(projectTask.getId());
-        }
-        fillWbs(projectTasks, projectTask);
-        return projectTasks;
-    }
-
-    @Override
     public Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(List<?> ids) {
 
         if (ids.size() == 0) return new HashMap<>();
@@ -390,15 +364,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             if (projectTaskInBase == null || !projectTask.getVersion().equals(projectTaskInBase.getVersion()))
                 throw new StandardError("The task " + projectTask + " has been changed by an another user. Should update the project and try again.");
         });
-
-    }
-
-    private void fillWbs(List<ProjectTask> children, ProjectTask projectTask) {
-
-        String wbs = "";
-        if (!Objects.isNull(projectTask)) wbs = projectTask.getWbs() + ".";
-        final String parentWbs = wbs;
-        children.forEach(child -> child.setWbs(parentWbs + child.getLevelOrder()));
 
     }
 

@@ -1,7 +1,8 @@
 package com.pmvaadin.projecttasks.views;
 
+import com.pmvaadin.projectstructure.ProjectHierarchicalDataProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.services.ProjectTaskService;
+import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -9,27 +10,21 @@ import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalDataProvider;
-import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 @SpringComponent
 public class ProjectSelectionForm extends Dialog {
 
-    private final ProjectTaskService projectTaskService;
+    private final TreeHierarchyChangeService hierarchyService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
-
     private Consumer<ProjectTask> selection;
 
-    private boolean isOpenEvent;
+    public ProjectSelectionForm(TreeHierarchyChangeService hierarchyService) {
 
-    public ProjectSelectionForm(ProjectTaskService projectTaskService) {
-
-        this.projectTaskService = projectTaskService;
+        this.hierarchyService = hierarchyService;
 
         Button selectionAction = new Button("Select");
         selectionAction.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -101,23 +96,7 @@ public class ProjectSelectionForm extends Dialog {
 
     private HierarchicalDataProvider<ProjectTask, Void> getDataProvider() {
 
-        return new AbstractBackEndHierarchicalDataProvider<>() {
-
-            @Override
-            public int getChildCount(HierarchicalQuery<ProjectTask, Void> query) {
-                return projectTaskService.getChildrenCount(query.getParent());
-            }
-
-            @Override
-            public boolean hasChildren(ProjectTask item) {
-                return projectTaskService.hasChildren(item);
-            }
-
-            @Override
-            protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, Void> query) {
-                return projectTaskService.fetchChildren(query.getParent()).stream();
-            }
-        };
+        return new ProjectHierarchicalDataProvider(hierarchyService);
 
     }
 

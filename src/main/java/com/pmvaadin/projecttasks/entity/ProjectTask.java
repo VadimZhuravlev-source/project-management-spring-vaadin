@@ -51,7 +51,8 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     int getLinksCheckSum();
     void setLinksCheckSum(int linksCheckSum);
 
-    default String getLinkPresentation() {
+    default String getRepresentation() {
+        if (getWbs() == null) return getName();
         return getName() + " 'wbs:' " + getWbs();
     }
 

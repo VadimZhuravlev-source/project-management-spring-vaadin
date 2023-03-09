@@ -14,8 +14,4 @@ public interface ProjectTaskService extends ProjectTreeService {
     boolean validate(ProjectTask projectTask);
     Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(List<?> ids);
 
-    int getChildrenCount(ProjectTask projectTask);
-    boolean hasChildren(ProjectTask projectTask);
-    List<ProjectTask> fetchChildren(ProjectTask projectTask);
-
 }

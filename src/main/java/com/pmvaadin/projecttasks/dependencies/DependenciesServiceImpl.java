@@ -61,7 +61,7 @@ public class DependenciesServiceImpl implements DependenciesService {
 
         String delimiter = " -> ";
         projectTasks.forEach(projectTask -> {
-            stringBuilder.append(projectTask.getLinkPresentation());
+            stringBuilder.append(projectTask.getRepresentation());
             stringBuilder.append(delimiter);
         });
 
