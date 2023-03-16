@@ -6,6 +6,15 @@ import java.util.List;
 
 public interface TreeHierarchyChangeService {
 
-    List<ProjectTask> fetchChildren(ProjectTask projectTask);
+    FetchedData getFetchedData(ProjectTask projectTask);
+    int getChildrenCount(ProjectTask projectTask);
+
+    interface FetchedData {
+
+        int getChildrenCountOfUpperLevel();
+
+        List<ProjectTask> getChildren();
+
+    }
 
 }

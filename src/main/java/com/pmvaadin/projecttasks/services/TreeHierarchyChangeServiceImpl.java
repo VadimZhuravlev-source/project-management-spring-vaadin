@@ -1,8 +1,9 @@
 package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +11,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceUnit;
 import javax.persistence.Query;
+import java.math.BigInteger;
 import java.util.*;
 
 @Service
@@ -31,7 +33,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
     }
 
     @Override
-    public List<ProjectTask> fetchChildren(ProjectTask projectTask) {
+    public FetchedData getFetchedData(ProjectTask projectTask) {
 
         List<ProjectTask> projectTasks;
         if (Objects.isNull(projectTask) || Objects.isNull(projectTask.getId())) {
@@ -40,9 +42,19 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
             projectTasks = projectTaskRepository.findByParentIdOrderByLevelOrderAsc(projectTask.getId());
         }
 
-        fillChildrenCount(projectTasks);
+        int childrenCountUpperLevel = fillChildrenCount(projectTasks);
         fillWbs(projectTasks, projectTask);
-        return projectTasks;
+        return new FetchedDataImpl(childrenCountUpperLevel, projectTasks);
+    }
+
+    @Override
+    public int getChildrenCount(ProjectTask projectTask) {
+
+        if (projectTask == null || projectTask.getId() == null)
+            return projectTaskRepository.getChildrenCount();
+
+        return projectTaskRepository.getChildrenCount(projectTask.getId());
+
     }
 
     private void fillWbs(List<ProjectTask> children, ProjectTask projectTask) {
@@ -54,7 +66,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
     }
 
-    private void fillChildrenCount(List<ProjectTask> projectTasks) {
+    private int fillChildrenCount(List<ProjectTask> projectTasks) {
 
         Map<?, Integer> map = getProjectTasksChildrenCount(projectTasks);
 
@@ -63,6 +75,8 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
             if (childrenCount == 0) return;
             projectTask.setChildrenCount(childrenCount);
         });
+
+        return map.getOrDefault(null, 0);
 
     }
 
@@ -74,12 +88,18 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
         	p.parent_id id,
             COUNT(p.id) children_count
         FROM project_tasks p
-        WHERE p.parent_id IN (:pids)
+        WHERE p.parent_id = ANY(:pids)
         GROUP BY p.parent_id
         HAVING COUNT(p.id) > 0
+        UNION
+        SELECT
+        	NULL id,
+            COUNT(p.id) children_count
+        FROM project_tasks p
+        WHERE p.parent_id IS NULL
         """;
 
-        var projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
+        var projectTaskIds = projectTasks.stream().map(ProjectTask::getId).filter(Objects::nonNull).toList();
         String parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
         parameterValue = "'" + parameterValue + "'";
 
@@ -102,12 +122,19 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
         for (Object[] row: rows) {
             I id = (I) row[idIndex];
-            Integer count = (int) row[countIndex];
+            Integer count = ((BigInteger) row[countIndex]).intValue();
             map.put(id, count);
         }
 
         return map;
 
+    }
+
+    @Data
+    @AllArgsConstructor
+    private static class FetchedDataImpl implements FetchedData {
+        private int childrenCountOfUpperLevel;
+        List<ProjectTask> children;
     }
 
 }

@@ -11,7 +11,8 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
 
     private TreeHierarchyChangeService hierarchyService;
 
-    private int cacheChildCount;
+    private int cacheChildrenCountUpperLevel;
+    private boolean firstInitialization = true;
 
     public ProjectHierarchicalDataProvider(TreeHierarchyChangeService hierarchyService) {
         this.hierarchyService = hierarchyService;
@@ -22,7 +23,11 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
 
         ProjectTask item = query.getParent();
         if (item == null) {
-            return cacheChildCount;
+            if (firstInitialization) {
+                cacheChildrenCountUpperLevel = hierarchyService.getChildrenCount(null);
+                firstInitialization = false;
+            }
+            return cacheChildrenCountUpperLevel;
         }
 
         return item.getChildrenCount();
@@ -36,7 +41,11 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
 
     @Override
     protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, Void> query) {
-        return hierarchyService.fetchChildren(query.getParent()).stream();
+
+        TreeHierarchyChangeService.FetchedData fetchedData = hierarchyService.getFetchedData(query.getParent());
+        cacheChildrenCountUpperLevel = fetchedData.getChildrenCountOfUpperLevel();
+        return fetchedData.getChildren().stream();
+
     }
 
 }
