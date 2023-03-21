@@ -108,7 +108,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
                 .map(ProjectTask::getId).toList();
 
         projectTaskRepository.deleteAllById(projectTaskIds);
-        List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
+        List<ProjectTask> savedElements = recalculateLevelOrderForChildrenOfProjectTaskIds(parentIds);
         projectTaskRepository.saveAll(savedElements);
 
     }
@@ -161,8 +161,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             projectTask.setLevelOrder(++levelOrder);
         }
 
-        //projectTaskRepository.saveAll(projectTaskList);
-
         var checkedIds = projectTasks.stream().map(ProjectTask::getId).toList();
         DependenciesSet dependenciesSet = dependenciesService.getAllDependenciesWithCheckedChildren(parent.getId(), checkedIds);
 
@@ -174,7 +172,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         recalculateTerms(dependenciesSet);
 
-        List<ProjectTask> savedElements = recalculateForChildrenOfProjectTaskIds(parentIds);
+        projectTaskRepository.saveAll(projectTaskList);
+        List<ProjectTask> savedElements = recalculateLevelOrderForChildrenOfProjectTaskIds(parentIds);
         projectTaskRepository.saveAll(savedElements);
 
     }
@@ -386,7 +385,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private List<ProjectTask> recalculateForChildrenOfProjectTaskIds(List<?> parentIds) {
+    private List<ProjectTask> recalculateLevelOrderForChildrenOfProjectTaskIds(List<?> parentIds) {
 
         List<ProjectTask> foundProjectTasks;
 
@@ -396,7 +395,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
                     projectTaskRepository.findByParentIdInWithNullOrderByLevelOrderAsc(findingParentIds);
             foundProjectTasks = foundProjectTasks1.stream()
                     .map(projectTaskImpl -> (ProjectTask) projectTaskImpl)
-                    .collect(Collectors.toList());
+                    .toList();
         } else {
             foundProjectTasks = projectTaskRepository.findByParentIdInOrderByLevelOrderAsc(parentIds);
         }
