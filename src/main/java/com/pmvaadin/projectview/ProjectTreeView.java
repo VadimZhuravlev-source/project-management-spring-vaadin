@@ -10,12 +10,14 @@ import com.pmvaadin.projecttasks.views.ProjectTaskForm;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.ItemClickEvent;
 import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
 import com.vaadin.flow.component.grid.dnd.GridDragStartEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropEvent;
+import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -41,19 +43,20 @@ public class ProjectTreeView extends VerticalLayout {
     private final ProjectTreeService projectTreeService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
     private final TextField filterText = new TextField();
-    private final ProjectTaskForm editingForm;
+    private final ProjectTaskForm projectTaskForm;
+    private ProjectTaskForm editingForm;
 
-    public ProjectTreeView(ProjectTreeService projectTreeService, ProjectTaskForm editingForm) {
+    public ProjectTreeView(ProjectTreeService projectTreeService, ProjectTaskForm projectTaskForm) {
 
         this.projectTreeService = projectTreeService;
-        this.editingForm = editingForm;
+        this.projectTaskForm = projectTaskForm;
         addClassName("project-tasks-view");
         setSizeFull();
         configureTreeGrid();
 
-        editingForm.addListener(ProjectTaskForm.SaveEvent.class, this::saveProjectTask);
+        projectTaskForm.addListener(ProjectTaskForm.SaveEvent.class, this::saveProjectTask);
         //editingForm.addListener(ProjectTaskForm.DeleteEvent.class, this::deleteProjectTaskEvent);
-        editingForm.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
+        projectTaskForm.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
 
         add(getToolbar(), treeGrid);
 
@@ -275,9 +278,15 @@ public class ProjectTreeView extends VerticalLayout {
 //            ProjectTask projectTask = projectTasks.stream().findFirst().orElse(null);
 //            editingForm.setProjectTask(projectTask);
 //            editingForm.setVisible(true);
-        editingForm.setProjectTask(projectTask);
-        editingForm.open();
-        addClassName("editing");
+        try {
+            editingForm = projectTaskForm.newInstance();
+            removeClassName("editing");
+            editingForm.setProjectTask(projectTask);
+            editingForm.open();
+            addClassName("editing");
+        } catch (Exception e) {
+            showProblem(e);
+        }
 //        }
     }
 
@@ -442,6 +451,8 @@ public class ProjectTreeView extends VerticalLayout {
         try {
 
             ProjectTask dropTargetItem = event.getDropTargetItem().orElse(null);
+
+            GridDropLocation dropLocation = event.getDropLocation();
 
             Set<ProjectTask> draggedItems = event.getSource().getSelectedItems();
             if (dropTargetItem == null || draggedItems == null || draggedItems.contains(dropTargetItem)) return;

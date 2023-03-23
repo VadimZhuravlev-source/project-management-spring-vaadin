@@ -42,6 +42,10 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         super.setItems(links);
     }
 
+    public LinksProjectTask newInstance() {
+        return new LinksProjectTask(linkService, projectSelectionForm.newInstance());
+    }
+
     public void setProjectTask(ProjectTask projectTask) {
         this.projectTask = projectTask;
         List<Link> links = (List<Link>) (linkService.getLinksWithProjectTaskRepresentation(projectTask));

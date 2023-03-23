@@ -7,11 +7,16 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
+import com.vaadin.flow.component.grid.GridSelectionModel;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dnd.GridDropLocation;
+import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.data.selection.SelectionModel;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
+import java.util.Set;
 import java.util.function.Consumer;
 
 @SpringComponent
@@ -35,10 +40,18 @@ public class ProjectSelectionForm extends Dialog {
 
         Button refreshButton = new Button(new Icon("lumo", "reload"),
                 (e) -> {
-            dataProvider.setFirstInitialization(true);
             treeGrid.getDataProvider().refreshAll();
                 });
-        getFooter().add(refreshButton);
+
+        Button refreshItemButton = new Button(new Icon("lumo", "reload"),
+                (e) -> {
+                    GridSelectionModel selectionModel = treeGrid.getSelectionModel();
+                    Set<ProjectTask> projectTaskSet = selectionModel.getSelectedItems();
+                    projectTaskSet.forEach(dataProvider::refreshItem);
+                    //treeGrid.getDataProvider().refreshAll();
+                });
+
+        getFooter().add(refreshButton, refreshItemButton);
         refreshButton.getStyle().set("margin-right", "auto");
 
         customizeTreeGrid();
@@ -67,16 +80,19 @@ public class ProjectSelectionForm extends Dialog {
             ProjectTask selectedTask = treeGrid.getSelectedItems().stream().findFirst().orElse(null);
             selectItem(selectedTask);
         });
-        addOpenedChangeListener(event -> {
-            if (event.isOpened()) {
-                dataProvider.setFirstInitialization(true);
-                treeGrid.getDataProvider().refreshAll();
-            }
-        });
+//        addOpenedChangeListener(event -> {
+//            if (event.isOpened()) {
+//                treeGrid.getDataProvider().refreshAll();
+//            }
+//        });
     }
 
     public void addSelectionListener(Consumer<ProjectTask> selection) {
         this.selection = selection;
+    }
+
+    public ProjectSelectionForm newInstance() {
+        return new ProjectSelectionForm(hierarchyService);
     }
 
     private void customizeHeader() {

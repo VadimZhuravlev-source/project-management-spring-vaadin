@@ -2,37 +2,25 @@ package com.pmvaadin.projectstructure;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
-import com.vaadin.flow.data.provider.DataProviderListener;
-import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
-import com.vaadin.flow.shared.Registration;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchicalDataProvider<ProjectTask, Void> {
 
-    private TreeHierarchyChangeService hierarchyService;
+    private final TreeHierarchyChangeService hierarchyService;
 
     private int cacheChildrenCountUpperLevel;
-    private boolean firstInitialization;
+    private boolean receiveRootChildrenCount;
+
+    private boolean isRefresh;
+    private List<ProjectTask> cacheChildren = new ArrayList<>(0);
 
     public ProjectHierarchicalDataProvider(TreeHierarchyChangeService hierarchyService) {
         this.hierarchyService = hierarchyService;
-    }
-
-    public void setFirstInitialization(boolean firstInitialization) {
-        this.firstInitialization = firstInitialization;
-    }
-
-    @Override
-    public int size(Query<ProjectTask, Void> query) {
-        return super.size(query);
-    }
-
-    @Override
-    public Stream<ProjectTask> fetch(Query<ProjectTask, Void> query) {
-        return fetchChildrenFromBackEndPrivate((HierarchicalQuery<ProjectTask, Void>) query);
     }
 
     @Override
@@ -40,9 +28,9 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
 
         ProjectTask item = query.getParent();
         if (item == null) {
-            if (firstInitialization) {
+            if (receiveRootChildrenCount) {
                 cacheChildrenCountUpperLevel = hierarchyService.getChildrenCount(null);
-                firstInitialization = false;
+                receiveRootChildrenCount = false;
             }
             return cacheChildrenCountUpperLevel;
         }
@@ -53,29 +41,67 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
 
     @Override
     public boolean hasChildren(ProjectTask item) {
-        return item.getChildrenCount() != 0;
-    }
 
-    @Override
-    public Stream<ProjectTask> fetchChildren(HierarchicalQuery<ProjectTask, Void> query) {
-        return fetchChildrenFromBackEndPrivate(query);
+        if (isRefresh) return item.getChildrenCount() != 0;
+
+        if (cacheChildren.contains(item)) {
+            if (cacheChildren.get(cacheChildren.size() - 1).equals(item)) cacheChildren.clear();
+            return item.getChildrenCount() != 0;
+        }
+
+        fetchDataByParent(item);
+
+        return cacheChildren.size() != 0;
+
     }
 
     @Override
     protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, Void> query) {
 
-        return fetchChildrenFromBackEndPrivate(query);
+        if (isRefresh) fetchChildrenByQuery(query);
+
+        return cacheChildren.stream();
 
     }
 
-    private Stream<ProjectTask> fetchChildrenFromBackEndPrivate(HierarchicalQuery<ProjectTask, Void> query) {
+    @Override
+    public void refreshAll() {
+        receiveRootChildrenCount = true;
+        isRefresh = true;
+        super.refreshAll();
+        isRefresh = false;
+    }
+
+    @Override
+    public void refreshItem(ProjectTask item) {
+        receiveRootChildrenCount = true;
+        isRefresh = true;
+        super.refreshItem(item);
+        isRefresh = false;
+    }
+
+    @Override
+    public void refreshItem(ProjectTask item, boolean refreshChildren) {
+        receiveRootChildrenCount = true;
+        isRefresh = true;
+        super.refreshItem(item, refreshChildren);
+        isRefresh = false;
+    }
+
+    private void fetchChildrenByQuery(HierarchicalQuery<ProjectTask, Void> query) {
 
         ProjectTask parent = query.getParent();
+
+        fetchDataByParent(parent);
+        if (parent != null) parent.setChildrenCount(cacheChildren.size());
+
+    }
+
+    private void fetchDataByParent(ProjectTask parent) {
+
         TreeHierarchyChangeService.FetchedData fetchedData = hierarchyService.getFetchedData(parent);
         cacheChildrenCountUpperLevel = fetchedData.getChildrenCountOfUpperLevel();
-        if (parent != null) parent.setChildrenCount(fetchedData.getChildren().size());
-
-        return fetchedData.getChildren().stream();
+        cacheChildren = fetchedData.getChildren();
 
     }
 

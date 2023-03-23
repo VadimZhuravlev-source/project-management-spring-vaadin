@@ -10,6 +10,7 @@ import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.views.LinksProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.ProjectTaskDataService;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -65,8 +66,6 @@ public class ProjectTaskForm extends Dialog {
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
                            CalendarSelectionForm calendarSelectionForm) {
 
-        super();
-
         this.projectTaskDataService = projectTaskDataService;
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
@@ -88,6 +87,10 @@ public class ProjectTaskForm extends Dialog {
 
         add(mainLayout);
 
+    }
+
+    public ProjectTaskForm newInstance() {
+        return new ProjectTaskForm(projectTaskDataService, linksGrid.newInstance(), calendarSelectionForm);
     }
 
     public void setProjectTask(ProjectTask projectTask) {
