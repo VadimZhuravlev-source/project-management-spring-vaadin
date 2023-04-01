@@ -17,7 +17,7 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     private boolean receiveRootChildrenCount;
 
     private boolean isRefresh;
-    private List<ProjectTask> cacheChildren = new ArrayList<>(0);
+    private final List<ProjectTask> cacheChildren = new ArrayList<>(0);
 
     public ProjectHierarchicalDataProvider(TreeHierarchyChangeService hierarchyService) {
         this.hierarchyService = hierarchyService;
@@ -58,7 +58,7 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     @Override
     protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, Void> query) {
 
-        if (isRefresh) fetchChildrenByQuery(query);
+        if (cacheChildren.isEmpty()) fetchChildrenByQuery(query);
 
         return cacheChildren.stream();
 
@@ -68,6 +68,7 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     public void refreshAll() {
         receiveRootChildrenCount = true;
         isRefresh = true;
+        cacheChildren.clear();
         super.refreshAll();
         isRefresh = false;
     }
@@ -76,6 +77,7 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     public void refreshItem(ProjectTask item) {
         receiveRootChildrenCount = true;
         isRefresh = true;
+        cacheChildren.clear();
         super.refreshItem(item);
         isRefresh = false;
     }
@@ -84,6 +86,7 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     public void refreshItem(ProjectTask item, boolean refreshChildren) {
         receiveRootChildrenCount = true;
         isRefresh = true;
+        cacheChildren.clear();
         super.refreshItem(item, refreshChildren);
         isRefresh = false;
     }
@@ -101,7 +104,8 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
 
         TreeHierarchyChangeService.FetchedData fetchedData = hierarchyService.getFetchedData(parent);
         cacheChildrenCountUpperLevel = fetchedData.getChildrenCountOfUpperLevel();
-        cacheChildren = fetchedData.getChildren();
+        cacheChildren.clear();
+        cacheChildren.addAll(fetchedData.getChildren());
 
     }
 

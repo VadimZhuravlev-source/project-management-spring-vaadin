@@ -9,11 +9,8 @@ import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.grid.GridSelectionModel;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.grid.dnd.GridDropLocation;
-import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.selection.SelectionModel;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 import java.util.Set;
@@ -80,11 +77,11 @@ public class ProjectSelectionForm extends Dialog {
             ProjectTask selectedTask = treeGrid.getSelectedItems().stream().findFirst().orElse(null);
             selectItem(selectedTask);
         });
-//        addOpenedChangeListener(event -> {
-//            if (event.isOpened()) {
-//                treeGrid.getDataProvider().refreshAll();
-//            }
-//        });
+        addOpenedChangeListener(event -> {
+            if (event.isOpened()) {
+                treeGrid.getDataProvider().refreshAll();
+            }
+        });
     }
 
     public void addSelectionListener(Consumer<ProjectTask> selection) {
