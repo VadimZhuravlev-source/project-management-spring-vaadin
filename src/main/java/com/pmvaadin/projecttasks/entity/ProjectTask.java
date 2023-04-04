@@ -59,4 +59,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     int getChildrenCount();
     void setChildrenCount(int childrenCount);
 
+    ProjectTask getParent();
+    void setParent(ProjectTask parent);
+
 }

@@ -25,7 +25,6 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.hierarchy.TreeData;
-import com.vaadin.flow.data.provider.hierarchy.TreeDataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -34,7 +33,6 @@ import javax.annotation.security.PermitAll;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Route(value="", layout = MainLayout.class)
 @PageTitle("Projects | PM")
@@ -230,11 +228,12 @@ public class ProjectTreeView extends VerticalLayout {
 
         ProjectTask savedProjectTask = event.getProjectTask();
         if (savedProjectTask == null) return;
-
+        ProjectTask refreshedItem = savedProjectTask.getParent();
+        if (refreshedItem == null) refreshedItem = savedProjectTask;
 //        treeGrid.asMultiSelect().deselectAll();
 //        treeGrid.asMultiSelect().select(savedProjectTask);
-        treeGrid.getDataProvider().refreshItem(savedProjectTask);
-        //updateTreeGrid();
+        //treeGrid.getDataProvider().refreshItem(refreshedItem, true);
+        updateTreeGrid();
 
         closeEditor();
 
@@ -451,16 +450,18 @@ public class ProjectTreeView extends VerticalLayout {
 
             ProjectTask dropTargetItem = event.getDropTargetItem().orElse(null);
 
+            if (dropTargetItem == null) return;
+
             GridDropLocation dropLocation = event.getDropLocation();
 
             Set<ProjectTask> draggedItems = event.getSource().getSelectedItems();
-            if (dropTargetItem == null || draggedItems == null || draggedItems.contains(dropTargetItem)) return;
+            if (draggedItems == null || draggedItems.contains(dropTargetItem)) return;
 
-            if (!checkMovableDraggedItemsInDroppedItem(draggedItems, dropTargetItem)) return;
+            //if (!checkMovableDraggedItemsInDroppedItem(draggedItems, dropTargetItem)) return;
 
-            projectTreeService.changeParent(draggedItems, dropTargetItem);
+            //projectTreeService.changeLocation(draggedItems, dropTargetItem, dropLocation);
 
-            updateTreeGrid();
+            //updateTreeGrid();
 
         } catch (Throwable e) {
             showProblem(e);
@@ -468,26 +469,26 @@ public class ProjectTreeView extends VerticalLayout {
 
     }
 
-    private boolean checkMovableDraggedItemsInDroppedItem(Set<ProjectTask> draggedItems, ProjectTask dropTargetItem) {
-
-        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
-        Map<ProjectTask, Boolean> rootItems = treeData.getRootItems().stream()
-                .collect(Collectors.toMap(projectTask -> projectTask, o -> true));
-
-        ProjectTask parent = dropTargetItem;
-        Map<ProjectTask, Boolean> allItemParents = new HashMap<>();
-        while (parent != null) {
-            if (rootItems.getOrDefault(parent, false)) break;
-            parent = treeData.getParent(parent);
-            allItemParents.put(parent, true);
-        }
-
-        for (ProjectTask draggedItem:draggedItems) {
-            if (allItemParents.getOrDefault(draggedItem, false)) return false;
-        }
-
-        return true;
-    }
+//    private boolean checkMovableDraggedItemsInDroppedItem(Set<ProjectTask> draggedItems, ProjectTask dropTargetItem) {
+//
+//        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
+//        Map<ProjectTask, Boolean> rootItems = treeData.getRootItems().stream()
+//                .collect(Collectors.toMap(projectTask -> projectTask, o -> true));
+//
+//        ProjectTask parent = dropTargetItem;
+//        Map<ProjectTask, Boolean> allItemParents = new HashMap<>();
+//        while (parent != null) {
+//            if (rootItems.getOrDefault(parent, false)) break;
+//            parent = treeData.getParent(parent);
+//            allItemParents.put(parent, true);
+//        }
+//
+//        for (ProjectTask draggedItem:draggedItems) {
+//            if (allItemParents.getOrDefault(draggedItem, false)) return false;
+//        }
+//
+//        return true;
+//    }
 
     private enum Direction {
         UP,

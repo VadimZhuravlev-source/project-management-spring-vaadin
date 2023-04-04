@@ -84,6 +84,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @JoinColumn(name = "calendar_id")
     private CalendarImpl calendar;
 
+    @Setter
+    @Transient
+    private ProjectTask parent;
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

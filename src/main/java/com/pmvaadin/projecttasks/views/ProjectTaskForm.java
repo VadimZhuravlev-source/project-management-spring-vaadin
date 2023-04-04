@@ -37,7 +37,6 @@ import java.util.List;
 public class ProjectTaskForm extends Dialog {
 
     private ProjectTask projectTask;
-    private ProjectTask parent;
     private final ProjectTaskDataService projectTaskDataService;
     private final LinksProjectTask linksGrid;
     private final CalendarSelectionForm calendarSelectionForm;
@@ -240,7 +239,7 @@ public class ProjectTaskForm extends Dialog {
     private void readData(ProjectTaskData projectTaskData) {
         this.projectTask = projectTaskData.getProjectTask();
         binder.readBean(projectTask);
-        linksGrid.setItems((List<Link>) (projectTaskData.getLinks()));
+        linksGrid.setItems(projectTaskData.getLinks());
         refreshHeader();
     }
 

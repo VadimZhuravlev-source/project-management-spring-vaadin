@@ -99,6 +99,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         }
 
         List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
+        projectTaskService.fillParent(projectTask);
 
         return new ProjectTaskDataImpl(projectTask, null, links);
 
