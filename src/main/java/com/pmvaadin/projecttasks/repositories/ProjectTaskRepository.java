@@ -35,10 +35,12 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     List<ProjectTask> findByParentIdIsNullOrderByLevelOrderAsc();
 
-    @Query(value = "SELECT * FROM project_tasks WHERE parent_id IS NULL\n" +
-            "UNION\n" +
-            "SELECT * FROM project_tasks WHERE parent_id in (:parentIds)\n" +
-            "ORDER BY level_order ASC", nativeQuery = true)
+    @Query(value = """            
+            SELECT * FROM project_tasks WHERE parent_id IS NULL
+            UNION
+            SELECT * FROM project_tasks WHERE parent_id in (:parentIds)
+            ORDER BY level_order ASC
+            """, nativeQuery = true)
     List<ProjectTaskImpl> findByParentIdInWithNullOrderByLevelOrderAsc(@Param("parentIds") Iterable<?> ids);
 
     @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parent_id = :parentId")
@@ -46,5 +48,21 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parent_id IS NULL")
     int getChildrenCount();
+
+    @Query(value = """
+            WITH found_task AS (
+            SELECT parent_id, level_order FROM project_tasks WHERE id = :id
+            )
+            SELECT *
+            FROM project_tasks
+            	JOIN found_task
+            	ON project_tasks.parent_id = found_task.parent_id
+            WHERE
+            	project_tasks.id NOT IN(:excludedIds)
+            	AND project_tasks.level_order > found_task.level_order
+            ORDER BY
+            	project_tasks.level_order
+            """, nativeQuery = true)
+    <I> List<ProjectTask> findTasksThatFollowTargetWithoutExcludedTasks(@Param("id") I targetId, @Param("excludedIds") Iterable<?> excludedIds);
 
 }

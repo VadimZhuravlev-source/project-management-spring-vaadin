@@ -71,7 +71,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     public ProjectTask save(ProjectTask projectTask, boolean validate, boolean recalculateTerms) {
 
         if (validate && !validate(projectTask)) return projectTask;
-        fillNecessaryFieldsIfIsNew(projectTask);
+        fillNecessaryFieldsIfItIsNew(projectTask);
         ProjectTask savedProjectTask = projectTaskRepository.save(projectTask);
         if (!recalculateTerms) {
             return savedProjectTask;
@@ -146,7 +146,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         // Get levelOrder for moved tasks
         Data_LevelOrder_ChangedTasks data = getMovedTasksAndLevelOrder(projectTaskList, target, dropLocation);
         List<ProjectTask> movedWithinOneParent = data.movedTasksWithinOneParent;
-        Integer levelOrder = data.levelOrder;
+        int levelOrder = data.levelOrder;
 
         Map<ProjectTask, ProjectTask> parentsOfParentMap = hierarchyService.getParentsOfParent(target).stream().collect(
                 Collectors.toMap(p -> p, p -> p));
@@ -164,13 +164,14 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             projectTask.setLevelOrder(++levelOrder);
         }
 
-        var checkedIds = projectTasks.stream().map(ProjectTask::getId).toList();
+        var checkedIds = projectTasks.stream().map(ProjectTask::getId).collect(Collectors.toList());
 
         if (dropLocation != GridDropLocation.ON_TOP) {
             checkedIds.add(target.getId());
         }
 
-        DependenciesSet dependenciesSet = dependenciesService.getAllDependenciesWithCheckedChildren(newParentId, checkedIds);
+        DependenciesSet dependenciesSet =
+                dependenciesService.getAllDependenciesWithCheckedChildren(newParentId, checkedIds);
 
         if (dependenciesSet.isCycle()) {
             dependenciesSet.fillWbs(this);
@@ -179,6 +180,14 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         }
 
         recalculateTerms(dependenciesSet);
+
+        if (dropLocation == GridDropLocation.ABOVE) target.setLevelOrder(++levelOrder);
+
+        if (!(dropLocation == GridDropLocation.ON_TOP)) {
+            List<ProjectTask> afterTargetProjectTasks =
+                    getAfterTargetProjectTasks(newParentId, movedWithinOneParent, levelOrder);
+            projectTaskList.addAll(afterTargetProjectTasks);
+        }
 
         projectTaskList.addAll(movedWithinOneParent);
         projectTaskRepository.saveAll(projectTaskList);
@@ -265,7 +274,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         if (projectTasks.size() == 0) return;
 
 
-        //TODO do through changeParent
+        //TODO do through changeLocation
 
 
 
@@ -334,6 +343,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         TestCase.createTestCase(this);
     }
 
+    @Override
     public void fillParent(ProjectTask projectTask) {
 
         if (projectTask.getParentId() == null) {
@@ -345,7 +355,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private void fillNecessaryFieldsIfIsNew(ProjectTask projectTask) {
+    private void fillNecessaryFieldsIfItIsNew(ProjectTask projectTask) {
 
         if (!projectTask.isNew()) return;
 
@@ -425,6 +435,21 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private static class Data_LevelOrder_ChangedTasks {
         List<ProjectTask> movedTasksWithinOneParent;
         Integer levelOrder;
+    }
+
+    private <I> List<ProjectTask> getAfterTargetProjectTasks(I target, List<ProjectTask> exceptedProjectTasks, Integer startLevelOrder) {
+
+        List<?> ids = exceptedProjectTasks.stream().map(ProjectTask::getId).toList();
+
+        List<ProjectTask> foundProjectTasks= projectTaskRepository.findTasksThatFollowTargetWithoutExcludedTasks(target, ids);
+
+        int level_order = startLevelOrder;
+        for (ProjectTask projectTask: foundProjectTasks) {
+            projectTask.setLevelOrder(++level_order);
+        }
+
+        return foundProjectTasks;
+
     }
 
     private void recalculateTerms(DependenciesSet dependenciesSet) {
