@@ -33,6 +33,7 @@ import javax.annotation.security.PermitAll;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Route(value="", layout = MainLayout.class)
 @PageTitle("Projects | PM")
@@ -106,14 +107,18 @@ public class ProjectTreeView extends VerticalLayout {
 //            treeGrid.getTreeData().clear();
 //            Map<?, Boolean> selectedIds = treeGrid.asMultiSelect().getSelectedItems()
 //                    .stream().collect(Collectors.toMap(ProjectTask::getId, p -> true));
-//
-//            treeGrid.asMultiSelect().clear();
+
+            Set<ProjectTask> selectedProjectTasks = treeGrid.asMultiSelect().getSelectedItems();
+
+            treeGrid.asMultiSelect().clear();
 //            Set<ProjectTask> selectedTasks = new HashSet<>(selectedIds.size());
 //
 //            populateTreeData(projectTasks, selectedIds, selectedTasks);
 //            treeGrid.asMultiSelect().setValue(selectedTasks);
 
             treeGrid.getDataProvider().refreshAll();
+
+            treeGrid.asMultiSelect().select(selectedProjectTasks);
 
         } catch (Throwable e) {
             showProblem(e);
@@ -449,19 +454,20 @@ public class ProjectTreeView extends VerticalLayout {
         try {
 
             ProjectTask dropTargetItem = event.getDropTargetItem().orElse(null);
-
             if (dropTargetItem == null) return;
+
+            Set<ProjectTask> draggedItems = event.getSource().getSelectedItems();
+            if (draggedItems == null) return;
 
             GridDropLocation dropLocation = event.getDropLocation();
 
-            Set<ProjectTask> draggedItems = event.getSource().getSelectedItems();
-            if (draggedItems == null || draggedItems.contains(dropTargetItem)) return;
+            if (dropLocation == GridDropLocation.ON_TOP && draggedItems.contains(dropTargetItem)) return;
 
             //if (!checkMovableDraggedItemsInDroppedItem(draggedItems, dropTargetItem)) return;
 
-            //projectTreeService.changeLocation(draggedItems, dropTargetItem, dropLocation);
+            projectTreeService.changeLocation(draggedItems, dropTargetItem, dropLocation);
 
-            //updateTreeGrid();
+            updateTreeGrid();
 
         } catch (Throwable e) {
             showProblem(e);

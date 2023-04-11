@@ -53,7 +53,7 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
             WITH found_task AS (
             SELECT parent_id, level_order FROM project_tasks WHERE id = :id
             )
-            SELECT *
+            SELECT project_tasks.*
             FROM project_tasks
             	JOIN found_task
             	ON project_tasks.parent_id = found_task.parent_id
@@ -63,6 +63,6 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
             ORDER BY
             	project_tasks.level_order
             """, nativeQuery = true)
-    <I> List<ProjectTask> findTasksThatFollowTargetWithoutExcludedTasks(@Param("id") I targetId, @Param("excludedIds") Iterable<?> excludedIds);
+    <I> List<ProjectTaskImpl> findTasksThatFollowAfterTargetWithoutExcludedTasks(@Param("id") I targetId, @Param("excludedIds") Iterable<?> excludedIds);
 
 }
