@@ -131,13 +131,13 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     @Override
     @Transactional
-    public void changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+    public Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
         if (!(dropLocation == GridDropLocation.ABOVE
                 || dropLocation == GridDropLocation.BELOW
-                || dropLocation == GridDropLocation.ON_TOP)) return;
+                || dropLocation == GridDropLocation.ON_TOP)) return new HashSet<>(0);
 
-        if (dropLocation == GridDropLocation.ON_TOP && projectTasks.contains(target)) return;
+        if (dropLocation == GridDropLocation.ON_TOP && projectTasks.contains(target)) return new HashSet<>(0);
 
         List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
         if (!projectTaskList.contains(target)) projectTaskList.add(target);
@@ -201,6 +201,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         parentIds.add(newParentId);
         List<ProjectTask> savedElements = recalculateLevelOrderForChildrenOfProjectTaskIds(parentIds);
         projectTaskRepository.saveAll(savedElements);
+
+        return projectTaskList.stream().filter(projectTasks::contains).collect(Collectors.toSet());
 
     }
 

@@ -12,7 +12,7 @@ public interface ProjectTreeService {
     List<ProjectTask> getTreeProjectTasks();
     ProjectTask sync(ProjectTask projectTask);
     void delete(List<? extends ProjectTask> projectTasks);
-    void changeLocation(Set<ProjectTask> projectTasks, ProjectTask parent, GridDropLocation dropLocation);
+    Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask parent, GridDropLocation dropLocation);
     List<ProjectTask> swap(Map<ProjectTask, ProjectTask> swappedTasks);
     void increaseTaskLevel(Set<ProjectTask> projectTasks);
     void decreaseTaskLevel(Set<ProjectTask> projectTasks);
