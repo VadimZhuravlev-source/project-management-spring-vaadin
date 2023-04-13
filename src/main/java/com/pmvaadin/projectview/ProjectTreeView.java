@@ -470,23 +470,7 @@ public class ProjectTreeView extends VerticalLayout {
             Set<ProjectTask> updatedTasks = projectTreeService.changeLocation(draggedItems, dropTargetItem, dropLocation);
 
             treeGrid.asMultiSelect().clear();
-            updatedTasks.forEach(projectTask -> {
-                ProjectTask parent = treeGrid.getDataCommunicator().getParentItem(projectTask);
-                if (parent == null) return;
-                projectTask.setWbs(parent.getWbs() + "." + projectTask.getLevelOrder());
-            });
             treeGrid.asMultiSelect().setValue(updatedTasks);
-
-//            dataProvider.addFetchedListener(fetchedChildren -> {
-//                Set<ProjectTask> selectedItemsHash = new HashSet<>(treeGrid.asMultiSelect().getSelectedItems());
-//                treeGrid.asMultiSelect().clear();
-//                for (ProjectTask projectTask: fetchedChildren) {
-//                    if (selectedItemsHash.contains(projectTask)) {
-//                        selectedItemsHash.add(projectTask);
-//                    }
-//                }
-//                treeGrid.asMultiSelect().setValue(selectedItemsHash);
-//            });
 
             updateTreeGrid();
 

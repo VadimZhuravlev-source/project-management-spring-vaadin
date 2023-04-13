@@ -130,79 +130,21 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    @Transactional
     public Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
-        if (!(dropLocation == GridDropLocation.ABOVE
-                || dropLocation == GridDropLocation.BELOW
-                || dropLocation == GridDropLocation.ON_TOP)) return new HashSet<>(0);
+        Set<ProjectTask> changedTasks = changeLocationInner(projectTasks, target, dropLocation);
 
-        if (dropLocation == GridDropLocation.ON_TOP && projectTasks.contains(target)) return new HashSet<>(0);
+        List<?> ids = changedTasks.stream().map(ProjectTask::getId).toList();
 
-        List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
-        if (!projectTaskList.contains(target)) projectTaskList.add(target);
+        Map<?, ProjectTask> projectTaskMap = getProjectTasksByIdWithFilledWbs(ids);
 
-        validateVersion(projectTaskList);
-
-        projectTaskList.remove(target);
-
-        // Get levelOrder for moved tasks
-        Data_LevelOrder_ChangedTasks data = getMovedTasksAndLevelOrder(projectTaskList, target, dropLocation);
-        List<ProjectTask> movedTasksWithinParent = data.movedTasksWithinParent;
-        int levelOrder = data.levelOrder;
-
-        Map<ProjectTask, ProjectTask> parentsOfParentMap = hierarchyService.getParentsOfParent(target).stream().collect(
-                Collectors.toMap(p -> p, p -> p));
-
-        var parentIds = new ArrayList<>();
-
-        var newParentId = target.getParentId();
-        if (dropLocation == GridDropLocation.ON_TOP) newParentId = target.getId();
-
-        for (ProjectTask projectTask: projectTaskList) {
-            if (parentsOfParentMap.get(projectTask) != null)
-                throw new StandardError("The project structure has been changed. Should update the project and try again.");
-            parentIds.add(projectTask.getParentId());
-            projectTask.setParentId(newParentId);
-            projectTask.setLevelOrder(++levelOrder);
+        for(ProjectTask projectTask: projectTasks) {
+            ProjectTask foundedPT = projectTaskMap.getOrDefault(projectTask.getId(), null);
+            if (foundedPT == null) continue;
+            foundedPT.setChildrenCount(projectTask.getChildrenCount());
         }
 
-        var checkedIds = projectTasks.stream().map(ProjectTask::getId).collect(Collectors.toList());
-
-//        if (dropLocation != GridDropLocation.ON_TOP) {
-//            checkedIds.add(target.getId());
-//        }
-
-        DependenciesSet dependenciesSet =
-                dependenciesService.getAllDependenciesWithCheckedChildren(newParentId, checkedIds);
-
-        if (dependenciesSet.isCycle()) {
-            dependenciesSet.fillWbs(this);
-            String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
-            throw new StandardError(message);
-        }
-
-        Set<ProjectTask> tasksWithRecalculatedTerms = recalculateTerms(dependenciesSet);
-        projectTaskList.addAll(tasksWithRecalculatedTerms);
-
-        if (dropLocation == GridDropLocation.ABOVE) target.setLevelOrder(++levelOrder);
-
-        if (!(dropLocation == GridDropLocation.ON_TOP)) {
-            List<ProjectTask> afterTargetProjectTasks =
-                    getTasksFollowingAfterTargetInBase(target.getId(), movedTasksWithinParent, levelOrder);
-            projectTaskList.addAll(afterTargetProjectTasks);
-        }
-
-        projectTaskList.add(target);
-        projectTaskList.addAll(movedTasksWithinParent);
-        // if there are project task duplicates in projectTaskList, that something is wrong in dependenciesSet or
-        // recalculateTerms or getTasksFollowingAfterTargetInBase. This situation has to additionally explore.
-        projectTaskRepository.saveAll(projectTaskList);
-        parentIds.add(newParentId);
-        List<ProjectTask> savedElements = recalculateLevelOrderForChildrenOfProjectTaskIds(parentIds);
-        projectTaskRepository.saveAll(savedElements);
-
-        return projectTaskList.stream().filter(projectTasks::contains).collect(Collectors.toSet());
+        return new HashSet<>(projectTaskMap.values());
 
     }
 
@@ -365,6 +307,78 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
+    @Transactional
+    private Set<ProjectTask> changeLocationInner(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+
+        if (!(dropLocation == GridDropLocation.ABOVE
+                || dropLocation == GridDropLocation.BELOW
+                || dropLocation == GridDropLocation.ON_TOP)) return new HashSet<>(0);
+
+        if (dropLocation == GridDropLocation.ON_TOP && projectTasks.contains(target)) return new HashSet<>(0);
+
+        List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
+        if (!projectTaskList.contains(target)) projectTaskList.add(target);
+
+        validateVersion(projectTaskList);
+
+        projectTaskList.remove(target);
+
+        // Get levelOrder for moved tasks
+        Data_LevelOrder_ChangedTasks data = getMovedTasksAndLevelOrder(projectTaskList, target, dropLocation);
+        List<ProjectTask> movedTasksWithinParent = data.movedTasksWithinParent;
+        int levelOrder = data.levelOrder;
+
+        Map<ProjectTask, ProjectTask> parentsOfParentMap = hierarchyService.getParentsOfParent(target).stream().collect(
+                Collectors.toMap(p -> p, p -> p));
+
+        var parentIds = new ArrayList<>();
+
+        var newParentId = target.getParentId();
+        if (dropLocation == GridDropLocation.ON_TOP) newParentId = target.getId();
+
+        for (ProjectTask projectTask: projectTaskList) {
+            if (parentsOfParentMap.get(projectTask) != null)
+                throw new StandardError("The project structure has been changed. Should update the project and try again.");
+            parentIds.add(projectTask.getParentId());
+            projectTask.setParentId(newParentId);
+            projectTask.setLevelOrder(++levelOrder);
+        }
+
+        var checkedIds = projectTasks.stream().map(ProjectTask::getId).collect(Collectors.toList());
+
+        DependenciesSet dependenciesSet =
+                dependenciesService.getAllDependenciesWithCheckedChildren(newParentId, checkedIds);
+
+        if (dependenciesSet.isCycle()) {
+            dependenciesSet.fillWbs(this);
+            String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
+            throw new StandardError(message);
+        }
+
+        Set<ProjectTask> tasksWithRecalculatedTerms = recalculateTerms(dependenciesSet);
+        projectTaskList.addAll(tasksWithRecalculatedTerms);
+
+        if (dropLocation == GridDropLocation.ABOVE) target.setLevelOrder(++levelOrder);
+
+        if (!(dropLocation == GridDropLocation.ON_TOP)) {
+            List<ProjectTask> afterTargetProjectTasks =
+                    getTasksFollowingAfterTargetInBase(target.getId(), movedTasksWithinParent, levelOrder);
+            projectTaskList.addAll(afterTargetProjectTasks);
+        }
+
+        projectTaskList.add(target);
+        projectTaskList.addAll(movedTasksWithinParent);
+        // if there are project task duplicates in projectTaskList, that something is wrong in dependenciesSet or
+        // recalculateTerms or getTasksFollowingAfterTargetInBase. This situation has to additionally explore.
+        projectTaskRepository.saveAll(projectTaskList);
+        parentIds.add(newParentId);
+        List<ProjectTask> savedElements = recalculateLevelOrderForChildrenOfProjectTaskIds(parentIds);
+        projectTaskRepository.saveAll(savedElements);
+
+        return projectTaskList.stream().filter(projectTasks::contains).collect(Collectors.toSet());
+
+    }
+
     private void fillNecessaryFieldsIfItIsNew(ProjectTask projectTask) {
 
         if (!projectTask.isNew()) return;
@@ -436,8 +450,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             if (levelOrder == null) levelOrder = 0;
         }
 
-        Data_LevelOrder_ChangedTasks data = new Data_LevelOrder_ChangedTasks(movedTasksWithinParent, levelOrder);
-        return data;
+        return new Data_LevelOrder_ChangedTasks(movedTasksWithinParent, levelOrder);
 
     }
 
@@ -451,16 +464,14 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         List<?> ids = exceptedProjectTasks.stream().map(ProjectTask::getId).toList();
 
-        List<ProjectTaskImpl> foundProjectTasks = projectTaskRepository.findTasksThatFollowAfterTargetWithoutExcludedTasks(targetId, ids);
+        List<ProjectTask> foundProjectTasks = projectTaskRepository.findTasksThatFollowAfterTargetWithoutExcludedTasks(targetId, ids);
 
         int level_order = startLevelOrder;
         for (ProjectTask projectTask: foundProjectTasks) {
             projectTask.setLevelOrder(++level_order);
         }
 
-        List<ProjectTask> foundProjectTasks1 = foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).toList();
-
-        return foundProjectTasks1;
+        return foundProjectTasks;
 
     }
 
@@ -490,11 +501,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         if (parentIds.stream().anyMatch(Objects::isNull)) {
             List<?> findingParentIds = parentIds.stream().filter(Objects::nonNull).collect(Collectors.toList());
-            List<ProjectTaskImpl> foundProjectTasks1 =
+            foundProjectTasks =
                     projectTaskRepository.findByParentIdInWithNullOrderByLevelOrderAsc(findingParentIds);
-            foundProjectTasks = foundProjectTasks1.stream()
-                    .map(projectTaskImpl -> (ProjectTask) projectTaskImpl)
-                    .toList();
         } else {
             foundProjectTasks = projectTaskRepository.findByParentIdInOrderByLevelOrderAsc(parentIds);
         }

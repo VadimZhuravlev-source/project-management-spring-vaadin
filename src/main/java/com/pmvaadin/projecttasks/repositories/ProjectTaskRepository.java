@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integer> {
 
@@ -16,7 +17,7 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     List<ProjectTask> findAllById(Iterable<?> ids);
 
-    Optional<ProjectTask> findById(Integer id);
+    <I> Optional<ProjectTask> findById(I id);
 
     void deleteAllById(Iterable<?> ids);
 
@@ -41,7 +42,13 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
             SELECT * FROM project_tasks WHERE parent_id in (:parentIds)
             ORDER BY level_order ASC
             """, nativeQuery = true)
-    List<ProjectTaskImpl> findByParentIdInWithNullOrderByLevelOrderAsc(@Param("parentIds") Iterable<?> ids);
+    List<ProjectTaskImpl> findByParentIdInWithNullOrderByLevelOrderAscInner(@Param("parentIds") Iterable<?> ids);
+
+    default List<ProjectTask> findByParentIdInWithNullOrderByLevelOrderAsc(Iterable<?> ids) {
+        List<ProjectTaskImpl> foundProjectTasks = findByParentIdInWithNullOrderByLevelOrderAscInner(ids);
+        return foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).collect(Collectors.toList());
+
+    }
 
     @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parent_id = :parentId")
     int getChildrenCount(@Param("parentId") Integer parentId);
@@ -63,6 +70,11 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
             ORDER BY
             	project_tasks.level_order
             """, nativeQuery = true)
-    <I> List<ProjectTaskImpl> findTasksThatFollowAfterTargetWithoutExcludedTasks(@Param("id") I targetId, @Param("excludedIds") Iterable<?> excludedIds);
+    <I> List<ProjectTaskImpl> findTasksThatFollowAfterTargetWithoutExcludedTasksInner(@Param("id") I targetId, @Param("excludedIds") Iterable<?> excludedIds);
+
+    default <I> List<ProjectTask> findTasksThatFollowAfterTargetWithoutExcludedTasks(I targetId, Iterable<?> excludedIds) {
+        List<ProjectTaskImpl> foundProjectTasks = findTasksThatFollowAfterTargetWithoutExcludedTasksInner(targetId, excludedIds);
+        return foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).collect(Collectors.toList());
+    }
 
 }
