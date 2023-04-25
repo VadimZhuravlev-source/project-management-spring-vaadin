@@ -5,7 +5,7 @@ import com.pmvaadin.commonobjects.ConfirmDialog;
 import com.pmvaadin.projectstructure.ProjectHierarchicalDataProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
-import com.pmvaadin.projectstructure.ProjectTreeService;
+import com.pmvaadin.projecttasks.services.ProjectTreeService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.pmvaadin.projecttasks.views.ProjectTaskForm;
@@ -24,7 +24,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.provider.hierarchy.TreeData;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -33,7 +32,6 @@ import javax.annotation.security.PermitAll;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Route(value="", layout = MainLayout.class)
 @PageTitle("Projects | PM")
@@ -160,10 +158,10 @@ public class ProjectTreeView extends VerticalLayout {
         deleteProjectTask.addClickShortcut(Key.DELETE);
 
         Button moveUp = new Button("Move up");
-        moveUp.addClickListener(event -> moveTasks(Direction.UP));
+        moveUp.addClickListener(event -> moveTasks(ProjectTreeService.Direction.UP));
 
         Button moveDown = new Button("Move down");
-        moveDown.addClickListener(event -> moveTasks(Direction.DOWN));
+        moveDown.addClickListener(event -> moveTasks(ProjectTreeService.Direction.DOWN));
 
         Button expandAll = new Button("Expand all");
         expandAll.addClickListener(this::expandAll);
@@ -320,43 +318,52 @@ public class ProjectTreeView extends VerticalLayout {
         removeClassName("editing");
     }
 
-    private void moveTasks(Direction direction) {
+    private void moveTasks(ProjectTreeService.Direction direction) {
 
-        ProjectTask projectTasks1 = treeGrid.asMultiSelect().getValue().stream().findFirst().orElse(null);
-        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
-        ProjectTask parent = treeData.getParent(projectTasks1);
-        List<ProjectTask> children = treeData.getChildren(parent);
+        Set<ProjectTask> selectedTasks = treeGrid.asMultiSelect().getValue();
 
-        ProjectTask projectTasks2 = null;
-        if (direction == Direction.UP) {
-            for (ProjectTask child : children) {
-                if (child.equals(projectTasks1)) break;
-                projectTasks2 = child;
-            }
-        }else {
-            for (int i = children.size() - 1; i >= 0; i--) {
-                if (children.get(i).equals(projectTasks1)) break;
-                projectTasks2 = children.get(i);
-            }
-        }
-
-        if (projectTasks2 == null) return;
-
-        List<? extends ProjectTask> replacedTasks;
         try {
-            Map<ProjectTask, ProjectTask> swappedTasks = new HashMap<>();
-            swappedTasks.put(projectTasks1, projectTasks2);
-            replacedTasks = projectTreeService.swap(swappedTasks);
+            projectTreeService.changeSortOrder(selectedTasks, direction);
         } catch (Throwable e) {
             showProblem(e);
-            return;
         }
-        int countReplacedTasks = 2;
-        if (replacedTasks.size() != countReplacedTasks) {
-            return;
-        }
-
         updateTreeGrid();
+
+//        ProjectTask projectTasks1 = treeGrid.asMultiSelect().getValue().stream().findFirst().orElse(null);
+//        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
+//        ProjectTask parent = treeData.getParent(projectTasks1);
+//        List<ProjectTask> children = treeData.getChildren(parent);
+//
+//        ProjectTask projectTasks2 = null;
+//        if (direction == Direction.UP) {
+//            for (ProjectTask child : children) {
+//                if (child.equals(projectTasks1)) break;
+//                projectTasks2 = child;
+//            }
+//        }else {
+//            for (int i = children.size() - 1; i >= 0; i--) {
+//                if (children.get(i).equals(projectTasks1)) break;
+//                projectTasks2 = children.get(i);
+//            }
+//        }
+//
+//        if (projectTasks2 == null) return;
+//
+//        List<? extends ProjectTask> replacedTasks;
+//        try {
+//            Map<ProjectTask, ProjectTask> swappedTasks = new HashMap<>();
+//            swappedTasks.put(projectTasks1, projectTasks2);
+//            replacedTasks = projectTreeService.changeSortOrder(swappedTasks, );
+//        } catch (Throwable e) {
+//            showProblem(e);
+//            return;
+//        }
+//        int countReplacedTasks = 2;
+//        if (replacedTasks.size() != countReplacedTasks) {
+//            return;
+//        }
+//
+//        updateTreeGrid();
 
     }
 

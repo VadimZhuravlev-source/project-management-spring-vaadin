@@ -1,6 +1,5 @@
 package com.pmvaadin.projecttasks.services;
 
-import com.pmvaadin.projectstructure.ProjectTreeService;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 
 import java.util.List;

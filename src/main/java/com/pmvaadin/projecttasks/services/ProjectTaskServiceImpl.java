@@ -7,7 +7,6 @@ import com.pmvaadin.projectstructure.TreeProjectTasks;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
@@ -134,64 +133,58 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         Set<ProjectTask> changedTasks = changeLocationInner(projectTasks, target, dropLocation);
 
-        List<?> ids = changedTasks.stream().map(ProjectTask::getId).toList();
-
-        Map<?, ProjectTask> projectTaskMap = getProjectTasksByIdWithFilledWbs(ids);
-
-        for(ProjectTask projectTask: projectTasks) {
-            ProjectTask foundedPT = projectTaskMap.getOrDefault(projectTask.getId(), null);
-            if (foundedPT == null) continue;
-            foundedPT.setChildrenCount(projectTask.getChildrenCount());
-        }
-
-        return new HashSet<>(projectTaskMap.values());
+        return getProjectTasksForSelection(projectTasks, changedTasks);
 
     }
 
     @Override
-    public List<ProjectTask> swap(Map<ProjectTask, ProjectTask> swappedTasks) {
+    public Set<ProjectTask> changeSortOrder(Set<ProjectTask> projectTasks, Direction direction) {
 
-        ProjectTask projectTask1 = null, projectTask2 = null;
-        for (Map.Entry<ProjectTask, ProjectTask> kv: swappedTasks.entrySet()) {
-            projectTask1 = kv.getKey();
-            projectTask2 = kv.getValue();
-            break;
-        }
+        Set<ProjectTask> changedTasks = changedSortOrderTransactional(projectTasks, direction);
 
-        List<Integer> ids = new ArrayList<>(2);
-        ids.add(projectTask1.getId());
-        ids.add(projectTask2.getId());
+        return getProjectTasksForSelection(projectTasks, changedTasks);
 
-        List<ProjectTask> projectTasksInBase = projectTaskRepository.findAllById(ids);
-
-        if (projectTasksInBase.size() != 2)
-            throw new StandardError("Roaming tasks do not exist. Should update project and try again.");
-
-        ProjectTask projectTask1InBase = null;
-        ProjectTask projectTask2InBase = null;
-        for (ProjectTask projectTask: projectTasksInBase) {
-            if (projectTask.equals(projectTask1)) projectTask1InBase = projectTask;
-            if (projectTask.equals(projectTask2)) projectTask2InBase = projectTask;
-        }
-
-        if (!projectTask1InBase.getVersion().equals(projectTask1.getVersion()) ||
-        !projectTask2InBase.getVersion().equals(projectTask2.getVersion())) {
-            throw new StandardError("Roaming tasks are changed by an another user. Should update the project and try again.");
-        }
-
-        Integer levelOrder = projectTask1InBase.getLevelOrder();
-        projectTask1InBase.setLevelOrder(projectTask2InBase.getLevelOrder());
-        projectTask2InBase.setLevelOrder(levelOrder);
-
-        List<ProjectTask> savedTasks = projectTaskRepository.saveAll(projectTasksInBase);
-
-        for (ProjectTask projectTask: savedTasks) {
-            if (projectTask.equals(projectTask1)) projectTask.setWbs(projectTask2.getWbs());
-            if (projectTask.equals(projectTask2)) projectTask.setWbs(projectTask1.getWbs());
-        }
-
-        return savedTasks;
-
+//        ProjectTask projectTask1 = null, projectTask2 = null;
+//        for (Map.Entry<ProjectTask, ProjectTask> kv: tasks.entrySet()) {
+//            projectTask1 = kv.getKey();
+//            projectTask2 = kv.getValue();
+//            break;
+//        }
+//
+//        List<Integer> ids = new ArrayList<>(2);
+//        ids.add(projectTask1.getId());
+//        ids.add(projectTask2.getId());
+//
+//        List<ProjectTask> projectTasksInBase = projectTaskRepository.findAllById(ids);
+//
+//        if (projectTasksInBase.size() != 2)
+//            throw new StandardError("Roaming tasks do not exist. Should update project and try again.");
+//
+//        ProjectTask projectTask1InBase = null;
+//        ProjectTask projectTask2InBase = null;
+//        for (ProjectTask projectTask: projectTasksInBase) {
+//            if (projectTask.equals(projectTask1)) projectTask1InBase = projectTask;
+//            if (projectTask.equals(projectTask2)) projectTask2InBase = projectTask;
+//        }
+//
+//        if (!projectTask1InBase.getVersion().equals(projectTask1.getVersion()) ||
+//        !projectTask2InBase.getVersion().equals(projectTask2.getVersion())) {
+//            throw new StandardError("Roaming tasks are changed by an another user. Should update the project and try again.");
+//        }
+//
+//        Integer levelOrder = projectTask1InBase.getLevelOrder();
+//        projectTask1InBase.setLevelOrder(projectTask2InBase.getLevelOrder());
+//        projectTask2InBase.setLevelOrder(levelOrder);
+//
+//        List<ProjectTask> savedTasks = projectTaskRepository.saveAll(projectTasksInBase);
+//
+//        for (ProjectTask projectTask: savedTasks) {
+//            if (projectTask.equals(projectTask1)) projectTask.setWbs(projectTask2.getWbs());
+//            if (projectTask.equals(projectTask2)) projectTask.setWbs(projectTask1.getWbs());
+//        }
+//
+//        return savedTasks;
+//
 //        return projectTaskRepository.replaceTasks(projectTask1.getId(), projectTask1.getVersion(),
 //                projectTask2.getId(), projectTask2.getVersion());
 
@@ -226,7 +219,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         if (projectTasks.size() == 0) return;
 
 
-        //TODO do through changeLocation
+        //TODO need to do through changeLocationInner
 
 
 
@@ -328,8 +321,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         List<ProjectTask> movedTasksWithinParent = data.movedTasksWithinParent;
         int levelOrder = data.levelOrder;
 
-        Map<ProjectTask, ProjectTask> parentsOfParentMap = hierarchyService.getParentsOfParent(target).stream().collect(
-                Collectors.toMap(p -> p, p -> p));
+        Map<ProjectTask, ProjectTask> parentsOfParentMap = new HashMap<>(0);
+        if (!projectTaskList.isEmpty())
+            parentsOfParentMap = hierarchyService.getParentsOfParent(target).stream()
+                    .collect(Collectors.toMap(p -> p, p -> p));
 
         var parentIds = new ArrayList<>();
 
@@ -341,7 +336,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
                 throw new StandardError("The project structure has been changed. Should update the project and try again.");
             parentIds.add(projectTask.getParentId());
             projectTask.setParentId(newParentId);
-            projectTask.setLevelOrder(++levelOrder);
+            projectTask.setLevelOrder(levelOrder++);
         }
 
         var checkedIds = projectTasks.stream().map(ProjectTask::getId).collect(Collectors.toList());
@@ -358,7 +353,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         Set<ProjectTask> tasksWithRecalculatedTerms = recalculateTerms(dependenciesSet);
         projectTaskList.addAll(tasksWithRecalculatedTerms);
 
-        if (dropLocation == GridDropLocation.ABOVE) target.setLevelOrder(++levelOrder);
+        if (dropLocation == GridDropLocation.ABOVE) target.setLevelOrder(levelOrder++);
 
         if (!(dropLocation == GridDropLocation.ON_TOP)) {
             List<ProjectTask> afterTargetProjectTasks =
@@ -376,6 +371,138 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         projectTaskRepository.saveAll(savedElements);
 
         return projectTaskList.stream().filter(projectTasks::contains).collect(Collectors.toSet());
+
+    }
+
+    @Transactional
+    private Set<ProjectTask> changedSortOrderTransactional(Set<ProjectTask> tasks, Direction direction) {
+
+        validateVersion(tasks);
+
+        List<?> ids = tasks.stream().map(ProjectTask::getId).toList();
+
+        int directionNumber = 1;
+        if (direction == Direction.UP) directionNumber = -1;
+
+        List<ProjectTask> foundTasks = projectTaskRepository.findTasksThatFollowBeforeGivenTasks(ids, directionNumber);
+
+        if (foundTasks.isEmpty()) return tasks;
+
+        List<PropertiesPT> persistedTasks =
+                foundTasks.stream()
+                        .map(projectTask -> new PropertiesPT(projectTask, true))
+                        .toList();
+
+        List<PropertiesPT> currentTasks = tasks.stream()
+                .map(projectTask -> new PropertiesPT(projectTask, false))
+                .collect(toList());
+
+        currentTasks.addAll(persistedTasks);
+        if (direction == Direction.UP)
+            currentTasks.sort(PropertiesPT::compareByPIDAndLevelOrder);
+        else
+            currentTasks.sort(PropertiesPT::compareByPIDAndLevelOrderReverse);;
+
+        Object previousParent = null;
+        PropertiesPT persistedElement = null;
+        int magnitudeOfChanging = 0;
+        //Integer currentParent = null;
+        for (PropertiesPT pw: currentTasks) {
+            ProjectTask projectTask = pw.value;
+            if (!Objects.equals(projectTask.getParentId(), previousParent)) {
+                previousParent = projectTask.getParentId();
+
+//                if (persistedElement != null) {
+//                    ProjectTask previousTask = persistedElement.value;
+//                    previousTask.setLevelOrder(previousTask.getLevelOrder() + directionNumber * magnitudeOfChanging);
+//                }
+
+                persistedElement = null;
+//                magnitudeOfChanging = 0;
+            }
+            if (pw.inBase) {
+
+//                if (persistedElement == null) {
+                    persistedElement = pw;
+                    continue;
+//                }
+//
+//                ProjectTask previousTask = persistedElement.value;
+//                previousTask.setLevelOrder(previousTask.getLevelOrder() + directionNumber * magnitudeOfChanging);
+//                magnitudeOfChanging = 0;
+//                continue;
+            }
+
+            if (persistedElement == null) continue;
+
+            int levelOrderOfCurrentTask = projectTask.getLevelOrder();
+            ProjectTask previousTask = persistedElement.value;
+            int levelOrderOfPreviousTask = previousTask.getLevelOrder();
+
+            projectTask.setLevelOrder(levelOrderOfPreviousTask);
+            previousTask.setLevelOrder(levelOrderOfCurrentTask);
+
+//            if (currentLevelOrder == 1) continue;
+//
+//            projectTask.setLevelOrder(++currentLevelOrder);
+//
+//            magnitudeOfChanging++;
+
+        }
+
+        Set<ProjectTask> savedTasks = currentTasks.stream()
+                .map(propertiesPT -> propertiesPT.value).collect(Collectors.toSet());
+
+        //projectTaskRepository.saveAll(savedTasks);
+
+        savedTasks.retainAll(tasks);
+
+        return savedTasks;
+
+//        foundTasks.addAll(tasks);
+//        Map<?, List<ProjectTask>> groupedElements =
+//                foundTasks.stream().collect(groupingBy(ProjectTask::getParentId, toList()));
+//
+//        Collection<List<ProjectTask>> elements = groupedElements.values();
+
+//        for(List<ProjectTask> innerElements: elements) {
+//            for(P)
+//        }
+
+    }
+
+    @AllArgsConstructor
+    private static class PropertiesPT {
+        ProjectTask value;
+        boolean inBase;
+        
+        static int compareByPIDAndLevelOrder(PropertiesPT o1, PropertiesPT o2) {
+            ProjectTask p1 = o1.value;
+            ProjectTask p2 = o2.value;
+            int result = Integer.compare(p1.getParentId(), p2.getParentId());
+            if (result != 0) return result;
+            return Integer.compare(p1.getLevelOrder(), p2.getLevelOrder());    
+        }
+
+        static int compareByPIDAndLevelOrderReverse(PropertiesPT o1, PropertiesPT o2) {
+            return compareByPIDAndLevelOrder(o2, o1);
+        }
+
+    }
+
+    private Set<ProjectTask> getProjectTasksForSelection(Set<ProjectTask> projectTasks, Set<ProjectTask> changedTasks) {
+
+        List<?> ids = changedTasks.stream().map(ProjectTask::getId).toList();
+
+        Map<?, ProjectTask> projectTaskMap = getProjectTasksByIdWithFilledWbs(ids);
+
+        for(ProjectTask projectTask: projectTasks) {
+            ProjectTask foundedPT = projectTaskMap.getOrDefault(projectTask.getId(), null);
+            if (foundedPT == null) continue;
+            foundedPT.setChildrenCount(projectTask.getChildrenCount());
+        }
+
+        return new HashSet<>(projectTaskMap.values());
 
     }
 
@@ -466,12 +593,20 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         List<ProjectTask> foundProjectTasks = projectTaskRepository.findTasksThatFollowAfterTargetWithoutExcludedTasks(targetId, ids);
 
+        ArrayList<ProjectTask> savedTasks = new ArrayList<>(foundProjectTasks.size());
         int level_order = startLevelOrder;
         for (ProjectTask projectTask: foundProjectTasks) {
+            if (level_order == projectTask.getLevelOrder()) {
+                level_order++;
+                continue;
+            }
             projectTask.setLevelOrder(++level_order);
+            savedTasks.add(projectTask);
         }
 
-        return foundProjectTasks;
+        savedTasks.trimToSize();
+
+        return savedTasks;
 
     }
 

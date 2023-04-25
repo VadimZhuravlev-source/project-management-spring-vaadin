@@ -77,4 +77,29 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
         return foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).collect(Collectors.toList());
     }
 
+    @Query(value = """
+            WITH found_task AS (
+            SELECT id, parent_id, level_order FROM project_tasks WHERE id IN(:ids)
+            )
+            SELECT project_tasks.*
+            FROM project_tasks
+                JOIN found_task
+                ON
+                    CASE WHEN found_task.parent_id IS NULL
+                        THEN project_tasks.parent_id IS NULL
+                        ELSE project_tasks.parent_id = found_task.parent_id
+                    END
+            WHERE
+                project_tasks.id NOT IN(:ids)
+                AND project_tasks.level_order = found_task.level_order + :direction
+            """, nativeQuery = true)
+    List<ProjectTaskImpl> findTasksThatFollowBeforeGivenTasksIds(@Param("ids") Iterable<?> tasksIds, @Param("direction") int direction);
+
+    default List<ProjectTask> findTasksThatFollowBeforeGivenTasks(Iterable<?> tasksIds, int direction) {
+        List<ProjectTaskImpl> foundProjectTasks = findTasksThatFollowBeforeGivenTasksIds(tasksIds, direction);
+        return foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).collect(Collectors.toList());
+    }
+
+
+
 }

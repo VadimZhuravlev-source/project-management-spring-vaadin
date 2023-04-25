@@ -1,10 +1,9 @@
-package com.pmvaadin.projectstructure;
+package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public interface ProjectTreeService {
@@ -13,10 +12,15 @@ public interface ProjectTreeService {
     ProjectTask sync(ProjectTask projectTask);
     void delete(List<? extends ProjectTask> projectTasks);
     Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask parent, GridDropLocation dropLocation);
-    List<ProjectTask> swap(Map<ProjectTask, ProjectTask> swappedTasks);
+    Set<ProjectTask> changeSortOrder(Set<ProjectTask> tasks, Direction direction);
     void increaseTaskLevel(Set<ProjectTask> projectTasks);
     void decreaseTaskLevel(Set<ProjectTask> projectTasks);
 
     void createTestCase();
+
+    enum Direction {
+        UP,
+        DOWN
+    }
 
 }
