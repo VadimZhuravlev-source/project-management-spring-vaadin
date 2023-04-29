@@ -326,14 +326,14 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             parentsOfParentMap = hierarchyService.getParentsOfParent(target).stream()
                     .collect(Collectors.toMap(p -> p, p -> p));
 
-        var parentIds = new ArrayList<>();
+        var parentIds = new HashSet<>();
 
         var newParentId = target.getParentId();
         if (dropLocation == GridDropLocation.ON_TOP) newParentId = target.getId();
 
         for (ProjectTask projectTask: projectTaskList) {
             if (parentsOfParentMap.get(projectTask) != null)
-                throw new StandardError("The project structure has been changed. Should update the project and try again.");
+                throw new StandardError("The project structure has been changed. You should update the project and try again.");
             parentIds.add(projectTask.getParentId());
             projectTask.setParentId(newParentId);
             projectTask.setLevelOrder(levelOrder++);
@@ -341,17 +341,23 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         var checkedIds = projectTasks.stream().map(ProjectTask::getId).collect(Collectors.toList());
 
-        DependenciesSet dependenciesSet =
-                dependenciesService.getAllDependenciesWithCheckedChildren(newParentId, checkedIds);
+        Set<ProjectTask> tasksWithChangedTerms;
+        if (newParentId != null) {
 
-        if (dependenciesSet.isCycle()) {
-            dependenciesSet.fillWbs(this);
-            String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
-            throw new StandardError(message);
+            DependenciesSet dependenciesSet =
+                    dependenciesService.getAllDependenciesWithCheckedChildren(newParentId, checkedIds);
+
+            if (dependenciesSet.isCycle()) {
+                dependenciesSet.fillWbs(this);
+                String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
+                throw new StandardError(message);
+            }
+            tasksWithChangedTerms = recalculateTerms(dependenciesSet, parentIds);
+        } else {
+            tasksWithChangedTerms = recalculateTerms(parentIds);
         }
 
-        Set<ProjectTask> tasksWithRecalculatedTerms = recalculateTerms(dependenciesSet);
-        projectTaskList.addAll(tasksWithRecalculatedTerms);
+        projectTaskList.addAll(tasksWithChangedTerms);
 
         if (dropLocation == GridDropLocation.ABOVE) target.setLevelOrder(levelOrder++);
 
@@ -405,32 +411,16 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         Object previousParent = null;
         PropertiesPT persistedElement = null;
-        int magnitudeOfChanging = 0;
-        //Integer currentParent = null;
+        HashSet<ProjectTask> savedTasks = new HashSet<>(currentTasks.size());
         for (PropertiesPT pw: currentTasks) {
             ProjectTask projectTask = pw.value;
             if (!Objects.equals(projectTask.getParentId(), previousParent)) {
                 previousParent = projectTask.getParentId();
-
-//                if (persistedElement != null) {
-//                    ProjectTask previousTask = persistedElement.value;
-//                    previousTask.setLevelOrder(previousTask.getLevelOrder() + directionNumber * magnitudeOfChanging);
-//                }
-
                 persistedElement = null;
-//                magnitudeOfChanging = 0;
             }
             if (pw.inBase) {
-
-//                if (persistedElement == null) {
-                    persistedElement = pw;
-                    continue;
-//                }
-//
-//                ProjectTask previousTask = persistedElement.value;
-//                previousTask.setLevelOrder(previousTask.getLevelOrder() + directionNumber * magnitudeOfChanging);
-//                magnitudeOfChanging = 0;
-//                continue;
+                persistedElement = pw;
+                continue;
             }
 
             if (persistedElement == null) continue;
@@ -441,33 +431,16 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
             projectTask.setLevelOrder(levelOrderOfPreviousTask);
             previousTask.setLevelOrder(levelOrderOfCurrentTask);
-
-//            if (currentLevelOrder == 1) continue;
-//
-//            projectTask.setLevelOrder(++currentLevelOrder);
-//
-//            magnitudeOfChanging++;
+            savedTasks.add(projectTask);
+            savedTasks.add(previousTask);
 
         }
 
-        Set<ProjectTask> savedTasks = currentTasks.stream()
-                .map(propertiesPT -> propertiesPT.value).collect(Collectors.toSet());
-
-        //projectTaskRepository.saveAll(savedTasks);
+        projectTaskRepository.saveAll(savedTasks);
 
         savedTasks.retainAll(tasks);
 
         return savedTasks;
-
-//        foundTasks.addAll(tasks);
-//        Map<?, List<ProjectTask>> groupedElements =
-//                foundTasks.stream().collect(groupingBy(ProjectTask::getParentId, toList()));
-//
-//        Collection<List<ProjectTask>> elements = groupedElements.values();
-
-//        for(List<ProjectTask> innerElements: elements) {
-//            for(P)
-//        }
 
     }
 
@@ -479,7 +452,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         static int compareByPIDAndLevelOrder(PropertiesPT o1, PropertiesPT o2) {
             ProjectTask p1 = o1.value;
             ProjectTask p2 = o2.value;
-            int result = Integer.compare(p1.getParentId(), p2.getParentId());
+            int parentId1 = p1.getParentId() == null ? p1.getNullId() : p1.getParentId();
+            int parentId2 = p2.getParentId() == null ? p2.getNullId() : p2.getParentId();
+            int result = Integer.compare(parentId1, parentId2);
             if (result != 0) return result;
             return Integer.compare(p1.getLevelOrder(), p2.getLevelOrder());    
         }
@@ -610,15 +585,21 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private Set<ProjectTask> recalculateTerms(DependenciesSet dependenciesSet) {
+    private Set<ProjectTask> recalculateTerms(DependenciesSet dependenciesSet, Set<?> taskIds) {
         return new HashSet(0);
         // TODO recalculate terms
     }
 
-    private void recalculateTerms(ProjectTask projectTask) {
+    private Set<ProjectTask> recalculateTerms(Set<?> taskIds) {
+        return new HashSet(0);
+        // TODO recalculate terms
+    }
+
+    private Set<ProjectTask> recalculateTerms(ProjectTask projectTask) {
         // TODO recalculate terms
         // TODO getting dependencies and check changing terms
         //recalculateTerms(DependenciesSet dependenciesSet);
+        return new HashSet(0);
     }
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {
@@ -630,7 +611,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private List<ProjectTask> recalculateLevelOrderForChildrenOfProjectTaskIds(List<?> parentIds) {
+    private List<ProjectTask> recalculateLevelOrderForChildrenOfProjectTaskIds(Collection<?> parentIds) {
 
         List<ProjectTask> foundProjectTasks;
 

@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Nonnull;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,7 +78,7 @@ public class DependenciesServiceImpl implements DependenciesService {
 
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
 
-        if (pid == null || isNullElement) throw new IllegalArgumentException();
+        if (pid == null || isNullElement) throw new IllegalArgumentException("Passed parameters haven't to be null.");
 
         String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
         parameterValue = "'" + parameterValue + "'";
