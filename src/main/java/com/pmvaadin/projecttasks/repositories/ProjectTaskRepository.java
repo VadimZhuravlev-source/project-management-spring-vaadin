@@ -63,7 +63,10 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
             SELECT project_tasks.*
             FROM project_tasks
             	JOIN found_task
-            	ON project_tasks.parent_id = found_task.parent_id
+                    CASE WHEN found_task.parent_id IS NULL
+                        THEN project_tasks.parent_id IS NULL
+                        ELSE project_tasks.parent_id = found_task.parent_id
+                    END
             WHERE
             	project_tasks.id NOT IN(:excludedIds)
             	AND project_tasks.level_order > found_task.level_order
@@ -100,6 +103,29 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
         return foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).collect(Collectors.toList());
     }
 
+    @Query(value = """
+            WITH found_task AS (
+            SELECT id, parent_id, level_order FROM project_tasks WHERE id IN(:ids)
+            )
+            SELECT DISTINCT
+                project_tasks.*
+            FROM project_tasks
+                JOIN found_task
+                    ON CASE WHEN found_task.parent_id IS NULL
+                        THEN project_tasks.parent_id IS NULL
+                        ELSE project_tasks.parent_id = found_task.parent_id
+                    END
+            WHERE
+                project_tasks.level_order >= found_task.level_order
+            ORDER BY
+                project_tasks.parent_id,
+                project_tasks.level_order
+            """, nativeQuery = true)
+    List<ProjectTaskImpl> findTasksThatFollowAfterGivenTasksIds(@Param("ids") Iterable<?> tasksIds);
 
+    default List<ProjectTask> findTasksThatFollowAfterGivenTasks(Iterable<?> tasksIds) {
+        List<ProjectTaskImpl> foundProjectTasks = findTasksThatFollowAfterGivenTasksIds(tasksIds);
+        return foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).collect(Collectors.toList());
+    }
 
 }

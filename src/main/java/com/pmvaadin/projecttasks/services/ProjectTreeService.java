@@ -13,6 +13,7 @@ public interface ProjectTreeService {
     void delete(List<? extends ProjectTask> projectTasks);
     Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask parent, GridDropLocation dropLocation);
     Set<ProjectTask> changeSortOrder(Set<ProjectTask> tasks, Direction direction);
+    Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, Direction direction);
     void increaseTaskLevel(Set<ProjectTask> projectTasks);
     void decreaseTaskLevel(Set<ProjectTask> projectTasks);
 

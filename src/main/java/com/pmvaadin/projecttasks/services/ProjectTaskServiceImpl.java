@@ -138,55 +138,20 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
+    public Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, Direction direction) {
+
+        Set<ProjectTask> changedTasks = changeLocationInner(projectTasks, direction);
+
+        return getProjectTasksForSelection(projectTasks, changedTasks);
+
+    }
+
+    @Override
     public Set<ProjectTask> changeSortOrder(Set<ProjectTask> projectTasks, Direction direction) {
 
         Set<ProjectTask> changedTasks = changedSortOrderTransactional(projectTasks, direction);
 
         return getProjectTasksForSelection(projectTasks, changedTasks);
-
-//        ProjectTask projectTask1 = null, projectTask2 = null;
-//        for (Map.Entry<ProjectTask, ProjectTask> kv: tasks.entrySet()) {
-//            projectTask1 = kv.getKey();
-//            projectTask2 = kv.getValue();
-//            break;
-//        }
-//
-//        List<Integer> ids = new ArrayList<>(2);
-//        ids.add(projectTask1.getId());
-//        ids.add(projectTask2.getId());
-//
-//        List<ProjectTask> projectTasksInBase = projectTaskRepository.findAllById(ids);
-//
-//        if (projectTasksInBase.size() != 2)
-//            throw new StandardError("Roaming tasks do not exist. Should update project and try again.");
-//
-//        ProjectTask projectTask1InBase = null;
-//        ProjectTask projectTask2InBase = null;
-//        for (ProjectTask projectTask: projectTasksInBase) {
-//            if (projectTask.equals(projectTask1)) projectTask1InBase = projectTask;
-//            if (projectTask.equals(projectTask2)) projectTask2InBase = projectTask;
-//        }
-//
-//        if (!projectTask1InBase.getVersion().equals(projectTask1.getVersion()) ||
-//        !projectTask2InBase.getVersion().equals(projectTask2.getVersion())) {
-//            throw new StandardError("Roaming tasks are changed by an another user. Should update the project and try again.");
-//        }
-//
-//        Integer levelOrder = projectTask1InBase.getLevelOrder();
-//        projectTask1InBase.setLevelOrder(projectTask2InBase.getLevelOrder());
-//        projectTask2InBase.setLevelOrder(levelOrder);
-//
-//        List<ProjectTask> savedTasks = projectTaskRepository.saveAll(projectTasksInBase);
-//
-//        for (ProjectTask projectTask: savedTasks) {
-//            if (projectTask.equals(projectTask1)) projectTask.setWbs(projectTask2.getWbs());
-//            if (projectTask.equals(projectTask2)) projectTask.setWbs(projectTask1.getWbs());
-//        }
-//
-//        return savedTasks;
-//
-//        return projectTaskRepository.replaceTasks(projectTask1.getId(), projectTask1.getVersion(),
-//                projectTask2.getId(), projectTask2.getVersion());
 
     }
 
@@ -301,16 +266,81 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Transactional
+    private Set<ProjectTask> changeLocationInner(Set<ProjectTask> projectTasks, Direction direction) {
+
+        validateVersion(projectTasks);
+
+        if (direction == Direction.UP)
+            return changeLocationUp(projectTasks);
+        else
+            return changeLocationDown(projectTasks);
+
+    }
+
+    private Set<ProjectTask> changeLocationUp(Set<ProjectTask> projectTasks) {
+
+        List<ProjectTask> changeableTasks = projectTasks.stream().filter(p -> p.getParentId() != null)
+                .toList();
+
+        if (changeableTasks.isEmpty()) return new HashSet<>(0);
+
+        var parentIds = changeableTasks.stream()
+                .map(ProjectTask::getParentId).distinct()
+                .toList();
+
+        List<ProjectTask> tasksThatFollowAfterParents = projectTaskRepository.findTasksThatFollowAfterGivenTasks(parentIds);
+
+        if (tasksThatFollowAfterParents.isEmpty()) return new HashSet<>(0);
+
+        Map<?, List<ProjectTask>> groupedByParentId = changeableTasks.stream().collect(groupingBy(ProjectTask::getParentId));
+
+        Object previousParentId = tasksThatFollowAfterParents.get(0).getParentId();
+        int magnitudeChanging = 0;
+        ArrayList<ProjectTask> savedTasks = new ArrayList<>(tasksThatFollowAfterParents.size() + changeableTasks.size());
+        for (ProjectTask task: tasksThatFollowAfterParents) {
+            if (!Objects.equals(task.getParentId(), previousParentId)) {
+                magnitudeChanging = 0;
+                previousParentId = task.getParentId();
+            }
+
+            int currentLevelOrder = task.getLevelOrder() + magnitudeChanging;
+            if (magnitudeChanging != 0) {
+                task.setLevelOrder(currentLevelOrder);
+                savedTasks.add(task);
+            }
+            List<ProjectTask> movedTasks = groupedByParentId.getOrDefault(task.getId(), null);
+            if (movedTasks != null) {
+                for (ProjectTask movedTask: movedTasks) {
+                    movedTask.setParentId(task.getParentId());
+                    movedTask.setLevelOrder(currentLevelOrder + 1);
+                    savedTasks.add(movedTask);
+                    magnitudeChanging++;
+                }
+            }
+
+        }
+
+        projectTaskRepository.saveAll(savedTasks);
+
+        return projectTasks;
+    }
+
+    private Set<ProjectTask> changeLocationDown(Set<ProjectTask> projectTasks) {
+        return projectTasks;
+    }
+
+    @Transactional
     private Set<ProjectTask> changeLocationInner(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
         if (!(dropLocation == GridDropLocation.ABOVE
                 || dropLocation == GridDropLocation.BELOW
                 || dropLocation == GridDropLocation.ON_TOP)) return new HashSet<>(0);
 
-        if (dropLocation == GridDropLocation.ON_TOP && projectTasks.contains(target)) return new HashSet<>(0);
+        boolean targetIsInProjectTasks = projectTasks.contains(target);
+        if (dropLocation == GridDropLocation.ON_TOP && targetIsInProjectTasks) return new HashSet<>(0);
 
         List<ProjectTask> projectTaskList = new ArrayList<>(projectTasks);
-        if (!projectTaskList.contains(target)) projectTaskList.add(target);
+        if (!targetIsInProjectTasks) projectTaskList.add(target);
 
         validateVersion(projectTaskList);
 
@@ -409,7 +439,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         else
             currentTasks.sort(PropertiesPT::compareByPIDAndLevelOrderReverse);;
 
-        Object previousParent = null;
+        Object previousParent = currentTasks.get(0);
         PropertiesPT persistedElement = null;
         HashSet<ProjectTask> savedTasks = new HashSet<>(currentTasks.size());
         for (PropertiesPT pw: currentTasks) {
