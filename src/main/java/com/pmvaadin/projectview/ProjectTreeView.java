@@ -182,7 +182,7 @@ public class ProjectTreeView extends VerticalLayout {
                 //filterText,
                 addProjectTask, deleteProjectTask, updateTreeData,
                 changeLevelUp,
-                //changeLevelDown,
+                changeLevelDown,
                 createTestCase,
                 moveUp, moveDown, expandAll, collapseAll);
 
@@ -192,21 +192,32 @@ public class ProjectTreeView extends VerticalLayout {
     }
 
     private void increaseTaskLevel(ClickEvent<Button> clickEvent) {
+
+        changeLocation(ProjectTreeService.Direction.UP);
+
+    }
+
+    private void decreaseTaskLevel(ClickEvent<Button> clickEvent) {
+
+        changeLocation(ProjectTreeService.Direction.DOWN);
+
+    }
+
+    private void changeLocation(ProjectTreeService.Direction direction) {
+
         try {
 
             Set<ProjectTask> selectedProjectTasks = treeGrid.asMultiSelect().getValue();
 
-            projectTreeService.increaseTaskLevel(selectedProjectTasks);
+            Set<ProjectTask> changedTasks = projectTreeService.changeLocation(selectedProjectTasks, direction);
+
+            treeGrid.asMultiSelect().setValue(changedTasks);
 
             updateTreeGrid();
 
         } catch (Throwable e) {
             showProblem(e);
         }
-
-    }
-
-    private void decreaseTaskLevel(ClickEvent<Button> clickEvent) {
 
     }
 
@@ -219,13 +230,13 @@ public class ProjectTreeView extends VerticalLayout {
 
     private void expandAll(ClickEvent<Button> clickEvent) {
 
-        treeGrid.expandRecursively(treeGrid.getTreeData().getRootItems(), 20);
+        //treeGrid.expandRecursively(treeGrid.getTreeData().getRootItems(), 20);
 
     }
 
     private void collapseAll(ClickEvent<Button> clickEvent) {
 
-        treeGrid.collapseRecursively(treeGrid.getTreeData().getRootItems(), 20);
+        //treeGrid.collapseRecursively(treeGrid.getTreeData().getRootItems(), 20);
 
     }
 
@@ -241,22 +252,6 @@ public class ProjectTreeView extends VerticalLayout {
         updateTreeGrid();
 
         closeEditor();
-
-//        try {
-//            projectDataService.saveTask(savedProjectTask);
-//        } catch (Throwable e) {
-//            showProblem(e);
-//            return;
-//        }
-//
-//        treeGrid.asMultiSelect().clear();
-//        Set<ProjectTask> selectedTasks = new HashSet<>(1);
-//        selectedTasks.add(savedProjectTask);
-//        treeGrid.asMultiSelect().setValue(selectedTasks);
-//
-//        updateTreeGrid();
-//
-//        closeEditor();
 
     }
 
@@ -277,25 +272,15 @@ public class ProjectTreeView extends VerticalLayout {
     }
 
     private void editProjectTask(ProjectTask projectTask) {
-//        if (projectTasks == null || projectTasks.size() != 1) {
-//            closeEditor();
-//        } else {
-//            ProjectTask projectTask = projectTasks.stream().findFirst().orElse(null);
-//            editingForm.setProjectTask(projectTask);
-//            editingForm.setVisible(true);
-        try {
-            editingForm = projectTaskForm.newInstance();
-            removeClassName("editing");
-            editingForm.setProjectTask(projectTask);
-            editingForm.addListener(ProjectTaskForm.SaveEvent.class, this::saveProjectTask);
-            //editingForm.addListener(ProjectTaskForm.DeleteEvent.class, this::deleteProjectTaskEvent);
-            editingForm.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
-            editingForm.open();
-            addClassName("editing");
-        } catch (Exception e) {
-            showProblem(e);
-        }
-//        }
+
+        editingForm = projectTaskForm.newInstance();
+        removeClassName("editing");
+        editingForm.setProjectTask(projectTask);
+        editingForm.addListener(ProjectTaskForm.SaveEvent.class, this::saveProjectTask);
+        editingForm.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
+        editingForm.open();
+        addClassName("editing");
+
     }
 
     private void addProjectTask() {
@@ -328,42 +313,6 @@ public class ProjectTreeView extends VerticalLayout {
             showProblem(e);
         }
         updateTreeGrid();
-
-//        ProjectTask projectTasks1 = treeGrid.asMultiSelect().getValue().stream().findFirst().orElse(null);
-//        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
-//        ProjectTask parent = treeData.getParent(projectTasks1);
-//        List<ProjectTask> children = treeData.getChildren(parent);
-//
-//        ProjectTask projectTasks2 = null;
-//        if (direction == Direction.UP) {
-//            for (ProjectTask child : children) {
-//                if (child.equals(projectTasks1)) break;
-//                projectTasks2 = child;
-//            }
-//        }else {
-//            for (int i = children.size() - 1; i >= 0; i--) {
-//                if (children.get(i).equals(projectTasks1)) break;
-//                projectTasks2 = children.get(i);
-//            }
-//        }
-//
-//        if (projectTasks2 == null) return;
-//
-//        List<? extends ProjectTask> replacedTasks;
-//        try {
-//            Map<ProjectTask, ProjectTask> swappedTasks = new HashMap<>();
-//            swappedTasks.put(projectTasks1, projectTasks2);
-//            replacedTasks = projectTreeService.changeSortOrder(swappedTasks, );
-//        } catch (Throwable e) {
-//            showProblem(e);
-//            return;
-//        }
-//        int countReplacedTasks = 2;
-//        if (replacedTasks.size() != countReplacedTasks) {
-//            return;
-//        }
-//
-//        updateTreeGrid();
 
     }
 
@@ -507,10 +456,5 @@ public class ProjectTreeView extends VerticalLayout {
 //
 //        return true;
 //    }
-
-    private enum Direction {
-        UP,
-        DOWN
-    }
 
 }

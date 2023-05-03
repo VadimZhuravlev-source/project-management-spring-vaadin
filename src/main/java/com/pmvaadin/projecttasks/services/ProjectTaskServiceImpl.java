@@ -112,7 +112,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
                 .map(ProjectTask::getId).toList();
 
         projectTaskRepository.deleteAllById(projectTaskIds);
-        List<ProjectTask> savedElements = recalculateLevelOrderForChildrenOfProjectTaskIds(parentIds);
+        List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(parentIds);
         projectTaskRepository.saveAll(savedElements);
 
     }
@@ -161,7 +161,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(List<?> ids) {
+    public Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(Collection<?> ids) {
 
         if (ids.size() == 0) return new HashMap<>();
 
@@ -174,77 +174,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         return projectTasks.stream().
                 filter(projectTask -> filter.containsKey(projectTask.getId())).
                 collect(Collectors.toMap(ProjectTask::getId, p -> p));
-
-    }
-
-    @Override
-    @Transactional
-    public void increaseTaskLevel(Set<ProjectTask> projectTasks) {
-
-        if (projectTasks.size() == 0) return;
-
-
-        //TODO need to do through changeLocationInner
-
-
-
-
-        // do only for one task
-        var projectTask = projectTasks.stream().findFirst().orElse(null);
-        if (projectTask == null) return;
-
-        var syncProjectTask = projectTaskRepository.findById(projectTask.getId()).orElse(null);
-        if (syncProjectTask == null) return; // TODO throw exception
-        if (!syncProjectTask.getVersion().equals(projectTask.getVersion())) return; // TODO throw exception
-
-        var parentId = syncProjectTask.getParentId();
-        if (parentId == null) return;
-        var parent = projectTaskRepository.findById(parentId).orElse(null);
-
-        // TODO validate links
-
-        if (parent == null) return;
-        var parentOfParentId = parent.getParentId();
-
-        var maxLevelOrder = 0;
-        if (parentOfParentId == null) maxLevelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
-        else maxLevelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentOfParentId);
-
-        syncProjectTask.setParentId(parentOfParentId);
-        syncProjectTask.setLevelOrder(++maxLevelOrder);
-
-        projectTaskRepository.save(syncProjectTask);
-
-        // TODO change parent for all selected tasks
-//        var ids = projectTasks.stream().map(ProjectTask::getId).toList();
-//        var syncedProjectTasks = projectTaskRepository.findAllById(ids).stream()
-//                .filter(projectTask -> projectTask.getParentId() != null)
-//                .collect(Collectors.toMap(p -> p, p -> p));
-//        validateVersion(projectTasks, syncedProjectTasks);
-//
-//        validateLinks();
-//        recalculateTerms();
-//
-//        var parentIds = syncedProjectTasks.keySet().stream().map(ProjectTask::getParentId).toList();
-//
-//        var parents = projectTaskRepository.findAllById(parentIds);
-//
-//        var parentsOfParentsHighLevel = parents.stream()
-//                .filter(projectTask -> projectTask.getParentId() == null).toList();
-//        var parentsOfParents = parents.stream().filter(projectTask -> projectTask.getParentId() != null).toList();
-//
-//
-//        var groupedTasks = syncedProjectTasks.keySet().stream().c
-
-    }
-
-    @Override
-    public void decreaseTaskLevel(Set<ProjectTask> projectTasks) {
-
-        //TODO do through changeParent
-        //validateLinks();
-
-        //recalculateTerms(DependenciesSet dependenciesSet);
 
     }
 
@@ -295,32 +224,42 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         Map<?, List<ProjectTask>> groupedByParentId = changeableTasks.stream().collect(groupingBy(ProjectTask::getParentId));
 
         Object previousParentId = tasksThatFollowAfterParents.get(0).getParentId();
-        int magnitudeChanging = 0;
+        int changeMagnitude = 0;
         ArrayList<ProjectTask> savedTasks = new ArrayList<>(tasksThatFollowAfterParents.size() + changeableTasks.size());
+        HashSet<Object> taskIdsForRecalculateTerm = new HashSet<>(parentIds);
         for (ProjectTask task: tasksThatFollowAfterParents) {
             if (!Objects.equals(task.getParentId(), previousParentId)) {
-                magnitudeChanging = 0;
+                changeMagnitude = 0;
                 previousParentId = task.getParentId();
             }
 
-            int currentLevelOrder = task.getLevelOrder() + magnitudeChanging;
-            if (magnitudeChanging != 0) {
-                task.setLevelOrder(currentLevelOrder);
+            int currentLevelOrder = task.getLevelOrder();
+            if (changeMagnitude != 0) {
+                task.setLevelOrder(currentLevelOrder + changeMagnitude);
                 savedTasks.add(task);
             }
             List<ProjectTask> movedTasks = groupedByParentId.getOrDefault(task.getId(), null);
             if (movedTasks != null) {
                 for (ProjectTask movedTask: movedTasks) {
+
+                    taskIdsForRecalculateTerm.add(movedTask.getParentId());
                     movedTask.setParentId(task.getParentId());
-                    movedTask.setLevelOrder(currentLevelOrder + 1);
+                    movedTask.setLevelOrder(currentLevelOrder + ++changeMagnitude);
                     savedTasks.add(movedTask);
-                    magnitudeChanging++;
+
                 }
+                taskIdsForRecalculateTerm.add(task.getParentId());
             }
 
         }
 
         projectTaskRepository.saveAll(savedTasks);
+
+        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculateTerm);
+        projectTaskRepository.saveAll(tasksWithChangedTerms);
+
+        List<ProjectTask> recalculatedTasks = recalculateLevelOrderByParentIds(parentIds);
+        projectTaskRepository.saveAll(recalculatedTasks);
 
         return projectTasks;
     }
@@ -371,7 +310,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         var checkedIds = projectTasks.stream().map(ProjectTask::getId).collect(Collectors.toList());
 
-        Set<ProjectTask> tasksWithChangedTerms;
         if (newParentId != null) {
 
             DependenciesSet dependenciesSet =
@@ -382,12 +320,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
                 String message = dependenciesService.getCycleLinkMessage(dependenciesSet);
                 throw new StandardError(message);
             }
-            tasksWithChangedTerms = recalculateTerms(dependenciesSet, parentIds);
-        } else {
-            tasksWithChangedTerms = recalculateTerms(parentIds);
         }
-
-        projectTaskList.addAll(tasksWithChangedTerms);
 
         if (dropLocation == GridDropLocation.ABOVE) target.setLevelOrder(levelOrder++);
 
@@ -402,8 +335,13 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         // if there are project task duplicates in projectTaskList, that something is wrong in dependenciesSet or
         // recalculateTerms or getTasksFollowingAfterTargetInBase. This situation has to additionally explore.
         projectTaskRepository.saveAll(projectTaskList);
+
         parentIds.add(newParentId);
-        List<ProjectTask> savedElements = recalculateLevelOrderForChildrenOfProjectTaskIds(parentIds);
+
+        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(parentIds);
+        projectTaskRepository.saveAll(tasksWithChangedTerms);
+
+        List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(parentIds);
         projectTaskRepository.saveAll(savedElements);
 
         return projectTaskList.stream().filter(projectTasks::contains).collect(Collectors.toSet());
@@ -615,21 +553,15 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private Set<ProjectTask> recalculateTerms(DependenciesSet dependenciesSet, Set<?> taskIds) {
-        return new HashSet(0);
-        // TODO recalculate terms
-    }
-
     private Set<ProjectTask> recalculateTerms(Set<?> taskIds) {
         return new HashSet(0);
         // TODO recalculate terms
     }
 
     private Set<ProjectTask> recalculateTerms(ProjectTask projectTask) {
-        // TODO recalculate terms
-        // TODO getting dependencies and check changing terms
-        //recalculateTerms(DependenciesSet dependenciesSet);
-        return new HashSet(0);
+        HashSet<Object> parentIds = new HashSet<>(1);
+        parentIds.add(projectTask.getParentId());
+        return recalculateTerms(parentIds);
     }
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {
@@ -641,7 +573,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private List<ProjectTask> recalculateLevelOrderForChildrenOfProjectTaskIds(Collection<?> parentIds) {
+    private List<ProjectTask> recalculateLevelOrderByParentIds(Collection<?> parentIds) {
 
         List<ProjectTask> foundProjectTasks;
 

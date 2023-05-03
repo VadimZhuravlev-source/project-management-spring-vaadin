@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -51,7 +52,7 @@ public class HierarchyServiceImpl implements HierarchyService {
     }
 
     @Override
-    public List<ProjectTask> getParentsOfParent(List<?> ids) {
+    public List<ProjectTask> getParentsOfParent(Collection<?> ids) {
 
         if (ids.size() == 0) return new ArrayList<>();
 
