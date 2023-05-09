@@ -98,7 +98,7 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
             """, nativeQuery = true)
     List<ProjectTaskImpl> findTasksThatFollowBeforeGivenTasksIds(@Param("ids") Iterable<?> tasksIds, @Param("direction") int direction);
 
-    default List<ProjectTask> findTasksThatFollowBeforeGivenTasks(Iterable<?> tasksIds, int direction) {
+    default List<ProjectTask> findTasksThatFollowToGivenDirection(Iterable<?> tasksIds, int direction) {
         List<ProjectTaskImpl> foundProjectTasks = findTasksThatFollowBeforeGivenTasksIds(tasksIds, direction);
         return foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).collect(Collectors.toList());
     }

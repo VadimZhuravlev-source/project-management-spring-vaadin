@@ -264,12 +264,79 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         return projectTasks;
     }
 
-    private Set<ProjectTask> changeLocationDown(Set<ProjectTask> projectTasks) {
-        return projectTasks;
+    private Set<ProjectTask> changeLocationDown(Set<ProjectTask> tasks) {
+
+        List<?> ids = tasks.stream().map(ProjectTask::getId).toList();
+
+        int directionNumber = -1;
+
+        List<ProjectTask> foundTasks = projectTaskRepository.findTasksThatFollowToGivenDirection(ids, directionNumber);
+
+        if (foundTasks.isEmpty()) return tasks;
+
+        List<PropertiesPT> persistedTasks =
+                foundTasks.stream()
+                        .map(projectTask -> new PropertiesPT(projectTask, true))
+                        .toList();
+
+        List<PropertiesPT> currentTasks = tasks.stream()
+                .map(projectTask -> new PropertiesPT(projectTask, false))
+                .collect(toList());
+
+        currentTasks.addAll(persistedTasks);
+
+        Map<?, List<PropertiesPT>> groupedByParentId = currentTasks.stream().collect(groupingBy(p -> p.value.getParentId()));
+
+        Map<ProjectTask, List<ProjectTask>> newParentsOfMovedTasks = new HashMap<>();
+
+        for (Map.Entry<?, List<PropertiesPT>> mapEntry: groupedByParentId.entrySet()) {
+
+            List<PropertiesPT> ptList = mapEntry.getValue();
+
+            ptList.sort(Comparator.comparingInt(o -> o.value.getLevelOrder()));
+
+            ProjectTask previousPT = null;
+
+            for (PropertiesPT prop: ptList) {
+
+                ProjectTask projectTask = prop.value;
+                if (prop.inBase) {
+                    previousPT = projectTask;
+                    newParentsOfMovedTasks.put(projectTask, new ArrayList<>());
+                    continue;
+                }
+
+                if (previousPT == null) continue;
+
+                List<ProjectTask> movedTasks = newParentsOfMovedTasks.getOrDefault(previousPT, null);
+
+                if (movedTasks == null) continue;
+
+                movedTasks.add(projectTask);
+
+            }
+
+        }
+
+        changeLocation(newParentsOfMovedTasks);
+
+        return tasks;
+    }
+
+    private void changeLocation(Map<ProjectTask, List<ProjectTask>> newParentsOfMovedTasks) {
+
+        // TODO compose additional method changeLocation for a check out of all dependencies as
+        //  there is accomplish heavy query in the changeLocationInner method
+        for (Map.Entry<ProjectTask, List<ProjectTask>> me: newParentsOfMovedTasks.entrySet()) {
+            ProjectTask newParent = me.getKey();
+            List<ProjectTask> movedTasks = me.getValue();
+            changeLocationInner(movedTasks, newParent, GridDropLocation.ON_TOP);
+        }
+
     }
 
     @Transactional
-    private Set<ProjectTask> changeLocationInner(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+    private Set<ProjectTask> changeLocationInner(Collection<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
         if (!(dropLocation == GridDropLocation.ABOVE
                 || dropLocation == GridDropLocation.BELOW
@@ -358,7 +425,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         int directionNumber = 1;
         if (direction == Direction.UP) directionNumber = -1;
 
-        List<ProjectTask> foundTasks = projectTaskRepository.findTasksThatFollowBeforeGivenTasks(ids, directionNumber);
+        List<ProjectTask> foundTasks = projectTaskRepository.findTasksThatFollowToGivenDirection(ids, directionNumber);
 
         if (foundTasks.isEmpty()) return tasks;
 
