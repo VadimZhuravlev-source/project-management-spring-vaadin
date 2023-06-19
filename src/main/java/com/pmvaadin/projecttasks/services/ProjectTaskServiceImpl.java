@@ -131,7 +131,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Override
     public Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
-        Set<ProjectTask> changedTasks = changeLocationInner(projectTasks, target, dropLocation);
+        Set<ProjectTask> changedTasks = changeLocationTransactional(projectTasks, target, dropLocation);
 
         return getProjectTasksForSelection(projectTasks, changedTasks);
 
@@ -327,16 +327,38 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         // TODO compose additional method changeLocation for a check out of all dependencies as
         //  there is accomplish heavy query in the changeLocationInner method
-        for (Map.Entry<ProjectTask, List<ProjectTask>> me: newParentsOfMovedTasks.entrySet()) {
-            ProjectTask newParent = me.getKey();
-            List<ProjectTask> movedTasks = me.getValue();
-            changeLocationInner(movedTasks, newParent, GridDropLocation.ON_TOP);
+        var taskIdsForRecalculate = new HashSet<>();
+        for (Map.Entry<ProjectTask, List<ProjectTask>> kV: newParentsOfMovedTasks.entrySet()) {
+            ProjectTask newParent = kV.getKey();
+            List<ProjectTask> movedTasks = kV.getValue();
+            Set<?> modifiedTaskIds = changeHierarchy(movedTasks, newParent, GridDropLocation.ON_TOP);
+            taskIdsForRecalculate.addAll(modifiedTaskIds);
         }
+
+        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculate);
+        projectTaskRepository.saveAll(tasksWithChangedTerms);
+
+        List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(taskIdsForRecalculate);
+        projectTaskRepository.saveAll(savedElements);
 
     }
 
     @Transactional
-    private Set<ProjectTask> changeLocationInner(Collection<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+    private Set<ProjectTask> changeLocationTransactional(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+
+        var taskIdsForRecalculate = changeHierarchy(projectTasks, target, dropLocation);
+
+        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculate);
+        projectTaskRepository.saveAll(tasksWithChangedTerms);
+
+        List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(taskIdsForRecalculate);
+        projectTaskRepository.saveAll(savedElements);
+
+        return projectTasks;
+
+    }
+
+    private Set<?> changeHierarchy(Collection<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
         if (!(dropLocation == GridDropLocation.ABOVE
                 || dropLocation == GridDropLocation.BELOW
@@ -389,7 +411,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             }
         }
 
-        if (dropLocation == GridDropLocation.ABOVE) target.setLevelOrder(levelOrder++);
+        if (dropLocation == GridDropLocation.ABOVE) {
+            target.setLevelOrder(levelOrder++);
+            projectTaskList.add(target);
+        }
 
         if (!(dropLocation == GridDropLocation.ON_TOP)) {
             List<ProjectTask> afterTargetProjectTasks =
@@ -397,21 +422,14 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             projectTaskList.addAll(afterTargetProjectTasks);
         }
 
-        projectTaskList.add(target);
         projectTaskList.addAll(movedTasksWithinParent);
-        // if there are project task duplicates in projectTaskList, that something is wrong in dependenciesSet or
+        // if there are project task duplicates in projectTaskList, that something has gone wrong in dependenciesSet or
         // recalculateTerms or getTasksFollowingAfterTargetInBase. This situation has to additionally explore.
         projectTaskRepository.saveAll(projectTaskList);
 
         parentIds.add(newParentId);
 
-        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(parentIds);
-        projectTaskRepository.saveAll(tasksWithChangedTerms);
-
-        List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(parentIds);
-        projectTaskRepository.saveAll(savedElements);
-
-        return projectTaskList.stream().filter(projectTasks::contains).collect(Collectors.toSet());
+        return parentIds;
 
     }
 
