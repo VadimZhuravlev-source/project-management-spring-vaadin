@@ -18,6 +18,7 @@ import java.util.Objects;
 @Entity
 @NoArgsConstructor
 @Table(name = "project_tasks")
+//@EntityListeners(ProjectTaskImpl.class)
 public class ProjectTaskImpl implements ProjectTask, Serializable {
 
     // hierarchy and order fields
@@ -69,9 +70,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Column(name = "links_check_sum")
     private int linksCheckSum;
 
+    // The field is not intended to store data
     @Setter
-    @Column(name = "children_count")
-    @OptimisticLock(excluded = true)
+    //@Column(name = "children_count")
+    //@OptimisticLock(excluded = true)
+    @Transient
     private int childrenCount;
 
     //    @Setter
@@ -80,6 +83,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @ManyToOne
     @JoinColumn(name = "calendar_id")
     private CalendarImpl calendar;
+
+    @Setter
+    @Transient
+    private ProjectTask parent;
 
     @Override
     public boolean equals(Object o) {
@@ -116,9 +123,9 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
         return 0;
     }
 
-    @PrePersist
-    public void prePersist() {
-        childrenCount = 0;
-    }
+//    @PrePersist
+//    public void prePersist() {
+//        childrenCount = 0;
+//    }
 
 }

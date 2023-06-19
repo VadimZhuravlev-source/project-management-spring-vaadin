@@ -2,10 +2,12 @@ package com.pmvaadin.projectview;
 
 import com.pmvaadin.MainLayout;
 import com.pmvaadin.commonobjects.ConfirmDialog;
+import com.pmvaadin.projectstructure.ProjectHierarchicalDataProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
-import com.pmvaadin.projectstructure.ProjectTreeService;
+import com.pmvaadin.projecttasks.services.ProjectTreeService;
 import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.pmvaadin.projecttasks.views.ProjectTaskForm;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Key;
@@ -16,13 +18,12 @@ import com.vaadin.flow.component.grid.ItemClickEvent;
 import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
 import com.vaadin.flow.component.grid.dnd.GridDragStartEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropEvent;
+import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.provider.hierarchy.TreeData;
-import com.vaadin.flow.data.provider.hierarchy.TreeDataProvider;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -31,7 +32,6 @@ import javax.annotation.security.PermitAll;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Route(value="", layout = MainLayout.class)
 @PageTitle("Projects | PM")
@@ -39,21 +39,22 @@ import java.util.stream.Collectors;
 public class ProjectTreeView extends VerticalLayout {
 
     private final ProjectTreeService projectTreeService;
+    private final TreeHierarchyChangeService treeHierarchyChangeService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
     private final TextField filterText = new TextField();
-    private final ProjectTaskForm editingForm;
+    private final ProjectTaskForm projectTaskForm;
+    private ProjectTaskForm editingForm;
+    private final ProjectHierarchicalDataProvider dataProvider;
 
-    public ProjectTreeView(ProjectTreeService projectTreeService, ProjectTaskForm editingForm) {
+    public ProjectTreeView(ProjectTreeService projectTreeService, TreeHierarchyChangeService treeHierarchyChangeService, ProjectTaskForm projectTaskForm) {
 
         this.projectTreeService = projectTreeService;
-        this.editingForm = editingForm;
+        this.treeHierarchyChangeService = treeHierarchyChangeService;
+        this.projectTaskForm = projectTaskForm;
+        dataProvider = new ProjectHierarchicalDataProvider(treeHierarchyChangeService);
         addClassName("project-tasks-view");
         setSizeFull();
         configureTreeGrid();
-
-        editingForm.addListener(ProjectTaskForm.SaveEvent.class, this::saveProjectTask);
-        //editingForm.addListener(ProjectTaskForm.DeleteEvent.class, this::deleteProjectTaskEvent);
-        editingForm.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
 
         add(getToolbar(), treeGrid);
 
@@ -63,6 +64,7 @@ public class ProjectTreeView extends VerticalLayout {
 
     private void configureTreeGrid() {
 
+        treeGrid.setDataProvider(dataProvider);
         treeGrid.addClassNames("project-tasks-grid");
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
@@ -74,7 +76,7 @@ public class ProjectTreeView extends VerticalLayout {
         treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true).setAutoWidth(true);
         treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true).setAutoWidth(true);
         treeGrid.getColumns().forEach(col -> col.setAutoWidth(true));
-        treeGrid.setDataProvider(new TreeDataProvider<>(new TreeData<>()));
+        //treeGrid.setDataProvider(new TreeDataProvider<>(new TreeData<>()));
 
         // hide checkbox column
         treeGrid.getElement().getNode().runWhenAttached(ui ->
@@ -100,19 +102,23 @@ public class ProjectTreeView extends VerticalLayout {
 
         try {
 
-            List<ProjectTask> projectTasks = projectTreeService.getTreeProjectTasks();
+//            List<ProjectTask> projectTasks = projectTreeService.getTreeProjectTasks();
+//
+//            treeGrid.getTreeData().clear();
+//            Map<?, Boolean> selectedIds = treeGrid.asMultiSelect().getSelectedItems()
+//                    .stream().collect(Collectors.toMap(ProjectTask::getId, p -> true));
 
-            treeGrid.getTreeData().clear();
-            Map<?, Boolean> selectedIds = treeGrid.asMultiSelect().getSelectedItems()
-                    .stream().collect(Collectors.toMap(ProjectTask::getId, p -> true));
+//            Set<ProjectTask> selectedProjectTasks = treeGrid.asMultiSelect().getSelectedItems();
 
-            treeGrid.asMultiSelect().clear();
-            Set<ProjectTask> selectedTasks = new HashSet<>(selectedIds.size());
-
-            populateTreeData(projectTasks, selectedIds, selectedTasks);
-            treeGrid.asMultiSelect().setValue(selectedTasks);
+//            treeGrid.asMultiSelect().clear();
+//            Set<ProjectTask> selectedTasks = new HashSet<>(selectedIds.size());
+//
+//            populateTreeData(projectTasks, selectedIds, selectedTasks);
+//            treeGrid.asMultiSelect().setValue(selectedTasks);
 
             treeGrid.getDataProvider().refreshAll();
+
+//            treeGrid.asMultiSelect().select(selectedProjectTasks);
 
         } catch (Throwable e) {
             showProblem(e);
@@ -123,13 +129,13 @@ public class ProjectTreeView extends VerticalLayout {
     private void populateTreeData(List<ProjectTask> projectTasks, Map<?, Boolean> selectedIds,
                                              Set<ProjectTask> selectedTasks) {
 
-        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
-        Map<?, ProjectTask> mapIdProjectTask = projectTasks.stream().
-                collect(Collectors.toMap(ProjectTask::getId, projectTask -> projectTask));
-        for (ProjectTask projectTask: projectTasks) {
-            treeData.addItem(mapIdProjectTask.getOrDefault(projectTask.getParentId(), null), projectTask);
-            if (selectedIds.getOrDefault(projectTask.getId(), false)) selectedTasks.add(projectTask);
-        }
+//        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
+//        Map<?, ProjectTask> mapIdProjectTask = projectTasks.stream().
+//                collect(Collectors.toMap(ProjectTask::getId, projectTask -> projectTask));
+//        for (ProjectTask projectTask: projectTasks) {
+//            treeData.addItem(mapIdProjectTask.getOrDefault(projectTask.getParentId(), null), projectTask);
+//            if (selectedIds.getOrDefault(projectTask.getId(), false)) selectedTasks.add(projectTask);
+//        }
 
     }
 
@@ -152,10 +158,10 @@ public class ProjectTreeView extends VerticalLayout {
         deleteProjectTask.addClickShortcut(Key.DELETE);
 
         Button moveUp = new Button("Move up");
-        moveUp.addClickListener(event -> moveTasks(Direction.UP));
+        moveUp.addClickListener(event -> moveTasks(ProjectTreeService.Direction.UP));
 
         Button moveDown = new Button("Move down");
-        moveDown.addClickListener(event -> moveTasks(Direction.DOWN));
+        moveDown.addClickListener(event -> moveTasks(ProjectTreeService.Direction.DOWN));
 
         Button expandAll = new Button("Expand all");
         expandAll.addClickListener(this::expandAll);
@@ -176,7 +182,7 @@ public class ProjectTreeView extends VerticalLayout {
                 //filterText,
                 addProjectTask, deleteProjectTask, updateTreeData,
                 changeLevelUp,
-                //changeLevelDown,
+                changeLevelDown,
                 createTestCase,
                 moveUp, moveDown, expandAll, collapseAll);
 
@@ -186,21 +192,32 @@ public class ProjectTreeView extends VerticalLayout {
     }
 
     private void increaseTaskLevel(ClickEvent<Button> clickEvent) {
+
+        changeLocation(ProjectTreeService.Direction.UP);
+
+    }
+
+    private void decreaseTaskLevel(ClickEvent<Button> clickEvent) {
+
+        changeLocation(ProjectTreeService.Direction.DOWN);
+
+    }
+
+    private void changeLocation(ProjectTreeService.Direction direction) {
+
         try {
 
             Set<ProjectTask> selectedProjectTasks = treeGrid.asMultiSelect().getValue();
 
-            projectTreeService.increaseTaskLevel(selectedProjectTasks);
+            Set<ProjectTask> changedTasks = projectTreeService.changeLocation(selectedProjectTasks, direction);
+
+            treeGrid.asMultiSelect().setValue(changedTasks);
 
             updateTreeGrid();
 
         } catch (Throwable e) {
             showProblem(e);
         }
-
-    }
-
-    private void decreaseTaskLevel(ClickEvent<Button> clickEvent) {
 
     }
 
@@ -213,13 +230,13 @@ public class ProjectTreeView extends VerticalLayout {
 
     private void expandAll(ClickEvent<Button> clickEvent) {
 
-        treeGrid.expandRecursively(treeGrid.getTreeData().getRootItems(), 20);
+        //treeGrid.expandRecursively(treeGrid.getTreeData().getRootItems(), 20);
 
     }
 
     private void collapseAll(ClickEvent<Button> clickEvent) {
 
-        treeGrid.collapseRecursively(treeGrid.getTreeData().getRootItems(), 20);
+        //treeGrid.collapseRecursively(treeGrid.getTreeData().getRootItems(), 20);
 
     }
 
@@ -227,28 +244,14 @@ public class ProjectTreeView extends VerticalLayout {
 
         ProjectTask savedProjectTask = event.getProjectTask();
         if (savedProjectTask == null) return;
-
-        treeGrid.asMultiSelect().deselectAll();
-        treeGrid.asMultiSelect().select(savedProjectTask);
+        ProjectTask refreshedItem = savedProjectTask.getParent();
+        if (refreshedItem == null) refreshedItem = savedProjectTask;
+//        treeGrid.asMultiSelect().deselectAll();
+//        treeGrid.asMultiSelect().select(savedProjectTask);
+        //treeGrid.getDataProvider().refreshItem(refreshedItem, true);
         updateTreeGrid();
 
         closeEditor();
-
-//        try {
-//            projectDataService.saveTask(savedProjectTask);
-//        } catch (Throwable e) {
-//            showProblem(e);
-//            return;
-//        }
-//
-//        treeGrid.asMultiSelect().clear();
-//        Set<ProjectTask> selectedTasks = new HashSet<>(1);
-//        selectedTasks.add(savedProjectTask);
-//        treeGrid.asMultiSelect().setValue(selectedTasks);
-//
-//        updateTreeGrid();
-//
-//        closeEditor();
 
     }
 
@@ -269,16 +272,15 @@ public class ProjectTreeView extends VerticalLayout {
     }
 
     private void editProjectTask(ProjectTask projectTask) {
-//        if (projectTasks == null || projectTasks.size() != 1) {
-//            closeEditor();
-//        } else {
-//            ProjectTask projectTask = projectTasks.stream().findFirst().orElse(null);
-//            editingForm.setProjectTask(projectTask);
-//            editingForm.setVisible(true);
+
+        editingForm = projectTaskForm.newInstance();
+        removeClassName("editing");
         editingForm.setProjectTask(projectTask);
+        editingForm.addListener(ProjectTaskForm.SaveEvent.class, this::saveProjectTask);
+        editingForm.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
         editingForm.open();
         addClassName("editing");
-//        }
+
     }
 
     private void addProjectTask() {
@@ -301,42 +303,15 @@ public class ProjectTreeView extends VerticalLayout {
         removeClassName("editing");
     }
 
-    private void moveTasks(Direction direction) {
+    private void moveTasks(ProjectTreeService.Direction direction) {
 
-        ProjectTask projectTasks1 = treeGrid.asMultiSelect().getValue().stream().findFirst().orElse(null);
-        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
-        ProjectTask parent = treeData.getParent(projectTasks1);
-        List<ProjectTask> children = treeData.getChildren(parent);
+        Set<ProjectTask> selectedTasks = treeGrid.asMultiSelect().getValue();
 
-        ProjectTask projectTasks2 = null;
-        if (direction == Direction.UP) {
-            for (ProjectTask child : children) {
-                if (child.equals(projectTasks1)) break;
-                projectTasks2 = child;
-            }
-        }else {
-            for (int i = children.size() - 1; i >= 0; i--) {
-                if (children.get(i).equals(projectTasks1)) break;
-                projectTasks2 = children.get(i);
-            }
-        }
-
-        if (projectTasks2 == null) return;
-
-        List<? extends ProjectTask> replacedTasks;
         try {
-            Map<ProjectTask, ProjectTask> swappedTasks = new HashMap<>();
-            swappedTasks.put(projectTasks1, projectTasks2);
-            replacedTasks = projectTreeService.swap(swappedTasks);
+            projectTreeService.changeSortOrder(selectedTasks, direction);
         } catch (Throwable e) {
             showProblem(e);
-            return;
         }
-        int countReplacedTasks = 2;
-        if (replacedTasks.size() != countReplacedTasks) {
-            return;
-        }
-
         updateTreeGrid();
 
     }
@@ -363,11 +338,6 @@ public class ProjectTreeView extends VerticalLayout {
 
         confirmDialog.open();
 
-    }
-
-    private enum Direction {
-        UP,
-        DOWN
     }
 
     // Events
@@ -442,13 +412,21 @@ public class ProjectTreeView extends VerticalLayout {
         try {
 
             ProjectTask dropTargetItem = event.getDropTargetItem().orElse(null);
+            if (dropTargetItem == null) return;
 
             Set<ProjectTask> draggedItems = event.getSource().getSelectedItems();
-            if (dropTargetItem == null || draggedItems == null || draggedItems.contains(dropTargetItem)) return;
+            if (draggedItems == null) return;
 
-            if (!checkMovableDraggedItemsInDroppedItem(draggedItems, dropTargetItem)) return;
+            GridDropLocation dropLocation = event.getDropLocation();
 
-            projectTreeService.changeParent(draggedItems, dropTargetItem);
+            if (dropLocation == GridDropLocation.ON_TOP && draggedItems.contains(dropTargetItem)) return;
+
+            //if (!checkMovableDraggedItemsInDroppedItem(draggedItems, dropTargetItem)) return;
+
+            Set<ProjectTask> updatedTasks = projectTreeService.changeLocation(draggedItems, dropTargetItem, dropLocation);
+
+            treeGrid.asMultiSelect().clear();
+            treeGrid.asMultiSelect().setValue(updatedTasks);
 
             updateTreeGrid();
 
@@ -458,25 +436,25 @@ public class ProjectTreeView extends VerticalLayout {
 
     }
 
-    private boolean checkMovableDraggedItemsInDroppedItem(Set<ProjectTask> draggedItems, ProjectTask dropTargetItem) {
-
-        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
-        Map<ProjectTask, Boolean> rootItems = treeData.getRootItems().stream()
-                .collect(Collectors.toMap(projectTask -> projectTask, o -> true));
-
-        ProjectTask parent = dropTargetItem;
-        Map<ProjectTask, Boolean> allItemParents = new HashMap<>();
-        while (parent != null) {
-            if (rootItems.getOrDefault(parent, false)) break;
-            parent = treeData.getParent(parent);
-            allItemParents.put(parent, true);
-        }
-
-        for (ProjectTask draggedItem:draggedItems) {
-            if (allItemParents.getOrDefault(draggedItem, false)) return false;
-        }
-
-        return true;
-    }
+//    private boolean checkMovableDraggedItemsInDroppedItem(Set<ProjectTask> draggedItems, ProjectTask dropTargetItem) {
+//
+//        TreeData<ProjectTask> treeData = treeGrid.getTreeData();
+//        Map<ProjectTask, Boolean> rootItems = treeData.getRootItems().stream()
+//                .collect(Collectors.toMap(projectTask -> projectTask, o -> true));
+//
+//        ProjectTask parent = dropTargetItem;
+//        Map<ProjectTask, Boolean> allItemParents = new HashMap<>();
+//        while (parent != null) {
+//            if (rootItems.getOrDefault(parent, false)) break;
+//            parent = treeData.getParent(parent);
+//            allItemParents.put(parent, true);
+//        }
+//
+//        for (ProjectTask draggedItem:draggedItems) {
+//            if (allItemParents.getOrDefault(draggedItem, false)) return false;
+//        }
+//
+//        return true;
+//    }
 
 }

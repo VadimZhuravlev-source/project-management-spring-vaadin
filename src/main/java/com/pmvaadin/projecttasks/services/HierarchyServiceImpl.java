@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,16 +40,7 @@ public class HierarchyServiceImpl implements HierarchyService {
         List<ProjectTask> projectTasksList;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-//            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_children_in_depth_fast",
-//                    ProjectTaskImpl.class);
-//            query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
-//            query.setParameter(1, parameterValue);
-//            query.execute();
-
-            Query query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class)
-                    //.setParameter("ids", projectTaskIds)
-                    ;
-
+            Query query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class);
             projectTasksList = (List<ProjectTask>) query.getResultList();
 
         }finally {
@@ -60,7 +52,7 @@ public class HierarchyServiceImpl implements HierarchyService {
     }
 
     @Override
-    public List<ProjectTask> getParentsOfParent(List<?> ids) {
+    public List<ProjectTask> getParentsOfParent(Collection<?> ids) {
 
         if (ids.size() == 0) return new ArrayList<>();
 
@@ -76,16 +68,7 @@ public class HierarchyServiceImpl implements HierarchyService {
         List<ProjectTask> projectTasks;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
-//            StoredProcedureQuery query = entityManager.createStoredProcedureQuery("get_parents_in_depth",
-//                    ProjectTaskImpl.class);
-//            query.registerStoredProcedureParameter(1, String.class, ParameterMode.IN);
-//            query.setParameter(1, parameterValue);
-//            query.execute();
-
-            Query query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class)
-                    //.setParameter("ids", ids)
-                    ;
-
+            Query query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class);
             projectTasks = (List<ProjectTask>) query.getResultList();
 
         }finally {

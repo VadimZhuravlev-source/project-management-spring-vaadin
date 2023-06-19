@@ -65,8 +65,6 @@ public class ProjectTaskForm extends Dialog {
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
                            CalendarSelectionForm calendarSelectionForm) {
 
-        super();
-
         this.projectTaskDataService = projectTaskDataService;
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
@@ -88,6 +86,10 @@ public class ProjectTaskForm extends Dialog {
 
         add(mainLayout);
 
+    }
+
+    public ProjectTaskForm newInstance() {
+        return new ProjectTaskForm(projectTaskDataService, linksGrid.newInstance(), calendarSelectionForm);
     }
 
     public void setProjectTask(ProjectTask projectTask) {
@@ -237,7 +239,7 @@ public class ProjectTaskForm extends Dialog {
     private void readData(ProjectTaskData projectTaskData) {
         this.projectTask = projectTaskData.getProjectTask();
         binder.readBean(projectTask);
-        linksGrid.setItems((List<Link>) (projectTaskData.getLinks()));
+        linksGrid.setItems(projectTaskData.getLinks());
         refreshHeader();
     }
 

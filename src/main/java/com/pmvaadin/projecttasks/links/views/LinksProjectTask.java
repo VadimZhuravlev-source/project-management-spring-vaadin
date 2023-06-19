@@ -18,9 +18,7 @@ import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @SpringComponent
 public class LinksProjectTask extends ObjectGrid<Link> {
@@ -42,6 +40,10 @@ public class LinksProjectTask extends ObjectGrid<Link> {
     public void setItems(List<Link> links) {
         clear();
         super.setItems(links);
+    }
+
+    public LinksProjectTask newInstance() {
+        return new LinksProjectTask(linkService, projectSelectionForm.newInstance());
     }
 
     public void setProjectTask(ProjectTask projectTask) {
@@ -124,7 +126,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
                             ptField.getValue().setLinkedProjectTask(selectedProjectTask);
                             ptField.getValue().setLinkedProjectTaskId(selectedProjectTask.getId());
-                            ptField.getValue().setRepresentation(selectedProjectTask.getLinkPresentation());
+                            ptField.getValue().setRepresentation(selectedProjectTask.getRepresentation());
                             ptField.refreshTextValue();
                         });
                 projectSelectionForm.open();

@@ -1,43 +1,69 @@
 package com.pmvaadin.projecttasks.views;
 
+import com.pmvaadin.projectstructure.ProjectHierarchicalDataProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.services.ProjectTaskService;
+import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
+import com.vaadin.flow.component.grid.GridSelectionModel;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
-import com.vaadin.flow.data.provider.hierarchy.HierarchicalDataProvider;
-import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
+import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 @SpringComponent
 public class ProjectSelectionForm extends Dialog {
 
-    private final ProjectTaskService projectTaskService;
+    private final TreeHierarchyChangeService hierarchyService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
-
+    private final ProjectHierarchicalDataProvider dataProvider;
     private Consumer<ProjectTask> selection;
 
-    private boolean isOpenEvent;
+    public ProjectSelectionForm(TreeHierarchyChangeService hierarchyService) {
 
-    public ProjectSelectionForm(ProjectTaskService projectTaskService) {
+        this.hierarchyService = hierarchyService;
 
-        this.projectTaskService = projectTaskService;
+        dataProvider = new ProjectHierarchicalDataProvider(hierarchyService);
 
         Button selectionAction = new Button("Select");
         selectionAction.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         getFooter().add(selectionAction);
-        selectionAction.getStyle().set("margin-right", "auto");
+        //selectionAction.getStyle().set("margin-right", "auto");
+
+        Button refreshButton = new Button(new Icon("lumo", "reload"),
+                (e) -> {
+            treeGrid.getDataProvider().refreshAll();
+                });
+
+        Button refreshItemButton = new Button(new Icon("lumo", "reload"),
+                (e) -> {
+                    GridSelectionModel selectionModel = treeGrid.getSelectionModel();
+                    Set<ProjectTask> projectTaskSet = selectionModel.getSelectedItems();
+                    projectTaskSet.forEach(dataProvider::refreshItem);
+                    //treeGrid.getDataProvider().refreshAll();
+                });
+
+        getFooter().add(refreshButton, refreshItemButton);
+        refreshButton.getStyle().set("margin-right", "auto");
+
         customizeTreeGrid();
         customizeHeader();
         add(treeGrid);
+        treeGrid.addExpandListener(event -> {
+            for (ProjectTask projectTask: event.getItems()) {
+                ProjectTask parent = treeGrid.getDataCommunicator().getParentItem(projectTask);
+            }
+        });
+        treeGrid.addCollapseListener(event -> {
+            for (ProjectTask projectTask: event.getItems()) {
+                ProjectTask parent = treeGrid.getDataCommunicator().getParentItem(projectTask);
+            }
+        });
 
         setWidth("70%");
         setHeight("70%");
@@ -62,6 +88,10 @@ public class ProjectSelectionForm extends Dialog {
         this.selection = selection;
     }
 
+    public ProjectSelectionForm newInstance() {
+        return new ProjectSelectionForm(hierarchyService);
+    }
+
     private void customizeHeader() {
 
         setHeaderTitle("Project task selection");
@@ -74,7 +104,7 @@ public class ProjectSelectionForm extends Dialog {
 
     private void customizeTreeGrid() {
 
-        treeGrid.setDataProvider(getDataProvider());
+        treeGrid.setDataProvider(dataProvider);
         treeGrid.addClassNames("project-tasks-selection-grid");
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
@@ -97,28 +127,6 @@ public class ProjectSelectionForm extends Dialog {
         if (projectTask == null) return;
         if (selection != null) selection.accept(projectTask);
         close();
-    }
-
-    private HierarchicalDataProvider<ProjectTask, Void> getDataProvider() {
-
-        return new AbstractBackEndHierarchicalDataProvider<>() {
-
-            @Override
-            public int getChildCount(HierarchicalQuery<ProjectTask, Void> query) {
-                return projectTaskService.getChildrenCount(query.getParent());
-            }
-
-            @Override
-            public boolean hasChildren(ProjectTask item) {
-                return projectTaskService.hasChildren(item);
-            }
-
-            @Override
-            protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, Void> query) {
-                return projectTaskService.fetchChildren(query.getParent()).stream();
-            }
-        };
-
     }
 
 }
