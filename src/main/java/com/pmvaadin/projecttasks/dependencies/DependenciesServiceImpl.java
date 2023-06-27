@@ -9,11 +9,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Nonnull;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 public class DependenciesServiceImpl implements DependenciesService {
@@ -40,7 +40,7 @@ public class DependenciesServiceImpl implements DependenciesService {
     }
 
     @Override
-    public  <I, L> DependenciesSet getAllDependencies(I pid, List<I> ids) {
+    public  <I> DependenciesSet getAllDependencies(I pid, List<I> ids) {
 
         return getAllDependencies(pid, ids, getQueryTextForDependencies());
 
@@ -68,9 +68,14 @@ public class DependenciesServiceImpl implements DependenciesService {
 
         stringBuilder.replace(stringBuilder.length()  - delimiter.length(), stringBuilder.length(), "");
 
-        String message = "The cycle has detected: " + stringBuilder + "\n";
+        return "The cycle has detected: " + stringBuilder + "\n";
 
-        return message;
+    }
+
+    @Override
+    public <I> DependenciesSet getAllDependencies(Set<I> ids) {
+
+        return getAllDependencies(ids, getQueryTextForDependenciesAtTermCalc());
 
     }
 
@@ -81,16 +86,18 @@ public class DependenciesServiceImpl implements DependenciesService {
         if (pid == null || isNullElement) throw new IllegalArgumentException("Passed parameters haven't to be null.");
 
         String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
+        String pairOfValues = "'" + pid + "#" + parameterValue + "'";
         parameterValue = "'" + parameterValue + "'";
 
-        String convertedQueryText = queryText.replace(":checkedIds", parameterValue);
+        String convertedQueryText = queryText.replace(":checkedIds", parameterValue)
+                .replace(":pid", pid.toString())
+                .replace(":pairOfValues", pairOfValues);
+
         List<Object[]> rows;
         EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
 
-            Query query = entityManager.createNativeQuery(convertedQueryText)
-                    .setParameter("pid", pid);
-                    //.setParameter("checkedIds", parameterValue);
+            Query query = entityManager.createNativeQuery(convertedQueryText);
 
             rows = query.getResultList();
 
@@ -101,10 +108,11 @@ public class DependenciesServiceImpl implements DependenciesService {
         List<I> projectTaskIds = new ArrayList<>(rows.size());
         List<L> linkIds = new ArrayList<>();
         String path = "";
-        var projectTaskIdIndex = 0;
-        var pathIndex = 1;
-        var isCycleIndex = 2;
-        var linkIdIndex = 3;
+        var checkedIdIndex = 0;
+        var projectTaskIdIndex = 1;
+        var pathIndex = 2;
+        var isCycleIndex = 3;
+        var linkIdIndex = 4;
         var isCycle = false;
         for (Object[] row: rows) {
             I id = (I) row[projectTaskIdIndex];
@@ -134,15 +142,44 @@ public class DependenciesServiceImpl implements DependenciesService {
 
     }
 
+    private <I> DependenciesSet getAllDependencies(Set<I> ids, String queryText) {
+
+        var isNullElement = ids.stream().anyMatch(Objects::isNull);
+
+        if (isNullElement) throw new IllegalArgumentException("Passed parameters haven't to be null.");
+
+        String pairsOfValues = String.join(";", ids.stream().map(Object::toString).toList());
+
+        String convertedQueryText = queryText.replace(":pairsOfValues", pairsOfValues);
+
+        List<Object[]> rows;
+        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        try {
+
+            Query query = entityManager.createNativeQuery(convertedQueryText);
+
+            rows = query.getResultList();
+
+        } finally {
+            entityManager.close();
+        }
+
+
+
+    }
+
     private String getQueryTextForDependencies() {
+
         return
+
         """
         SELECT
+            dep.checked_id,
             dep.id,
             dep.path,
             dep.is_cycle,
             dep.link_id
-        FROM get_all_dependencies(:pid, :checkedIds) dep
+        FROM get_all_dependencies(:pairOfValues) dep
         """;
 
     }
@@ -150,19 +187,21 @@ public class DependenciesServiceImpl implements DependenciesService {
     private String getQueryTextForDependenciesWithCheckedChildren() {
 
         return
+
         """
         WITH all_children_ids AS (
-            SELECT id
-            FROM get_children_in_depth_fast(:checkedIds)
+        SELECT
+            id
+        FROM get_children_in_depth_fast(:checkedIds)
         ),
-                        
+        
         all_checked_ids AS (
         SELECT DISTINCT
             id
         FROM all_children_ids
-                        
+        
         UNION
-            
+        
         SELECT
             linked_project_task
         FROM links
@@ -173,15 +212,37 @@ public class DependenciesServiceImpl implements DependenciesService {
                       FROM all_children_ids
                      )
             )
-            
-        )
-                        
+        
+        ),
+        
+        pair_of_values AS (
         SELECT
+            :pid || '#{' || array_to_string(ARRAY(SELECT id FROM all_checked_ids), ',','NULL') || '}' text
+        )
+        
+        SELECT
+            dep.checked_id,
             dep.id,
             dep.path,
             dep.is_cycle,
             dep.link_id
-        FROM get_all_dependencies(:pid, ARRAY(SELECT id FROM all_checked_ids)) dep
+        FROM get_all_dependencies((SELECT text FROM pair_of_values)) dep
+        """;
+
+    }
+
+    private String getQueryTextForDependenciesAtTermCalc() {
+
+        return
+
+        """
+        SELECT
+            dep.checked_id,
+            dep.id,
+            dep.path,
+            dep.is_cycle,
+            dep.link_id
+        FROM get_all_dependencies(:pairsOfValues) dep
         """;
 
     }

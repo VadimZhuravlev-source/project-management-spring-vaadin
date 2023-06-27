@@ -4,7 +4,6 @@ import java.util.Date;
 
 public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
-    Integer getVersion();
     Date getDateOfCreation();
     Date getUpdateDate();
     boolean isNew();

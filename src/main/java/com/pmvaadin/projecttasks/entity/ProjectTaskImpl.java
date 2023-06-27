@@ -1,6 +1,5 @@
 package com.pmvaadin.projecttasks.entity;
 
-import com.pmvaadin.calendars.entity.Calendar;
 import com.pmvaadin.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -72,17 +71,20 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
 
     // The field is not intended to store data
     @Setter
-    //@Column(name = "children_count")
-    //@OptimisticLock(excluded = true)
     @Transient
     private int childrenCount;
 
     //    @Setter
 //    @Column(name = "duration")
 //    private new BigDecimal duration;
-    @ManyToOne
+    //@ManyToOne
+    @Setter
     @JoinColumn(name = "calendar_id")
-    private CalendarImpl calendar;
+    private Integer calendarId;
+
+    @Setter
+    @Transient
+    private String calendarRepresentation;
 
     @Setter
     @Transient

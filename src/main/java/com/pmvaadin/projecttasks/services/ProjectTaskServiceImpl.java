@@ -1,17 +1,22 @@
 package com.pmvaadin.projecttasks.services;
 
+import com.pmvaadin.AppConfiguration;
 import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
+import com.pmvaadin.projectstructure.termscalculation.TermsCalculation;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
+import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversion;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -639,8 +644,16 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     private Set<ProjectTask> recalculateTerms(Set<?> taskIds) {
-        return new HashSet(0);
-        // TODO recalculate terms
+        //return new HashSet(0);
+
+        DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(taskIds);
+
+        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
+        TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
+        Set<ProjectTask> tasks = termsCalculation.calculate(dependenciesSet);
+
+        return tasks;
+
     }
 
     private Set<ProjectTask> recalculateTerms(ProjectTask projectTask) {
