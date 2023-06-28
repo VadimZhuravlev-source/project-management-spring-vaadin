@@ -1,5 +1,3 @@
---DROP FUNCTION get_all_dependencies(pairs TEXT);
-
 with dependencies as(
 SELECT
 	dep.checked_id,
@@ -23,9 +21,10 @@ FROM dependencies, proceeding_exection
 WHERE 
 	NOT proceeding_exection.is_cycle	
 	
-)
+),
 
-SELECT 
+searched_ids AS (
+SELECT DISTINCT
 	unique_ids.id,
 	NULL::INT link_id
 FROM
@@ -50,5 +49,13 @@ FROM
 	unique_ids
 JOIN links
 	ON unique_ids.id = links.project_task
+)
 
---select * from uniq_ids
+SELECT
+	proceeding_exection.is_cycle,
+	searched_ids.id,
+	searched_ids.link_id
+FROM
+	proceeding_exection
+LEFT JOIN searched_ids
+	ON TRUE

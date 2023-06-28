@@ -75,6 +75,7 @@ public class DependenciesServiceImpl implements DependenciesService {
     @Override
     public <I> DependenciesSet getAllDependencies(Set<I> ids) {
 
+        //return new DependenciesSetImpl(new ArrayList<>(), new ArrayList<>(), false);
         return getAllDependencies(ids, getQueryTextForDependenciesAtTermCalc());
 
     }
@@ -142,7 +143,7 @@ public class DependenciesServiceImpl implements DependenciesService {
 
     }
 
-    private <I> DependenciesSet getAllDependencies(Set<I> ids, String queryText) {
+    private <I, L> DependenciesSet getAllDependencies(Set<I> ids, String queryText) {
 
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
 
@@ -164,7 +165,31 @@ public class DependenciesServiceImpl implements DependenciesService {
             entityManager.close();
         }
 
+        List<I> projectTaskIds = new ArrayList<>(rows.size());
+        List<L> linkIds = new ArrayList<>();
 
+        var isCycleIndex = 0;
+        var projectTaskIdIndex = 1;
+        var linkIdIndex = 2;
+        var isCycle = false;
+        for (Object[] row: rows) {
+            isCycle = (boolean) row[isCycleIndex];
+            if (isCycle) break;
+            I id = (I) row[projectTaskIdIndex];
+            L linkId = (L) row[linkIdIndex];
+            if (id != null) projectTaskIds.add(id);
+            if (linkId != null) linkIds.add(linkId);
+        }
+
+        if (isCycle) {
+            projectTaskIds.clear();
+            linkIds.clear();
+        }
+
+        var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
+        var links = linkRepository.findAllById(linkIds);
+
+        return new DependenciesSetImpl(projectTasks, links, isCycle);
 
     }
 
@@ -236,13 +261,63 @@ public class DependenciesServiceImpl implements DependenciesService {
         return
 
         """
+        with dependencies as(
         SELECT
             dep.checked_id,
             dep.id,
             dep.path,
             dep.is_cycle,
             dep.link_id
-        FROM get_all_dependencies(:pairsOfValues) dep
+        FROM get_all_dependencies('3;4') dep
+        ),
+        
+        proceeding_execution AS (
+        SELECT
+            bool_or(dependencies.is_cycle) is_cycle
+        FROM dependencies
+        ),
+        
+        unique_ids AS (
+        SELECT DISTINCT
+            dependencies.id
+        FROM dependencies, proceeding_execution
+        WHERE
+            NOT proceeding_execution.is_cycle
+        
+        ),
+        
+        searched_ids AS (
+        SELECT DISTINCT
+            unique_ids.id,
+            NULL::INT link_id
+        FROM unique_ids
+        
+        UNION
+        
+        SELECT
+            project_tasks.id,
+            NULL::INT
+        FROM unique_ids
+        JOIN project_tasks
+            ON unique_ids.id = project_tasks.parent_id
+        
+        UNION
+        
+        SELECT
+            NULL::INT,
+            links.id
+        FROM unique_ids
+        JOIN links
+            ON unique_ids.id = links.project_task
+        )
+        
+        SELECT
+            proceeding_execution.is_cycle,
+            searched_ids.id,
+            searched_ids.link_id
+        FROM proceeding_execution
+        LEFT JOIN searched_ids
+            ON TRUE
         """;
 
     }
