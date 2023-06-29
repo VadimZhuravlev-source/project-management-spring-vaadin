@@ -1,11 +1,14 @@
 package com.pmvaadin;
 
+import com.pmvaadin.projecttasks.entity.LinkedProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -21,6 +24,11 @@ public class CommandLineRunnerForTests implements CommandLineRunner {
     @Override
     public void run(String...args) throws Exception {
         //Optional<ProjectTask> projectTask = projectTaskRepository.findById(3);
+        ArrayList<Integer> ids = new ArrayList<>(2);
+        ids.add(2);
+        ids.add(10000);
+        List<LinkedProjectTask> linkedProjectTasks = projectTaskRepository.findAllByIdIn(ids, LinkedProjectTask.class);
+        linkedProjectTasks = null;
     }
 
 }

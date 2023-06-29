@@ -10,10 +10,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.stereotype.Service;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class DependenciesServiceImpl implements DependenciesService {
@@ -165,8 +162,8 @@ public class DependenciesServiceImpl implements DependenciesService {
             entityManager.close();
         }
 
-        List<I> projectTaskIds = new ArrayList<>(rows.size());
-        List<L> linkIds = new ArrayList<>();
+        HashSet<I> projectTaskIds = new HashSet<>(rows.size());
+        HashSet<L> linkIds = new HashSet<>();
 
         var isCycleIndex = 0;
         var projectTaskIdIndex = 1;
@@ -268,7 +265,7 @@ public class DependenciesServiceImpl implements DependenciesService {
             dep.path,
             dep.is_cycle,
             dep.link_id
-        FROM get_all_dependencies('3;4') dep
+        FROM get_all_dependencies(:pairsOfValues) dep
         ),
         
         proceeding_execution AS (
@@ -304,7 +301,7 @@ public class DependenciesServiceImpl implements DependenciesService {
         UNION
         
         SELECT
-            NULL::INT,
+            links.linked_project_task,
             links.id
         FROM unique_ids
         JOIN links

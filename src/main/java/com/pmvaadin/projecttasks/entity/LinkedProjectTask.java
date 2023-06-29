@@ -12,6 +12,6 @@ public interface LinkedProjectTask extends HierarchyElement<Integer>{
     Date getFinishDate();
     void setFinishDate(Date finishDate);
 
-    Set<Link> getLinks();
+    //Set<Link> getLinks();
 
 }

@@ -9,6 +9,11 @@ public class LinkedProjectTaskImpl extends ProjectTaskImpl implements LinkedProj
 
     private Set<Link> links = new HashSet<>();
 
+    public LinkedProjectTaskImpl(ProjectTaskImpl projectTask, Set<Link> links) {
+        super();
+        this.links = links;
+    }
+
     public Set<Link> getLinks() {
         return links;
     }

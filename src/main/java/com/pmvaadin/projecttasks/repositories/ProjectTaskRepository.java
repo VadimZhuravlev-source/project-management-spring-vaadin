@@ -17,6 +17,8 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     List<ProjectTask> findAllById(Iterable<?> ids);
 
+    <T> List<T> findAllByIdIn(@Param("id") Iterable<?> ids, Class<T> type);
+
     <I> Optional<ProjectTask> findById(I id);
 
     void deleteAllById(Iterable<?> ids);
