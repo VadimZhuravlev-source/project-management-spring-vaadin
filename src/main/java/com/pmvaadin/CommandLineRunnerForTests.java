@@ -1,5 +1,6 @@
 package com.pmvaadin;
 
+import com.pmvaadin.projectstructure.termscalculation.LinkedProjectTaskDTO;
 import com.pmvaadin.projecttasks.entity.LinkedProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
@@ -27,7 +28,7 @@ public class CommandLineRunnerForTests implements CommandLineRunner {
         ArrayList<Integer> ids = new ArrayList<>(2);
         ids.add(2);
         ids.add(10000);
-        List<LinkedProjectTask> linkedProjectTasks = projectTaskRepository.findAllByIdIn(ids, LinkedProjectTask.class);
+        List<LinkedProjectTaskDTO> linkedProjectTasks = projectTaskRepository.findAllByIdIn(ids, LinkedProjectTaskDTO.class);
         linkedProjectTasks = null;
     }
 
