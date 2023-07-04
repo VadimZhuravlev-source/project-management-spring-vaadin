@@ -27,9 +27,11 @@ public class TermsCalculationImpl implements TermsCalculation {
         int count = dependenciesSet.getProjectTasks().size() + dependenciesSet.getLinks().size();
         Map<SimpleLinkedTreeItem, Boolean> path = new HashMap<>(count);
 
-        checkCycle(rootItem, path);
+        detectCycle(rootItem, path);
 
-        return calculate(rootItem);
+        calculate(rootItem);
+
+        return new HashSet<>(0);
 
     }
 
@@ -80,27 +82,64 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private void checkCycle(SimpleLinkedTreeItem treeItem, Map<SimpleLinkedTreeItem, Boolean> path) {
+    private void detectCycle(SimpleLinkedTreeItem treeItem, Map<SimpleLinkedTreeItem, Boolean> path) {
 
         for (TreeItem<ProjectTask> item: treeItem.getChildren()) {
-
             if (! (item instanceof SimpleLinkedTreeItem linkedTreeItem)) continue;
-
-            path.put(linkedTreeItem, true);
             checkCycle(linkedTreeItem, path);
-            path.remove(linkedTreeItem);
+        }
 
+        for (LinkRef item: treeItem.links) {
+            checkCycle(item.refToTreeItem, path);
         }
 
     }
 
-    private Set<ProjectTask> calculate(SimpleLinkedTreeItem rootItem) {
+    private void checkCycle(SimpleLinkedTreeItem treeItem, Map<SimpleLinkedTreeItem, Boolean> path) {
 
-        return new HashSet<>(0);
+        if (path.containsKey(treeItem)) throw new StandardError("Detect cycle in the data of term calculation.");
+
+        path.put(treeItem, true);
+        detectCycle(treeItem, path);
+        path.remove(treeItem);
+
+    }
+
+    private void calculate(SimpleLinkedTreeItem treeItem) {
+
+        if (treeItem.isCalculated) return;
+
+        Date minStartDate = new Date();
+        //Date maxFinishDate = new Date();
+        for (TreeItem<ProjectTask> item: treeItem.getChildren()) {
+            if (!(item instanceof SimpleLinkedTreeItem linkedTreeItem)) continue;
+            calculate(linkedTreeItem);
+            ProjectTask task = treeItem.getValue();
+            Date startDate = task.getStartDate();
+            if (minStartDate.compareTo(startDate) > 0) {
+                minStartDate = startDate;
+            }
+//            Date finishDate = task.getFinishDate();
+//            if (maxFinishDate.compareTo(finishDate) < 0) {
+//                maxFinishDate = finishDate;
+//            }
+        }
+
+        for (LinkRef item: treeItem.links) {
+            calculate(item.refToTreeItem);
+        }
+
+        ProjectTask currentTask = treeItem.getValue();
+
+
+
+
 
     }
 
     private static class SimpleLinkedTreeItem extends SimpleTreeItem<ProjectTask> {
+
+        private boolean isCalculated;
 
         private final List<LinkRef> links = new ArrayList<>();
 
@@ -116,18 +155,20 @@ public class TermsCalculationImpl implements TermsCalculation {
             return links;
         }
 
+        public void setCalculated(boolean isCalculated) {
+            this.isCalculated = isCalculated;
+        }
+
+        public boolean getCalculated() {
+            return this.isCalculated;
+        }
+
     }
 
     @AllArgsConstructor
     private static class LinkRef {
         private Link value;
         private SimpleLinkedTreeItem refToTreeItem;
-    }
-
-    private interface LinkedTreeItem<V, L> extends TreeItem<V> {
-
-        List<? extends LinkedTreeItem<V, L>> getLinks();
-
     }
 
 }
