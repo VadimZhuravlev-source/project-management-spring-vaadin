@@ -1,7 +1,5 @@
 package com.pmvaadin.projectstructure.termscalculation;
 
-import com.pmvaadin.commonobjects.tree.SimpleTreeItem;
-import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
@@ -24,9 +22,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         SimpleLinkedTreeItem rootItem = constructTree(dependenciesSet);
 
-        int count = dependenciesSet.getProjectTasks().size() + dependenciesSet.getLinks().size();
-        Map<SimpleLinkedTreeItem, Boolean> path = new HashMap<>(count);
-
+        Map<SimpleLinkedTreeItem, Boolean> path = new HashMap<>();
         detectCycle(rootItem, path);
 
         calculate(rootItem);
@@ -84,9 +80,8 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private void detectCycle(SimpleLinkedTreeItem treeItem, Map<SimpleLinkedTreeItem, Boolean> path) {
 
-        for (TreeItem<ProjectTask> item: treeItem.getChildren()) {
-            if (! (item instanceof SimpleLinkedTreeItem linkedTreeItem)) continue;
-            checkCycle(linkedTreeItem, path);
+        for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
+            checkCycle(item, path);
         }
 
         for (LinkRef item: treeItem.links) {
@@ -105,64 +100,108 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private void calculate(SimpleLinkedTreeItem treeItem) {
+    private void calculate(SimpleLinkedTreeItem rootItem) {
+
+
+
+        Set<ProjectTask> savedTasks = new HashSet<>();
+        for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
+            calculateStartDateRecursively(item, savedTasks);
+        }
+
+        for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
+            //calculateStartDateRecursively(item);
+        }
+
+    }
+
+    private void calculateStartDateRecursively(SimpleLinkedTreeItem treeItem, Set<ProjectTask> savedTasks) {
 
         if (treeItem.isCalculated) return;
 
+        // It is a condition that this task is the last one in the chain of dependencies.
+        if (treeItem.getChildren().isEmpty() && treeItem.links.isEmpty()) {
+            treeItem.isCalculated = true;
+            return;
+        }
+
         Date minStartDate = new Date();
-        //Date maxFinishDate = new Date();
-        for (TreeItem<ProjectTask> item: treeItem.getChildren()) {
-            if (!(item instanceof SimpleLinkedTreeItem linkedTreeItem)) continue;
-            calculate(linkedTreeItem);
-            ProjectTask task = treeItem.getValue();
+        for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
+            calculate(item);
+            ProjectTask task = item.getValue();
             Date startDate = task.getStartDate();
             if (minStartDate.compareTo(startDate) > 0) {
                 minStartDate = startDate;
             }
-//            Date finishDate = task.getFinishDate();
-//            if (maxFinishDate.compareTo(finishDate) < 0) {
-//                maxFinishDate = finishDate;
-//            }
         }
 
         for (LinkRef item: treeItem.links) {
             calculate(item.refToTreeItem);
+            ProjectTask task = item.refToTreeItem.getValue();
+            Date startDate = task.getStartDate();
+            if (minStartDate.compareTo(startDate) > 0) {
+                minStartDate = startDate;
+            }
         }
 
         ProjectTask currentTask = treeItem.getValue();
 
-
-
-
+        Date startDate = currentTask.getStartDate();
+        if (startDate.compareTo(minStartDate) > 0) {
+            currentTask.setStartDate(minStartDate);
+            savedTasks.add(currentTask);
+        }
 
     }
 
-    private static class SimpleLinkedTreeItem extends SimpleTreeItem<ProjectTask> {
+    private static class SimpleLinkedTreeItem {//extends SimpleTreeItem<ProjectTask> {
 
+        private SimpleLinkedTreeItem parent;
         private boolean isCalculated;
+        private ProjectTask value;
+        private final List<SimpleLinkedTreeItem> children = new ArrayList<>();
 
         private final List<LinkRef> links = new ArrayList<>();
 
         public SimpleLinkedTreeItem() {
-            super();
+
         }
 
         public SimpleLinkedTreeItem(ProjectTask value) {
-            super(value);
+            this.value = value;
         }
 
         public List<LinkRef> getLinks() {
             return links;
         }
 
-        public void setCalculated(boolean isCalculated) {
-            this.isCalculated = isCalculated;
+        public SimpleLinkedTreeItem getParent() {
+            return parent;
         }
 
-        public boolean getCalculated() {
-            return this.isCalculated;
+        public void setParent(SimpleLinkedTreeItem parent) {
+            this.parent = parent;
         }
 
+        public boolean isCalculated() {
+            return isCalculated;
+        }
+
+        public void setCalculated(boolean calculated) {
+            isCalculated = calculated;
+        }
+
+        public ProjectTask getValue() {
+            return value;
+        }
+
+        public void setValue(ProjectTask value) {
+            this.value = value;
+        }
+
+        public List<SimpleLinkedTreeItem> getChildren() {
+            return children;
+        }
     }
 
     @AllArgsConstructor
