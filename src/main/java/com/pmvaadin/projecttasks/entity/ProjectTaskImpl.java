@@ -1,6 +1,5 @@
 package com.pmvaadin.projecttasks.entity;
 
-import com.pmvaadin.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,6 +9,7 @@ import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Objects;
 
@@ -57,13 +57,33 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Transient
     private String wbs;
 
-    // Terms
+    @Setter
+    @Column(name = "is_project")
+    private boolean isProject;
+
+    // Terms begin
     @Setter
     @Column(name = "start_date")
     private Date startDate;
+
     @Setter
     @Column(name = "finish_date")
     private Date finishDate;
+
+    @Setter
+    @Column(name = "duration")
+    private BigDecimal duration;
+
+    @Setter
+    @Column(name = "terms_planning_id")
+    private TermsPlanningType termsPlanningType;
+
+    //@ManyToOne
+    @Setter
+    //@JoinColumn(name = "calendar_id")
+    @Column(name = "calendar_id")
+    private Integer calendarId;
+    // Terms end
 
     @Setter
     @Column(name = "links_check_sum")
@@ -73,14 +93,6 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Setter
     @Transient
     private int childrenCount;
-
-    //    @Setter
-//    @Column(name = "duration")
-//    private new BigDecimal duration;
-    //@ManyToOne
-    @Setter
-    @JoinColumn(name = "calendar_id")
-    private Integer calendarId;
 
     @Setter
     @Transient

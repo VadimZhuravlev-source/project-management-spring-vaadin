@@ -377,6 +377,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         validateVersion(projectTaskList);
 
+        // TODO validation type links with summary task "target"
+
         projectTaskList.remove(target);
 
         // Get levelOrder for moved tasks

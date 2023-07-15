@@ -6,7 +6,7 @@ public enum LinkType {
     FINISHSTART(2),
     FINISHFINISH(3);
 
-    private Integer code;
+    private final Integer code;
 
     LinkType(Integer code) {
         this.code = code;
@@ -25,7 +25,7 @@ public enum LinkType {
         }else if (this.code.equals(2)) {
             return "Finish-to-start(FS)";
         }else if (this.code.equals(3)) {
-            return "Finish-toFinish(FF)";
+            return "Finish-to-Finish(FF)";
         }
         return "";
     }

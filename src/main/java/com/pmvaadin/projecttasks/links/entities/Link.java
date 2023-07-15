@@ -2,6 +2,8 @@ package com.pmvaadin.projecttasks.links.entities;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 
+import java.math.BigDecimal;
+
 public interface Link {
 
     Integer getId();
@@ -22,6 +24,9 @@ public interface Link {
 
     LinkType getLinkType();
     void setLinkType(LinkType linkType);
+
+    BigDecimal getDelay();
+    void setDelay(BigDecimal delay);
 
     Link getInstance();
     Link copy(Link link);

@@ -102,20 +102,14 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private void calculate(SimpleLinkedTreeItem rootItem) {
 
-
-
         Set<ProjectTask> savedTasks = new HashSet<>();
         for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
-            calculateStartDateRecursively(item, savedTasks);
-        }
-
-        for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
-            //calculateStartDateRecursively(item);
+            calculateRecursively(item, savedTasks);
         }
 
     }
 
-    private void calculateStartDateRecursively(SimpleLinkedTreeItem treeItem, Set<ProjectTask> savedTasks) {
+    private void calculateRecursively(SimpleLinkedTreeItem treeItem, Set<ProjectTask> savedTasks) {
 
         if (treeItem.isCalculated) return;
 
@@ -127,7 +121,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         Date minStartDate = new Date();
         for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
-            calculate(item);
+            calculateRecursively(item, savedTasks);
             ProjectTask task = item.getValue();
             Date startDate = task.getStartDate();
             if (minStartDate.compareTo(startDate) > 0) {
@@ -136,7 +130,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         }
 
         for (LinkRef item: treeItem.links) {
-            calculate(item.refToTreeItem);
+            calculateRecursively(item.refToTreeItem, savedTasks);
             ProjectTask task = item.refToTreeItem.getValue();
             Date startDate = task.getStartDate();
             if (minStartDate.compareTo(startDate) > 0) {
@@ -144,13 +138,15 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
         }
 
-        ProjectTask currentTask = treeItem.getValue();
+        ProjectTask task = treeItem.getValue();
 
-        Date startDate = currentTask.getStartDate();
+        Date startDate = task.getStartDate();
         if (startDate.compareTo(minStartDate) > 0) {
-            currentTask.setStartDate(minStartDate);
-            savedTasks.add(currentTask);
+            task.setStartDate(minStartDate);
+            savedTasks.add(task);
         }
+
+        treeItem.isCalculated = true;
 
     }
 

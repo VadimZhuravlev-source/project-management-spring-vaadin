@@ -1,12 +1,11 @@
 package com.pmvaadin.projecttasks.links.entities;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.Objects;
 
 @Getter
@@ -41,6 +40,10 @@ public class LinkImpl implements Link {
     @Setter
     @Column(name = "link_type")
     private LinkType linkType;
+
+    @Setter
+    @Column(name = "delay")
+    private BigDecimal delay;
 
     @Setter
     @Transient
