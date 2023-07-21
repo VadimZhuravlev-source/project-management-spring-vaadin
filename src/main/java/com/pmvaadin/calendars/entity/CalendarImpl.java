@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,7 +43,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
     @Setter
     @Enumerated(EnumType.STRING)
-    private CalendarSettings setting;
+    private CalendarSettings setting = CalendarSettings.EIGHTHOURWORKINGDAY;
 
     @Setter
     @Transient
@@ -88,6 +90,21 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @Override
     public String toString() {
         return name;
+    }
+
+    @Override
+    public Date calculate(Date date, BigDecimal duration) {
+
+        if (duration == null || new BigDecimal("0").equals(duration)) return date;
+
+        List<DayOfWeekSettings> daysOfWeekSettings;
+        if (setting == CalendarSettings.DAYSOFWEEKSETTINGS) daysOfWeekSettings = this.daysOfWeekSettings;
+        else daysOfWeekSettings = this.setting.getDaysOfWeekSettings();
+
+
+
+        return date;
+
     }
 
 }

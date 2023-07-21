@@ -1,5 +1,7 @@
 package com.pmvaadin.calendars.entity;
 
+import java.math.BigDecimal;
+import java.util.Date;
 import java.util.List;
 
 import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
@@ -33,4 +35,8 @@ public interface Calendar {
     List<ExceptionDays> getCalendarException();
 
     void setCalendarException(List<ExceptionDays> exceptionDaysList);
+
+    Date calculate(Date date, BigDecimal duration);
+
+
 }

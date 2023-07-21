@@ -1,13 +1,16 @@
 package com.pmvaadin.projectstructure.termscalculation;
 
+import com.pmvaadin.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.projecttasks.entity.TermsPlanningType;
 import com.pmvaadin.projecttasks.links.entities.Link;
+import com.pmvaadin.projecttasks.links.entities.LinkType;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -15,12 +18,17 @@ import java.util.stream.Collectors;
 @Scope("prototype")
 public class TermsCalculationImpl implements TermsCalculation {
 
+    private Map<?, Calendar> calendarMap = new HashMap<>();
+    private Calendar defaultCalendar;
+
     @Override
-    public Set<ProjectTask> calculate(DependenciesSet dependenciesSet) {
+    public Set<ProjectTask> calculate(TermCalculationData termCalculationData) {
 
-        if (dependenciesSet.isCycle()) throw new StandardError("Cycle detected in the dependent tasks. Terms calculation is not possible.");
+        if (termCalculationData.isCycle()) throw new StandardError("Cycle detected in the dependent tasks. Terms calculation is not possible.");
 
-        SimpleLinkedTreeItem rootItem = constructTree(dependenciesSet);
+        SimpleLinkedTreeItem rootItem = constructTree(termCalculationData);
+
+        fillParameters(termCalculationData);
 
         Map<SimpleLinkedTreeItem, Boolean> path = new HashMap<>();
         detectCycle(rootItem, path);
@@ -31,10 +39,18 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private SimpleLinkedTreeItem constructTree(DependenciesSet dependenciesSet) {
+    private void fillParameters(TermCalculationData termCalculationData) {
 
-        List<ProjectTask> projectTasks = dependenciesSet.getProjectTasks();
-        List<Link> links = dependenciesSet.getLinks();
+        calendarMap = termCalculationData.getCalendars().stream()
+                .collect(Collectors.toMap(Calendar::getId, calendar -> calendar));
+        defaultCalendar = termCalculationData.getDefaultCalendar();
+
+    }
+
+    private SimpleLinkedTreeItem constructTree(TermCalculationData termCalculationData) {
+
+        List<ProjectTask> projectTasks = termCalculationData.getProjectTasks();
+        List<Link> links = termCalculationData.getLinks();
 
         Map<?, SimpleLinkedTreeItem> mapProjectTasks = projectTasks.stream()
                 .collect(Collectors.toMap(ProjectTask::getId, SimpleLinkedTreeItem::new));
@@ -67,7 +83,8 @@ public class TermsCalculationImpl implements TermsCalculation {
                 parentTreeItem = rootItem;
             }
 
-            if (parentTreeItem == null) throw new StandardError("The passed list of project tasks does not include tasks that have matching IDs.");
+            if (parentTreeItem == null)
+                throw new StandardError("The passed list of project tasks does not include tasks that have matching IDs.");
 
             treeItem.setParent(parentTreeItem);
             parentTreeItem.getChildren().add(treeItem);
@@ -84,8 +101,8 @@ public class TermsCalculationImpl implements TermsCalculation {
             checkCycle(item, path);
         }
 
-        for (LinkRef item: treeItem.links) {
-            checkCycle(item.refToTreeItem, path);
+        for (LinkRef linkItem: treeItem.links) {
+            checkCycle(linkItem.refToTreeItem, path);
         }
 
     }
@@ -119,7 +136,14 @@ public class TermsCalculationImpl implements TermsCalculation {
             return;
         }
 
+        ProjectTask currentTask = treeItem.getValue();
+        if (currentTask.getTermsPlanningType().equals(TermsPlanningType.MANUAL)) {
+            treeItem.isCalculated = true;
+            return;
+        }
+
         Date minStartDate = new Date();
+        boolean isSumTask = !treeItem.getChildren().isEmpty() || currentTask.getChildrenCount() != 0;
         for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
             calculateRecursively(item, savedTasks);
             ProjectTask task = item.getValue();
@@ -129,26 +153,58 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
         }
 
-        for (LinkRef item: treeItem.links) {
-            calculateRecursively(item.refToTreeItem, savedTasks);
-            ProjectTask task = item.refToTreeItem.getValue();
-            Date startDate = task.getStartDate();
-            if (minStartDate.compareTo(startDate) > 0) {
-                minStartDate = startDate;
-            }
+        if (!isSumTask) {
+            minStartDate = calculateTermsFromLinks(treeItem.links, currentTask, savedTasks);
         }
 
-        ProjectTask task = treeItem.getValue();
-
-        Date startDate = task.getStartDate();
+        Date startDate = currentTask.getStartDate();
         if (startDate.compareTo(minStartDate) > 0) {
-            task.setStartDate(minStartDate);
-            savedTasks.add(task);
+            currentTask.setStartDate(minStartDate);
+            savedTasks.add(currentTask);
         }
 
         treeItem.isCalculated = true;
 
     }
+
+    private Terms calculateTermsFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
+
+        Date minStartDate = new Date();
+        Calendar calendar = calendarMap.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
+        BigDecimal duration = calculatedTask.getDuration();
+        for (LinkRef item : links) {
+            calculateRecursively(item.refToTreeItem, savedTasks);
+            ProjectTask task = item.refToTreeItem.getValue();
+
+            Link link = item.value;
+            LinkType linkType = link.getLinkType();
+            Date startDate = null;
+            Date finishDate = null;
+            if (linkType == LinkType.STARTSTART) startDate = task.getStartDate();
+            else if (linkType == LinkType.STARTFINISH) finishDate = task.getStartDate();
+            else if (linkType == LinkType.FINISHSTART) startDate = task.getFinishDate();
+            else if (linkType == LinkType.FINISHFINISH) finishDate = task.getFinishDate();
+            else throw new StandardError("Illegal link type of the predecessor: " + task);
+
+            if (startDate == null && finishDate == null)
+                throw new StandardError("Illegal start date and finish date of the project task: " + task);
+
+            Date calculatedDate;
+            if (startDate == null) calculatedDate = finishDate;
+            else calculatedDate = startDate;
+
+            calendar
+
+            if (minStartDate.compareTo(startDate) > 0) {
+                minStartDate = startDate;
+            }
+        }
+
+        return new Terms(s)
+
+    }
+
+    private record Terms(Date startDate, Date finishDate) {}
 
     private static class SimpleLinkedTreeItem {//extends SimpleTreeItem<ProjectTask> {
 

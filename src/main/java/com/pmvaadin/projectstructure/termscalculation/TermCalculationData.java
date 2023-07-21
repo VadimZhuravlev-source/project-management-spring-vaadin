@@ -8,10 +8,10 @@ import java.util.List;
 
 public interface TermCalculationData {
 
-    List<ProjectTask> projectTasks();
-    List<Link> links();
+    List<ProjectTask> getProjectTasks();
+    List<Link> getLinks();
     boolean isCycle();
-    List<Calendar> calendars();
-    Calendar defaultCalendar();
+    List<Calendar> getCalendars();
+    Calendar getDefaultCalendar();
 
 }

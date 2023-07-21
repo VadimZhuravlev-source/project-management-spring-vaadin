@@ -5,10 +5,10 @@ import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
+import com.pmvaadin.projectstructure.termscalculation.TermCalculationData;
 import com.pmvaadin.projectstructure.termscalculation.TermsCalculation;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
-import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversion;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
@@ -648,11 +648,11 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private Set<ProjectTask> recalculateTerms(Set<?> taskIds) {
         //return new HashSet(0);
 
-        DependenciesSet dependenciesSet = dependenciesService.getAllDependencies(taskIds);
+        TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(taskIds);
 
         ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
         TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
-        Set<ProjectTask> tasks = termsCalculation.calculate(dependenciesSet);
+        Set<ProjectTask> tasks = termsCalculation.calculate(termCalculationData);
 
         return tasks;
 

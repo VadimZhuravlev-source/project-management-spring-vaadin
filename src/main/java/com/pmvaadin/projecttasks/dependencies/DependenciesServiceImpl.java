@@ -1,6 +1,8 @@
 package com.pmvaadin.projecttasks.dependencies;
 
 import com.pmvaadin.AppConfiguration;
+import com.pmvaadin.projectstructure.termscalculation.TermCalculationData;
+import com.pmvaadin.projectstructure.termscalculation.TermCalculationDataImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
@@ -70,10 +72,10 @@ public class DependenciesServiceImpl implements DependenciesService {
     }
 
     @Override
-    public <I> DependenciesSet getAllDependencies(Set<I> ids) {
+    public <I> TermCalculationData getAllDependenciesForTermCalc(Set<I> ids) {
 
         //return new DependenciesSetImpl(new ArrayList<>(), new ArrayList<>(), false);
-        return getAllDependencies(ids, getQueryTextForDependenciesAtTermCalc());
+        return getAllDependenciesForTermCalc(ids, getQueryTextForDependenciesAtTermCalc());
 
     }
 
@@ -140,7 +142,7 @@ public class DependenciesServiceImpl implements DependenciesService {
 
     }
 
-    private <I, L> DependenciesSet getAllDependencies(Set<I> ids, String queryText) {
+    private <I, L> TermCalculationData getAllDependenciesForTermCalc(Set<I> ids, String queryText) {
 
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
 
@@ -186,7 +188,7 @@ public class DependenciesServiceImpl implements DependenciesService {
         var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
         var links = linkRepository.findAllById(linkIds);
 
-        return new DependenciesSetImpl(projectTasks, links, isCycle);
+        return new TermCalculationDataImpl(projectTasks, links, isCycle);
 
     }
 
