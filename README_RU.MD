@@ -9,7 +9,7 @@ Project management
 
 Раздел Projects:
 
-<img src="Images/Projects.png" alt="Projects" width="100%"/>
+<img src="images/Projects.png" alt="Projects" width="100%"/>
 
 Здесь доступны следующие действия с проектными задачами:
 + Создание.
@@ -17,11 +17,11 @@ Project management
 + Перемещение. В пределах дерева можно перемещать задачи с помощью кнопок и перетаскивать мышью
 + Двойным кликом открывается форма редактирования задачи (Данные задачи можно менять только с помощью формы редактирования)
 
-<img src="Images/Project_task.png" alt="Project task" width="100%"/>
+<img src="images/Project_task.png" alt="Project task" width="100%"/>
 
 + + На вкладке "Main" распологаются основные данные задачи
 
-<img src="Images/Predecessors.png" alt="Predecessors" width="100%"/>
+<img src="images/Predecessors.png" alt="Predecessors" width="100%"/>
 
 + + На вкладке "Predecessors" можно задавать предшественников задачи.
 Для добавления предшественников нужно нажать на кнопку Add, после чего добавиться строка в таблицу,
