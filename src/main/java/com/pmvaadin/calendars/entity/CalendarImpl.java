@@ -1,6 +1,7 @@
 package com.pmvaadin.calendars.entity;
 
 import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
+import com.pmvaadin.calendars.dayofweeksettings.DefaultDaySetting;
 import com.pmvaadin.calendars.exceptiondays.ExceptionDays;
 import com.pmvaadin.calendars.OperationListenerForCalendar;
 import lombok.Getter;
@@ -13,9 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @EntityListeners(OperationListenerForCalendar.class)
@@ -24,6 +30,9 @@ import java.util.Objects;
 @Table(name = "calendars")
 @Transactional
 public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
+
+    private static java.util.Calendar systemCalendar = java.util.Calendar.getInstance();
+
     @Id
     @Setter
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -97,11 +106,22 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
         if (duration == null || new BigDecimal("0").equals(duration)) return date;
 
-        List<DayOfWeekSettings> daysOfWeekSettings;
-        if (setting == CalendarSettings.DAYSOFWEEKSETTINGS) daysOfWeekSettings = this.daysOfWeekSettings;
-        else daysOfWeekSettings = this.setting.getDaysOfWeekSettings();
+        Set<DefaultDaySetting> daysOfWeekSettings;
+        if (setting == CalendarSettings.DAYSOFWEEKSETTINGS)
+            // TODO initialization of daysOfWeekSettings has to make only one time
+            daysOfWeekSettings = this.daysOfWeekSettings.stream()
+                    .map(d -> new DefaultDaySetting(d.getDayOfWeek(), d.getCountHours()))
+                    .collect(Collectors.toUnmodifiableSet());
+        else {
+            daysOfWeekSettings = this.setting.getDefaultSettings();
+        }
 
+        systemCalendar.setTime(date);
+        int dayOfWeek = systemCalendar.get(java.util.Calendar.DAY_OF_WEEK);
 
+        LocalDate d = new LocalDate(date);
+        d.
+        DayOfWeek.
 
         return date;
 

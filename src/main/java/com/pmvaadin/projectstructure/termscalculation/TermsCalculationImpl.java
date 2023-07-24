@@ -193,7 +193,7 @@ public class TermsCalculationImpl implements TermsCalculation {
             if (startDate == null) calculatedDate = finishDate;
             else calculatedDate = startDate;
 
-            calendar
+            Date newDate = calendar.calculate(calculatedDate, duration.add(link.getDelay()));
 
             if (minStartDate.compareTo(startDate) > 0) {
                 minStartDate = startDate;

@@ -9,4 +9,5 @@ public class OperationListenerForCalendar {
     public void postLoad(CalendarImpl calendar) {
         calendar.setSetting(calendar.getSetting());
     }
+
 }

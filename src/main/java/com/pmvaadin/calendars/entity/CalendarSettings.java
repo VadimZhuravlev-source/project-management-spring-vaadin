@@ -1,22 +1,26 @@
 package com.pmvaadin.calendars.entity;
 
 import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
+import com.pmvaadin.calendars.dayofweeksettings.DefaultDaySetting;
 
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 public enum CalendarSettings {
-    EIGHTHOURWORKINGDAY,
-    HOURSHIFT12,
-    HOURSHIFT24,
-    DAYSOFWEEKSETTINGS;
+    EIGHTHOURWORKINGDAY(initiateSettingsEightHour()),
+    HOURSHIFT12(initiateShiftSettings("12.00")),
+    HOURSHIFT24(initiateShiftSettings("24.00")),
+    DAYSOFWEEKSETTINGS(initiateShiftSettings("0.00"));
+
+    private final Set<DefaultDaySetting> defaultSettings;
 
     private static final CalendarSettings[] ENUMS = values();
 
-    CalendarSettings(){
+    CalendarSettings(Set<DefaultDaySetting> defaultSettings){
+
+        this.defaultSettings = defaultSettings;
+
     }
 
     public static CalendarSettings of(int calendarSettings) {
@@ -43,44 +47,40 @@ public enum CalendarSettings {
 
     }
 
+    private static Set<DefaultDaySetting> initiateShiftSettings(String number) {
+
+        int quantityOfDayInWeek = 7;
+        Set<DefaultDaySetting> set = new HashSet<>(quantityOfDayInWeek);
+        for (DayOfWeek dayOfWeek: DayOfWeek.values()) {
+            set.add(new DefaultDaySetting(dayOfWeek.getValue(), new BigDecimal(number)));
+        }
+        return Collections.unmodifiableSet(set);
+
+    }
+
+    private static Set<DefaultDaySetting> initiateSettingsEightHour() {
+
+        int quantityOfDayInWeek = 7;
+        Set<DefaultDaySetting> setEightHour = new HashSet<>(quantityOfDayInWeek);
+        setEightHour.add(new DefaultDaySetting(DayOfWeek.MONDAY.getValue(), new  BigDecimal("8.00")));
+        setEightHour.add(new DefaultDaySetting(DayOfWeek.TUESDAY.getValue(), new BigDecimal("8.00")));
+        setEightHour.add(new DefaultDaySetting(DayOfWeek.WEDNESDAY.getValue(), new BigDecimal("8.00")));
+        setEightHour.add(new DefaultDaySetting(DayOfWeek.THURSDAY.getValue(), new BigDecimal("8.00")));
+        setEightHour.add(new DefaultDaySetting(DayOfWeek.FRIDAY.getValue(), new BigDecimal("8.00")));
+        setEightHour.add(new DefaultDaySetting(DayOfWeek.SATURDAY.getValue(), new BigDecimal("0.00")));
+        setEightHour.add(new DefaultDaySetting(DayOfWeek.SUNDAY.getValue(), new BigDecimal("0.00")));
+
+        return Collections.unmodifiableSet(setEightHour);
+
+    }
+
+    public Set<DefaultDaySetting> getDefaultSettings() {
+        return defaultSettings;
+    }
+
     public List<DayOfWeekSettings> getDaysOfWeekSettings() {
 
-        List<DayOfWeekSettings> daysOfWeekSettings = new ArrayList<>();
-
-        if (this == EIGHTHOURWORKINGDAY) {
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.MONDAY.getValue(), new  BigDecimal("8.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.TUESDAY.getValue(), new BigDecimal("8.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.WEDNESDAY.getValue(), new BigDecimal("8.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.THURSDAY.getValue(), new BigDecimal("8.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.FRIDAY.getValue(), new BigDecimal("8.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.SATURDAY.getValue(), new BigDecimal("0.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.SUNDAY.getValue(), new BigDecimal("0.00")));
-        }else if (this == HOURSHIFT12) {
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.MONDAY.getValue(), new BigDecimal("12.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.TUESDAY.getValue(), new BigDecimal("12.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.WEDNESDAY.getValue(), new BigDecimal("12.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.THURSDAY.getValue(), new BigDecimal("12.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.FRIDAY.getValue(), new BigDecimal("12.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.SATURDAY.getValue(), new BigDecimal("12.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.SUNDAY.getValue(), new BigDecimal("12.00")));
-        }else if (this == HOURSHIFT24) {
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.MONDAY.getValue(), new BigDecimal("24.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.TUESDAY.getValue(), new BigDecimal("24.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.WEDNESDAY.getValue(), new BigDecimal("24.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.THURSDAY.getValue(), new BigDecimal("24.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.FRIDAY.getValue(), new BigDecimal("24.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.SATURDAY.getValue(), new BigDecimal("24.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.SUNDAY.getValue(), new BigDecimal("24.00")));
-        }else {
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.MONDAY.getValue(), new BigDecimal("0.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.TUESDAY.getValue(), new BigDecimal("0.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.WEDNESDAY.getValue(), new BigDecimal("0.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.THURSDAY.getValue(), new BigDecimal("0.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.SATURDAY.getValue(), new BigDecimal("0.00")));
-            daysOfWeekSettings.add(new DayOfWeekSettings(DayOfWeek.SUNDAY.getValue(), new BigDecimal("0.00")));
-        }
-
-        return daysOfWeekSettings;
+        return defaultSettings.stream().map(DayOfWeekSettings::new).toList();
 
     }
 

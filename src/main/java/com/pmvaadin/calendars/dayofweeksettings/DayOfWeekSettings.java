@@ -2,6 +2,7 @@ package com.pmvaadin.calendars.dayofweeksettings;
 
 import com.pmvaadin.calendars.OperationListenerForDayOfWeekSettings;
 import com.pmvaadin.calendars.entity.CalendarImpl;
+import com.pmvaadin.projecttasks.links.entities.LinkImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -54,6 +55,11 @@ public class DayOfWeekSettings implements Serializable {
 
     }
 
+    public DayOfWeekSettings(DefaultDaySetting dayOfWeekSettings) {
+        this.dayOfWeek = dayOfWeekSettings.dayOfWeek();
+        this.countHours = dayOfWeekSettings.countHours();
+    }
+
     public static String getWorkDaysName() {
         return "Day of week";
     }
@@ -67,8 +73,17 @@ public class DayOfWeekSettings implements Serializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LinkImpl that)) return false;
+        if (getId() == null && that.getId() == null) return false;
+        return Objects.equals(getId(), that.getId());
+    }
+
+    @Override
     public int hashCode() {
-        return Objects.hash(id, version);
+        if (getId() == null) return super.hashCode();
+        return Objects.hash(getId());
     }
 
 }
