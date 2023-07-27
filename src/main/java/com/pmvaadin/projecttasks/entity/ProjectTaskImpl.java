@@ -10,6 +10,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Objects;
 
@@ -64,11 +65,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     // Terms begin
     @Setter
     @Column(name = "start_date")
-    private Date startDate;
+    private LocalDateTime startDate;
 
     @Setter
     @Column(name = "finish_date")
-    private Date finishDate;
+    private LocalDateTime finishDate;
 
     @Setter
     @Column(name = "duration")

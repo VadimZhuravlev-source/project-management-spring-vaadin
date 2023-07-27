@@ -1,6 +1,10 @@
 package com.pmvaadin.projectstructure.termscalculation;
 
+import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
+import com.pmvaadin.calendars.dayofweeksettings.DefaultDaySetting;
 import com.pmvaadin.calendars.entity.Calendar;
+import com.pmvaadin.calendars.entity.CalendarSettings;
+import com.pmvaadin.calendars.exceptiondays.ExceptionDays;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.TermsPlanningType;
@@ -11,6 +15,8 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -18,8 +24,8 @@ import java.util.stream.Collectors;
 @Scope("prototype")
 public class TermsCalculationImpl implements TermsCalculation {
 
-    private Map<?, Calendar> calendarMap = new HashMap<>();
-    private Calendar defaultCalendar;
+    private Map<?, CalendarData> calendarsData = new HashMap<>();
+    private CalendarData defaultCalendar;
 
     @Override
     public Set<ProjectTask> calculate(TermCalculationData termCalculationData) {
@@ -41,9 +47,31 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private void fillParameters(TermCalculationData termCalculationData) {
 
-        calendarMap = termCalculationData.getCalendars().stream()
-                .collect(Collectors.toMap(Calendar::getId, calendar -> calendar));
-        defaultCalendar = termCalculationData.getDefaultCalendar();
+        calendarsData = termCalculationData.getCalendars().stream()
+                .collect(Collectors.toMap(Calendar::getId, this::getCalendarData));
+
+        defaultCalendar = getCalendarData(termCalculationData.getDefaultCalendar());
+
+    }
+
+    private CalendarData getCalendarData(Calendar calendar) {
+
+        List<ExceptionDays> exceptionDaysList = calendar.getCalendarException();
+
+        List<DefaultDaySetting> settingList;
+        if (calendar.getSetting() == CalendarSettings.DAYSOFWEEKSETTINGS) {
+            List<DayOfWeekSettings> list = calendar.getDaysOfWeekSettings();
+            settingList = list.stream().map(d -> new DefaultDaySetting(d.getDayOfWeek(), d.getCountHours())).toList();
+        } else {
+            settingList = calendar.getSetting().getDefaultDaySettings();
+        }
+
+        Map<LocalDate, BigDecimal> mapExceptions =
+                exceptionDaysList.stream().collect(
+                        Collectors.toMap(ExceptionDays::getDate, ExceptionDays::getDuration)
+                );
+
+        return new CalendarData(settingList, mapExceptions);
 
     }
 
@@ -142,12 +170,12 @@ public class TermsCalculationImpl implements TermsCalculation {
             return;
         }
 
-        Date minStartDate = new Date();
+        LocalDateTime minStartDate = LocalDateTime.of(0, 0, 0, 0, 0, 0);
         boolean isSumTask = !treeItem.getChildren().isEmpty() || currentTask.getChildrenCount() != 0;
         for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
             calculateRecursively(item, savedTasks);
             ProjectTask task = item.getValue();
-            Date startDate = task.getStartDate();
+            LocalDateTime startDate = task.getStartDate();
             if (minStartDate.compareTo(startDate) > 0) {
                 minStartDate = startDate;
             }
@@ -157,7 +185,7 @@ public class TermsCalculationImpl implements TermsCalculation {
             minStartDate = calculateTermsFromLinks(treeItem.links, currentTask, savedTasks);
         }
 
-        Date startDate = currentTask.getStartDate();
+        LocalDateTime startDate = currentTask.getStartDate();
         if (startDate.compareTo(minStartDate) > 0) {
             currentTask.setStartDate(minStartDate);
             savedTasks.add(currentTask);
@@ -169,8 +197,8 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private Terms calculateTermsFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
 
-        Date minStartDate = new Date();
-        Calendar calendar = calendarMap.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
+        LocalDateTime minStartDate = LocalDateTime.of(0, 0, 0, 0, 0);
+        CalendarData calendarData = calendarsData.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
         BigDecimal duration = calculatedTask.getDuration();
         for (LinkRef item : links) {
             calculateRecursively(item.refToTreeItem, savedTasks);
@@ -178,8 +206,8 @@ public class TermsCalculationImpl implements TermsCalculation {
 
             Link link = item.value;
             LinkType linkType = link.getLinkType();
-            Date startDate = null;
-            Date finishDate = null;
+            LocalDateTime startDate = null;
+            LocalDateTime finishDate = null;
             if (linkType == LinkType.STARTSTART) startDate = task.getStartDate();
             else if (linkType == LinkType.STARTFINISH) finishDate = task.getStartDate();
             else if (linkType == LinkType.FINISHSTART) startDate = task.getFinishDate();
@@ -189,11 +217,11 @@ public class TermsCalculationImpl implements TermsCalculation {
             if (startDate == null && finishDate == null)
                 throw new StandardError("Illegal start date and finish date of the project task: " + task);
 
-            Date calculatedDate;
+            LocalDateTime calculatedDate;
             if (startDate == null) calculatedDate = finishDate;
             else calculatedDate = startDate;
 
-            Date newDate = calendar.calculate(calculatedDate, duration.add(link.getDelay()));
+            LocalDateTime newDate = calculateDate(calendarData, calculatedDate, duration.add(link.getDelay()));
 
             if (minStartDate.compareTo(startDate) > 0) {
                 minStartDate = startDate;
@@ -203,6 +231,49 @@ public class TermsCalculationImpl implements TermsCalculation {
         return new Terms(s)
 
     }
+
+    private LocalDateTime calculateDate(CalendarData calendarData, LocalDateTime date, BigDecimal duration) {
+
+        if (duration.compareTo(BigDecimal.ZERO) == 0) return date;
+
+        int dayOfWeek = date.getDayOfWeek().getValue();
+
+        List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay;
+        Map<LocalDate, BigDecimal> exceptionDays = calendarData.exceptionDays;
+
+        boolean isAscend = duration.compareTo(BigDecimal.ZERO) > 0;
+
+        LocalDate day = date.toLocalDate();
+
+        BigDecimal hoursOfException = exceptionDays.get(day);
+
+        int index = 0;
+        for (int i = 0; i < durationOfDaysOfWeek.size(); i++) {
+            if (durationOfDaysOfWeek.get(i).dayOfWeek() == dayOfWeek) {
+                index = i;
+                break;
+            }
+        }
+
+
+        if (hoursOfException == null)
+
+        for (DefaultDaySetting def: durationOfDaysOfWeek) {
+            if (de)
+        }
+
+
+
+        Map<Integer, BigDecimal> dayDurations = calendarData.amountOfHourInDay();
+        Map<LocalDate, BigDecimal> exception = calendarData.exceptionDays();
+
+
+
+    }
+
+    // classes
+
+    private record CalendarData(List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, BigDecimal> exceptionDays) {}
 
     private record Terms(Date startDate, Date finishDate) {}
 

@@ -3,6 +3,7 @@ package com.pmvaadin.projecttasks.entity;
 import org.springframework.data.relational.core.sql.In;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 public interface ProjectTask extends ProjectTaskOrderedHierarchy {
@@ -45,10 +46,10 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     String getName();
     void setName(String name);
-    Date getStartDate();
-    void setStartDate(Date startDate);
-    Date getFinishDate();
-    void setFinishDate(Date finishDate);
+    LocalDateTime getStartDate();
+    void setStartDate(LocalDateTime startDate);
+    LocalDateTime getFinishDate();
+    void setFinishDate(LocalDateTime finishDate);
     boolean isProject();
     void setProject(boolean isProject);
     BigDecimal getDuration();
