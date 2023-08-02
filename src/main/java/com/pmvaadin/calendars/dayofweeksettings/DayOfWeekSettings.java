@@ -1,6 +1,5 @@
 package com.pmvaadin.calendars.dayofweeksettings;
 
-import com.pmvaadin.calendars.OperationListenerForDayOfWeekSettings;
 import com.pmvaadin.calendars.entity.CalendarImpl;
 import com.pmvaadin.projecttasks.links.entities.LinkImpl;
 import lombok.Getter;

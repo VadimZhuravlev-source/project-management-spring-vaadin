@@ -1,4 +1,4 @@
-package com.pmvaadin.calendars;
+package com.pmvaadin.calendars.dayofweeksettings;
 
 import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
 

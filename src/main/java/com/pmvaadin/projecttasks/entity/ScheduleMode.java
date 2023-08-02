@@ -1,13 +1,13 @@
 package com.pmvaadin.projecttasks.entity;
 
-public enum TermsPlanningType {
+public enum ScheduleMode {
 
-    AUTOMATIC(0),
-    MANUAL(1);
+    AUTO(0),
+    MANUALLY(1);
 
     private final Integer code;
 
-    TermsPlanningType(int code) {
+    ScheduleMode(int code) {
         this.code = code;
     }
 

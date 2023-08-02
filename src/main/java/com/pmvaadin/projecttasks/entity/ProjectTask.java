@@ -1,8 +1,5 @@
 package com.pmvaadin.projecttasks.entity;
 
-import org.springframework.data.relational.core.sql.In;
-
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -52,10 +49,10 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     void setFinishDate(LocalDateTime finishDate);
     boolean isProject();
     void setProject(boolean isProject);
-    BigDecimal getDuration();
-    void setDuration(BigDecimal duration);
-    TermsPlanningType getTermsPlanningType();
-    void setTermsPlanningType(TermsPlanningType termsPlanningType);
+    long getDuration();
+    void setDuration(long duration);
+    ScheduleMode getScheduleMode();
+    void setScheduleMode(ScheduleMode scheduleMode);
     Integer getCalendarId();
     void setCalendarId(Integer calendarId);
 

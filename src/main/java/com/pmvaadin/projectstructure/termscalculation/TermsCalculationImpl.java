@@ -7,7 +7,7 @@ import com.pmvaadin.calendars.entity.CalendarSettings;
 import com.pmvaadin.calendars.exceptiondays.ExceptionDays;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.TermsPlanningType;
+import com.pmvaadin.projecttasks.entity.ScheduleMode;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.entities.LinkType;
 import lombok.AllArgsConstructor;
@@ -26,6 +26,8 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private Map<?, CalendarData> calendarsData = new HashMap<>();
     private CalendarData defaultCalendar;
+
+    private BigDecimal secondInHour = new BigDecimal(3600);
 
     @Override
     public Set<ProjectTask> calculate(TermCalculationData termCalculationData) {
@@ -165,7 +167,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         }
 
         ProjectTask currentTask = treeItem.getValue();
-        if (currentTask.getTermsPlanningType().equals(TermsPlanningType.MANUAL)) {
+        if (currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY)) {
             treeItem.isCalculated = true;
             return;
         }
@@ -199,7 +201,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         LocalDateTime minStartDate = LocalDateTime.of(0, 0, 0, 0, 0);
         CalendarData calendarData = calendarsData.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
-        BigDecimal duration = calculatedTask.getDuration();
+        long duration = calculatedTask.getDuration();
         for (LinkRef item : links) {
             calculateRecursively(item.refToTreeItem, savedTasks);
             ProjectTask task = item.refToTreeItem.getValue();
@@ -232,16 +234,16 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private LocalDateTime calculateDate(CalendarData calendarData, LocalDateTime date, BigDecimal duration) {
+    private LocalDateTime calculateDate(CalendarData calendarData, LocalDateTime date, long duration) {
 
-        if (duration.compareTo(BigDecimal.ZERO) == 0) return date;
+        if (duration == 0L) return date;
 
         int dayOfWeek = date.getDayOfWeek().getValue();
 
         List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay;
         Map<LocalDate, BigDecimal> exceptionDays = calendarData.exceptionDays;
 
-        boolean isAscend = duration.compareTo(BigDecimal.ZERO) > 0;
+        boolean isAscend = duration > 0L;
 
         LocalDate day = date.toLocalDate();
 
@@ -255,6 +257,30 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
         }
 
+        BigDecimal hourCurrentDay = durationOfDaysOfWeek.get(index).countHours();
+
+        long tempDuration = duration;
+
+        BigDecimal hoursCount = new BigDecimal(0);
+        while (isAscend && tempDuration > 0) {
+
+            if (hoursOfException != null){
+                hoursCount = hoursOfException;
+            } else {
+                hoursCount = hourCurrentDay;
+            }
+
+            long hoursCountSecond = hoursCount.multiply(secondInHour).longValue();
+
+            tempDuration =- hoursCountSecond;
+
+            hoursOfException = exceptionDays.get(day.minusDays(1L));
+
+            if (index == 0) index = durationOfDaysOfWeek.size();
+            index--;
+            hourCurrentDay = durationOfDaysOfWeek.get(index).countHours();
+
+        }
 
         if (hoursOfException == null)
 

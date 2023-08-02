@@ -5,10 +5,10 @@ import javax.persistence.Converter;
 import java.util.stream.Stream;
 
 @Converter(autoApply = true)
-public class TermsPlanningTypeConverter implements AttributeConverter<TermsPlanningType, Integer> {
+public class ScheduleModeConverter implements AttributeConverter<ScheduleMode, Integer> {
 
     @Override
-    public Integer convertToDatabaseColumn(TermsPlanningType planningType) {
+    public Integer convertToDatabaseColumn(ScheduleMode planningType) {
         if (planningType == null) {
             return null;
         }
@@ -16,12 +16,12 @@ public class TermsPlanningTypeConverter implements AttributeConverter<TermsPlann
     }
 
     @Override
-    public TermsPlanningType convertToEntityAttribute(Integer code) {
+    public ScheduleMode convertToEntityAttribute(Integer code) {
         if (code == null) {
             return null;
         }
 
-        return Stream.of(TermsPlanningType.values())
+        return Stream.of(ScheduleMode.values())
                 .filter(c -> c.getCode().equals(code))
                 .findFirst()
                 .orElseThrow(IllegalArgumentException::new);

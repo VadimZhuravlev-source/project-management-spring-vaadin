@@ -9,7 +9,6 @@ import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Objects;
@@ -60,7 +59,7 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
 
     @Setter
     @Column(name = "is_project")
-    private boolean isProject;
+    private boolean isProject = false;
 
     // Terms begin
     @Setter
@@ -73,11 +72,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
 
     @Setter
     @Column(name = "duration")
-    private BigDecimal duration;
+    private long duration = 1L;
 
     @Setter
-    @Column(name = "terms_planning_id")
-    private TermsPlanningType termsPlanningType;
+    @Column(name = "schedule_mode_id")
+    private ScheduleMode scheduleMode = ScheduleMode.AUTO;
 
     //@ManyToOne
     @Setter
