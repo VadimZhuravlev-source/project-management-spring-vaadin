@@ -25,8 +25,14 @@ public interface Link {
     LinkType getLinkType();
     void setLinkType(LinkType linkType);
 
-    BigDecimal getDelay();
-    void setDelay(BigDecimal delay);
+    long getLag();
+    void setLag(long lag);
+
+    Integer getCalendarId();
+    void setCalendarId(Integer id);
+
+    BigDecimal getLagRepresentation();
+    void setLagRepresentation(BigDecimal lagRepresentation);
 
     Link getInstance();
     Link copy(Link link);

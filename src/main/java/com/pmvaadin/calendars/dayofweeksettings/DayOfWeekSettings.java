@@ -43,10 +43,10 @@ public class DayOfWeekSettings implements Serializable {
     private String dayOfWeekString;
 
     @Setter
-    @Column(name = "count_hours")
-    private BigDecimal countHours;
+    @Column(name = "duration")
+    private int countHours;
 
-    public DayOfWeekSettings(Integer dayOfWeek, BigDecimal countHours) {
+    public DayOfWeekSettings(Integer dayOfWeek, int countHours) {
 
         this.dayOfWeek = dayOfWeek;
         fillDayOfWeekString();

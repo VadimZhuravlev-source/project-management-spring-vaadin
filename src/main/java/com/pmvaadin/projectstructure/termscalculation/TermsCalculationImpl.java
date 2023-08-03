@@ -27,7 +27,7 @@ public class TermsCalculationImpl implements TermsCalculation {
     private Map<?, CalendarData> calendarsData = new HashMap<>();
     private CalendarData defaultCalendar;
 
-    private BigDecimal secondInHour = new BigDecimal(3600);
+    private int secondInHour = 3600;
 
     @Override
     public Set<ProjectTask> calculate(TermCalculationData termCalculationData) {
@@ -68,7 +68,7 @@ public class TermsCalculationImpl implements TermsCalculation {
             settingList = calendar.getSetting().getDefaultDaySettings();
         }
 
-        Map<LocalDate, BigDecimal> mapExceptions =
+        Map<LocalDate, Integer> mapExceptions =
                 exceptionDaysList.stream().collect(
                         Collectors.toMap(ExceptionDays::getDate, ExceptionDays::getDuration)
                 );
@@ -210,20 +210,22 @@ public class TermsCalculationImpl implements TermsCalculation {
             LinkType linkType = link.getLinkType();
             LocalDateTime startDate = null;
             LocalDateTime finishDate = null;
-            if (linkType == LinkType.STARTSTART) startDate = task.getStartDate();
-            else if (linkType == LinkType.STARTFINISH) finishDate = task.getStartDate();
-            else if (linkType == LinkType.FINISHSTART) startDate = task.getFinishDate();
-            else if (linkType == LinkType.FINISHFINISH) finishDate = task.getFinishDate();
+            if (linkType == LinkType.STARTSTART) {
+                startDate = calculateDate(calendarData, task.getStartDate(), link.getLag());
+            }
+            else if (linkType == LinkType.STARTFINISH) {
+                startDate = calculateDate(calendarData, task.getStartDate(), -duration + link.getLag());
+            }
+            else if (linkType == LinkType.FINISHSTART) {
+                startDate = calculateDate(calendarData, task.getFinishDate(), link.getLag());
+            }
+            else if (linkType == LinkType.FINISHFINISH) {
+                startDate = calculateDate(calendarData, task.getFinishDate(), duration + link.getLag());
+            }
             else throw new StandardError("Illegal link type of the predecessor: " + task);
 
             if (startDate == null && finishDate == null)
                 throw new StandardError("Illegal start date and finish date of the project task: " + task);
-
-            LocalDateTime calculatedDate;
-            if (startDate == null) calculatedDate = finishDate;
-            else calculatedDate = startDate;
-
-            LocalDateTime newDate = calculateDate(calendarData, calculatedDate, duration.add(link.getDelay()));
 
             if (minStartDate.compareTo(startDate) > 0) {
                 minStartDate = startDate;
@@ -241,13 +243,13 @@ public class TermsCalculationImpl implements TermsCalculation {
         int dayOfWeek = date.getDayOfWeek().getValue();
 
         List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay;
-        Map<LocalDate, BigDecimal> exceptionDays = calendarData.exceptionDays;
+        Map<LocalDate, Integer> exceptionDays = calendarData.exceptionDays;
 
         boolean isAscend = duration > 0L;
 
         LocalDate day = date.toLocalDate();
 
-        BigDecimal hoursOfException = exceptionDays.get(day);
+        Integer durationOfException = exceptionDays.get(day);
 
         int index = 0;
         for (int i = 0; i < durationOfDaysOfWeek.size(); i++) {
@@ -257,32 +259,38 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
         }
 
-        BigDecimal hourCurrentDay = durationOfDaysOfWeek.get(index).countHours();
+        int durationDay = durationOfDaysOfWeek.get(index).countHours();
 
         long tempDuration = duration;
 
-        BigDecimal hoursCount = new BigDecimal(0);
-        while (isAscend && tempDuration > 0) {
+        int secondInDay;
+        while ((isAscend && tempDuration > 0) || (!isAscend && tempDuration < 0)) {
 
-            if (hoursOfException != null){
-                hoursCount = hoursOfException;
+            if (durationOfException != null){
+                secondInDay = durationOfException;
             } else {
-                hoursCount = hourCurrentDay;
+                secondInDay = durationDay;
             }
 
-            long hoursCountSecond = hoursCount.multiply(secondInHour).longValue();
+            if (isAscend) {
+                tempDuration =- secondInDay;
+                day = day.minusDays(1L);
+                durationOfException = exceptionDays.get(day);
+                if (index == 0) index = durationOfDaysOfWeek.size();
+                index--;
+                durationDay = durationOfDaysOfWeek.get(index).countHours();
+            } else {
+                tempDuration =+ secondInDay;
+                day = day.plusDays(1L);
+                durationOfException = exceptionDays.get(day);
+                index++;
+                if (index == durationOfDaysOfWeek.size()) index = 0;
 
-            tempDuration =- hoursCountSecond;
-
-            hoursOfException = exceptionDays.get(day.minusDays(1L));
-
-            if (index == 0) index = durationOfDaysOfWeek.size();
-            index--;
-            hourCurrentDay = durationOfDaysOfWeek.get(index).countHours();
-
+                durationDay = durationOfDaysOfWeek.get(index).countHours();
+            }
         }
 
-        if (hoursOfException == null)
+        if (durationOfException == null)
 
         for (DefaultDaySetting def: durationOfDaysOfWeek) {
             if (de)
@@ -299,7 +307,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     // classes
 
-    private record CalendarData(List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, BigDecimal> exceptionDays) {}
+    private record CalendarData(List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, Integer> exceptionDays) {}
 
     private record Terms(Date startDate, Date finishDate) {}
 

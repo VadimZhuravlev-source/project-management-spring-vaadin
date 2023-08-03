@@ -42,8 +42,16 @@ public class LinkImpl implements Link {
     private LinkType linkType;
 
     @Setter
-    @Column(name = "delay")
-    private BigDecimal delay;
+    @Column(name = "lag")
+    private long lag = 0L;
+
+    @Setter
+    @Transient
+    private BigDecimal lagRepresentation;
+
+    @Setter
+    @Column(name = "calendar_id")
+    private Integer calendarId;
 
     @Setter
     @Transient
