@@ -14,9 +14,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -26,8 +26,6 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private Map<?, CalendarData> calendarsData = new HashMap<>();
     private CalendarData defaultCalendar;
-
-    private int secondInHour = 3600;
 
     @Override
     public Set<ProjectTask> calculate(TermCalculationData termCalculationData) {
@@ -197,42 +195,39 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private Terms calculateTermsFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
+    private LocalDateTime calculateTermsFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
 
         LocalDateTime minStartDate = LocalDateTime.of(0, 0, 0, 0, 0);
         CalendarData calendarData = calendarsData.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
         long duration = calculatedTask.getDuration();
         for (LinkRef item : links) {
             calculateRecursively(item.refToTreeItem, savedTasks);
-            ProjectTask task = item.refToTreeItem.getValue();
+            ProjectTask linkedTask = item.refToTreeItem.getValue();
 
             Link link = item.value;
             LinkType linkType = link.getLinkType();
-            LocalDateTime startDate = null;
-            LocalDateTime finishDate = null;
+            LocalDateTime startDate;
             if (linkType == LinkType.STARTSTART) {
-                startDate = calculateDate(calendarData, task.getStartDate(), link.getLag());
+                startDate = calculateDate(calendarData, linkedTask.getStartDate(), link.getLag());
             }
             else if (linkType == LinkType.STARTFINISH) {
-                startDate = calculateDate(calendarData, task.getStartDate(), -duration + link.getLag());
+                startDate = calculateDate(calendarData, linkedTask.getStartDate(), -duration + link.getLag());
             }
             else if (linkType == LinkType.FINISHSTART) {
-                startDate = calculateDate(calendarData, task.getFinishDate(), link.getLag());
+                startDate = calculateDate(calendarData, linkedTask.getFinishDate(), link.getLag());
             }
             else if (linkType == LinkType.FINISHFINISH) {
-                startDate = calculateDate(calendarData, task.getFinishDate(), duration + link.getLag());
+                startDate = calculateDate(calendarData, linkedTask.getFinishDate(), duration + link.getLag());
             }
-            else throw new StandardError("Illegal link type of the predecessor: " + task);
-
-            if (startDate == null && finishDate == null)
-                throw new StandardError("Illegal start date and finish date of the project task: " + task);
+            else throw new StandardError("Illegal link type of the predecessor: " + linkedTask);
 
             if (minStartDate.compareTo(startDate) > 0) {
                 minStartDate = startDate;
             }
+
         }
 
-        return new Terms(s)
+        return minStartDate;
 
     }
 
@@ -249,8 +244,6 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         LocalDate day = date.toLocalDate();
 
-        Integer durationOfException = exceptionDays.get(day);
-
         int index = 0;
         for (int i = 0; i < durationOfDaysOfWeek.size(); i++) {
             if (durationOfDaysOfWeek.get(i).dayOfWeek() == dayOfWeek) {
@@ -259,12 +252,12 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
         }
 
-        int durationDay = durationOfDaysOfWeek.get(index).countHours();
-
         long tempDuration = duration;
-
         int secondInDay;
-        while ((isAscend && tempDuration > 0) || (!isAscend && tempDuration < 0)) {
+        do {
+
+            int durationDay = durationOfDaysOfWeek.get(index).countSeconds();
+            Integer durationOfException = exceptionDays.get(day);
 
             if (durationOfException != null){
                 secondInDay = durationOfException;
@@ -274,34 +267,30 @@ public class TermsCalculationImpl implements TermsCalculation {
 
             if (isAscend) {
                 tempDuration =- secondInDay;
-                day = day.minusDays(1L);
-                durationOfException = exceptionDays.get(day);
-                if (index == 0) index = durationOfDaysOfWeek.size();
-                index--;
-                durationDay = durationOfDaysOfWeek.get(index).countHours();
+                if (tempDuration >= 0L) {
+                    day = day.minusDays(1L);
+                    if (index == 0) index = durationOfDaysOfWeek.size();
+                    index--;
+                }
             } else {
                 tempDuration =+ secondInDay;
-                day = day.plusDays(1L);
-                durationOfException = exceptionDays.get(day);
-                index++;
-                if (index == durationOfDaysOfWeek.size()) index = 0;
-
-                durationDay = durationOfDaysOfWeek.get(index).countHours();
+                if (tempDuration <= 0L) {
+                    day = day.plusDays(1L);
+                    index++;
+                    if (index == durationOfDaysOfWeek.size()) index = 0;
+                }
             }
+
+        } while ((isAscend && tempDuration >= 0L) || (!isAscend && tempDuration <= 0L));
+
+        LocalTime time = date.toLocalTime();
+        if (isAscend && tempDuration < 0L) {
+
         }
 
-        if (durationOfException == null)
+        if (!isAscend && tempDuration > 0L) {
 
-        for (DefaultDaySetting def: durationOfDaysOfWeek) {
-            if (de)
         }
-
-
-
-        Map<Integer, BigDecimal> dayDurations = calendarData.amountOfHourInDay();
-        Map<LocalDate, BigDecimal> exception = calendarData.exceptionDays();
-
-
 
     }
 
@@ -311,7 +300,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private record Terms(Date startDate, Date finishDate) {}
 
-    private static class SimpleLinkedTreeItem {//extends SimpleTreeItem<ProjectTask> {
+    private static class SimpleLinkedTreeItem {
 
         private SimpleLinkedTreeItem parent;
         private boolean isCalculated;
@@ -338,14 +327,6 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         public void setParent(SimpleLinkedTreeItem parent) {
             this.parent = parent;
-        }
-
-        public boolean isCalculated() {
-            return isCalculated;
-        }
-
-        public void setCalculated(boolean calculated) {
-            isCalculated = calculated;
         }
 
         public ProjectTask getValue() {

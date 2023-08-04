@@ -8,7 +8,6 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.format.TextStyle;
 import java.util.Locale;
@@ -56,7 +55,7 @@ public class DayOfWeekSettings implements Serializable {
 
     public DayOfWeekSettings(DefaultDaySetting dayOfWeekSettings) {
         this.dayOfWeek = dayOfWeekSettings.dayOfWeek();
-        this.countHours = dayOfWeekSettings.countHours();
+        this.countHours = dayOfWeekSettings.countSeconds();
     }
 
     public static String getWorkDaysName() {

@@ -1,5 +1,5 @@
 package com.pmvaadin.calendars.dayofweeksettings;
 
 
-public record DefaultDaySetting(Integer dayOfWeek, int countHours) {
+public record DefaultDaySetting(int dayOfWeek, int countSeconds) {
 }
