@@ -14,9 +14,11 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -71,7 +73,11 @@ public class TermsCalculationImpl implements TermsCalculation {
                         Collectors.toMap(ExceptionDays::getDate, ExceptionDays::getDuration)
                 );
 
-        return new CalendarData(settingList, mapExceptions);
+        BigDecimal startTime = calendar.getStartTime();
+        BigDecimal secondInHour = new BigDecimal(3600);
+        int secondFromBeggingOfDay = startTime.multiply(secondInHour).intValue();
+
+        return new CalendarData(secondFromBeggingOfDay, settingList, mapExceptions);
 
     }
 
@@ -235,14 +241,50 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         if (duration == 0L) return date;
 
-        int dayOfWeek = date.getDayOfWeek().getValue();
-
-        List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay;
-        Map<LocalDate, Integer> exceptionDays = calendarData.exceptionDays;
-
         boolean isAscend = duration > 0L;
 
+        if (isAscend) {
+            LocalDateTime startDate = increaseDateByDuration(date, duration, calendarData);
+        } else {
+            LocalDateTime startDate = decreaseDateByDuration(date, index, duration, durationOfDaysOfWeek, exceptionDays);
+        }
+
+    }
+
+    private LocalDateTime decreaseDateByDuration(LocalDateTime date, int index, long duration,
+                                                 List<DefaultDaySetting> durationOfDaysOfWeek,
+                                                 Map<LocalDate, Integer> exceptionDays) {
+
         LocalDate day = date.toLocalDate();
+        long tempDuration = duration;
+        int secondInDay;
+        do {
+            int durationDay = durationOfDaysOfWeek.get(index).countSeconds();
+            Integer durationOfException = exceptionDays.get(day);
+
+            if (durationOfException != null) {
+                secondInDay = durationOfException;
+            } else {
+                secondInDay = durationDay;
+            }
+
+            // common part
+            tempDuration =+ secondInDay;
+            if (tempDuration <= 0L) {
+                day = day.minusDays(1L);
+                if (index == 0) index = durationOfDaysOfWeek.size();
+                index--;
+            }
+
+        } while (tempDuration <= 0L);
+    }
+
+    private LocalDateTime increaseDateByDuration(LocalDateTime date, long duration,
+                                           CalendarData calendarData) {
+
+        List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay();
+
+        int dayOfWeek = date.getDayOfWeek().getValue();
 
         int index = 0;
         for (int i = 0; i < durationOfDaysOfWeek.size(); i++) {
@@ -252,53 +294,96 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
         }
 
-        long tempDuration = duration;
-        int secondInDay;
+        long remainedDuration = duration;
+
+        // have to count a start time in the first day
+        LocalDate day = LocalDate.ofEpochDay(date.toLocalDate().toEpochDay());
+        LocalTime time = LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay());
+
+        int startTime = calendarData.startTime();
+        int finishTime = startTime + getNumberOfSecondsInDay(index, day, calendarData);
+
+        int secondOfDay = time.toSecondOfDay();
+        if (secondOfDay >= finishTime) {
+            index++;
+            if (index == durationOfDaysOfWeek.size()) index = 0;
+            day.plusDays(1L);
+            time = LocalTime.ofSecondOfDay(startTime);
+        } else {
+            if (secondOfDay + remainedDuration < finishTime) {
+                time.plusSeconds(remainedDuration);
+                return LocalDateTime.of(day, time);
+            }else {
+                index++;
+                if (index == durationOfDaysOfWeek.size()) index = 0;
+                day.plusDays(1L);
+                time = LocalTime.ofSecondOfDay(startTime);
+                remainedDuration =- finishTime - secondOfDay;
+            }
+        }
+
+        // increase/decrease days
+
+        int numberOfSecondsInDay;
         do {
+            numberOfSecondsInDay = getNumberOfSecondsInDay(index, day, calendarData);
 
-            int durationDay = durationOfDaysOfWeek.get(index).countSeconds();
-            Integer durationOfException = exceptionDays.get(day);
+            //common part
+            remainedDuration =- numberOfSecondsInDay;
+            if (remainedDuration > 0L) {
+                day = day.plusDays(1L);
 
-            if (durationOfException != null){
-                secondInDay = durationOfException;
-            } else {
-                secondInDay = durationDay;
             }
 
-            if (isAscend) {
-                tempDuration =- secondInDay;
-                if (tempDuration >= 0L) {
-                    day = day.minusDays(1L);
-                    if (index == 0) index = durationOfDaysOfWeek.size();
-                    index--;
-                }
-            } else {
-                tempDuration =+ secondInDay;
-                if (tempDuration <= 0L) {
-                    day = day.plusDays(1L);
-                    index++;
-                    if (index == durationOfDaysOfWeek.size()) index = 0;
-                }
-            }
+            //common part
+        } while (remainedDuration > 0L);
 
-        } while ((isAscend && tempDuration >= 0L) || (!isAscend && tempDuration <= 0L));
+        //LocalTime time = date.toLocalTime();
+        if (remainedDuration == 0) return LocalDateTime.of(day, date.toLocalTime());
 
-        LocalTime time = date.toLocalTime();
-        if (isAscend && tempDuration < 0L) {
+        // calculate time again
+        finishTime = startTime + numberOfSecondsInDay;
+        //common part
+
+        remainedDuration =+ numberOfSecondsInDay;
+
+        int secondsInTime = time.toSecondOfDay();
+        if (secondsInTime > finishTime) remainedDuration =+ secondsInTime - finishTime;
+
+
+
+        long endSecond = secondsInTime + remainedDuration;
+        while (endSecond > finishTime) {
+
+            remainedDuration = endSecond - finishTime;
+
+            numberOfSecondsInDay = getNumberOfSecondsInDay(index, day, calendarData);
 
         }
 
-        if (!isAscend && tempDuration > 0L) {
-
-        }
 
     }
 
+    private int getNumberOfSecondsInDay(int index, LocalDate day, CalendarData calendarData) {
+
+        int durationDay = calendarData.amountOfHourInDay().get(index).countSeconds();
+        Integer durationOfException = calendarData.exceptionDays().get(day);
+
+        int numberOfSecondsInDay;
+        if (durationOfException != null) {
+            numberOfSecondsInDay = durationOfException;
+        } else {
+            numberOfSecondsInDay = durationDay;
+        }
+
+        return numberOfSecondsInDay;
+
+    }
+
+
     // classes
 
-    private record CalendarData(List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, Integer> exceptionDays) {}
-
-    private record Terms(Date startDate, Date finishDate) {}
+    private record CalendarData(int startTime, List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, Integer> exceptionDays) {}
 
     private static class SimpleLinkedTreeItem {
 

@@ -29,3 +29,7 @@ DROP COLUMN IF EXISTS duration;
 
 ALTER TABLE calendar_exception
 ADD COLUMN duration INT NOT NULL DEFAULT 1;
+
+ALTER TABLE calendars
+ADD COLUMN start_time NUMERIC(4, 2);
+

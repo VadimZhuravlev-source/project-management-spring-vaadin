@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Objects;
 
@@ -43,6 +44,10 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @Setter
     @Enumerated(EnumType.STRING)
     private CalendarSettings setting = CalendarSettings.EIGHTHOURWORKINGDAY;
+
+    @Setter
+    @Column(name = "start_time")
+    private BigDecimal startTime;
 
     @Setter
     @Transient
