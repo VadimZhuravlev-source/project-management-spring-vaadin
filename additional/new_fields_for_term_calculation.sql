@@ -10,7 +10,9 @@ ADD is_project BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE links
 ADD 'lag' BIGINT NOT NULL DEFAULT 0;
 
+
 ALTER TABLE links
+-- time unit
 ADD calendar_id INT,
 ADD CONSTRAINT fk_calendar_id
       FOREIGN KEY(calendar_id)
