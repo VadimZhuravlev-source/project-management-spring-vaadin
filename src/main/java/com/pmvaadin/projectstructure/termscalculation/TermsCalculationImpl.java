@@ -28,6 +28,8 @@ public class TermsCalculationImpl implements TermsCalculation {
     private Map<?, CalendarData> calendarsData = new HashMap<>();
     private CalendarData defaultCalendar;
 
+    private final DateComputation dateComputation = new DateComputation();
+
     @Override
     public Set<ProjectTask> calculate(TermCalculationData termCalculationData) {
 
@@ -187,7 +189,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         }
 
         if (!isSumTask) {
-            minStartDate = calculateTermsFromLinks(treeItem.links, currentTask, savedTasks);
+            minStartDate = calculateStartDateFromLinks(treeItem.links, currentTask, savedTasks);
         }
 
         LocalDateTime startDate = currentTask.getStartDate();
@@ -200,7 +202,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private LocalDateTime calculateTermsFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
+    private LocalDateTime calculateStartDateFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
 
         LocalDateTime minStartDate = LocalDateTime.of(0, 0, 0, 0, 0);
         CalendarData calendarData = calendarsData.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
@@ -238,100 +240,49 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private LocalDateTime calculateDate(CalendarData calendarData, LocalDateTime date, long duration) {
 
-        if (duration == 0L) return date;
+        if (duration == 0L) return LocalDateTime.of(
+                LocalDate.ofEpochDay(date.toLocalDate().toEpochDay()),
+                LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay())
+        );
 
         boolean isAscend = duration > 0L;
 
+        dateComputation.setDateComputation(date, duration, calendarData);
+        LocalDateTime startDate;
         if (isAscend) {
-            LocalDateTime startDate = increaseDateByDuration(date, duration, calendarData);
+            startDate = dateComputation.increaseDateByDuration();
         } else {
-            LocalDateTime startDate = decreaseDateByDuration(date, index, duration, durationOfDaysOfWeek, exceptionDays);
+            startDate = dateComputation.decreaseDateByDuration();
         }
-
+        return startDate;
     }
 
-    private LocalDateTime decreaseDateByDuration(LocalDateTime date, int index, long duration,
-                                                 List<DefaultDaySetting> durationOfDaysOfWeek,
-                                                 Map<LocalDate, Integer> exceptionDays) {
+    private long getDuration(LocalDateTime start, LocalDateTime finish, CalendarData calendarData) {
 
-        LocalDate day = date.toLocalDate();
-        long tempDuration = duration;
-        int secondInDay;
-        do {
-            int durationDay = durationOfDaysOfWeek.get(index).countSeconds();
-            Integer durationOfException = exceptionDays.get(day);
+        if (start.compareTo(finish) > 0) throw new StandardError("Illegal argument exception");
 
-            if (durationOfException != null) {
-                secondInDay = durationOfException;
-            } else {
-                secondInDay = durationDay;
-            }
-
-            // common part
-            tempDuration =+ secondInDay;
-            if (tempDuration <= 0L) {
-                day = day.minusDays(1L);
-                if (index == 0) index = durationOfDaysOfWeek.size();
-                index--;
-            }
-
-        } while (tempDuration <= 0L);
-    }
-
-    private LocalDateTime increaseDateByDuration(LocalDateTime date, long duration,
-                                           CalendarData calendarData) {
-
-        // have to count a start time in the first day
-        LocalDate day = LocalDate.ofEpochDay(date.toLocalDate().toEpochDay());
-        LocalTime time = LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay());
+        LocalDate startDay = LocalDate.ofEpochDay(start.toLocalDate().toEpochDay());
+        LocalTime startTime = LocalTime.ofSecondOfDay(start.toLocalTime().toSecondOfDay());
 
         ComputingDataOfWorkingDay computingDataOfWorkingDay =
-                new ComputingDataOfWorkingDay(day, calendarData, date.getDayOfWeek().getValue());
+                new ComputingDataOfWorkingDay(startDay, calendarData, start.getDayOfWeek().getValue());
 
-        int startTime = calendarData.startTime();
-        int finishTime = startTime + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+        int startTimeCalendar = calendarData.startTime();
+        int finishTimeCalendar = startTimeCalendar + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
 
-        long remainderOfDuration = duration;
-        int secondOfDay = time.toSecondOfDay();
-        if (secondOfDay >= finishTime) {
+        long duration = finishTimeCalendar - startTime.toSecondOfDay();
+
+        LocalDate finishDay = finish.toLocalDate();
+        while (startDay.compareTo(finishDay) < 0) {
             computingDataOfWorkingDay.increaseDay();
-            time = LocalTime.ofSecondOfDay(startTime);
-        } else if (secondOfDay <= startTime) {
-            time = LocalTime.ofSecondOfDay(startTime);
-        } else {
-            if (secondOfDay + remainderOfDuration < finishTime) {
-                time.plusSeconds(remainderOfDuration);
-                return LocalDateTime.of(day, time);
-            } else {
-                computingDataOfWorkingDay.increaseDay();
-                time = LocalTime.ofSecondOfDay(startTime);
-                int numberOfSecondUntilEndOfWorkingDay = finishTime - secondOfDay;
-                remainderOfDuration =- numberOfSecondUntilEndOfWorkingDay;
-            }
+            duration =+ computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
         }
 
-        // increase/decrease days
-        int numberOfSecondsInWorkingDay;
-        do {
-            numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-            //common part
-            remainderOfDuration =- numberOfSecondsInWorkingDay;
-            if (remainderOfDuration > 0L) {
-                computingDataOfWorkingDay.increaseDay();
-            }
+        if (startTimeCalendar < finish.toLocalTime().toSecondOfDay()) {
+            duration =+ finish.toLocalTime().toSecondOfDay() - startTimeCalendar;
+        }
 
-            //common part
-        } while (remainderOfDuration > 0L);
-
-        if (remainderOfDuration == 0) return LocalDateTime.of(day, date.toLocalTime());
-
-        //common part
-        // reclaim remainderOfDuration to add it to the time
-        remainderOfDuration =+ numberOfSecondsInWorkingDay;
-
-        time.plusSeconds(remainderOfDuration);
-
-        return LocalDateTime.of(day, time);
+        return duration;
 
     }
 
@@ -361,6 +312,8 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         public LocalDateTime increaseDateByDuration() {
 
+            if (duration < 0) throw new StandardError("Illegal argument exception");
+
             initiate();
 
             if (secondOfDay >= finishTime) {
@@ -384,18 +337,15 @@ public class TermsCalculationImpl implements TermsCalculation {
             int numberOfSecondsInWorkingDay;
             do {
                 numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-                //common part
                 remainderOfDuration =- numberOfSecondsInWorkingDay;
                 if (remainderOfDuration > 0L) {
                     computingDataOfWorkingDay.increaseDay();
                 }
 
-                //common part
             } while (remainderOfDuration > 0L);
 
-            if (remainderOfDuration == 0) return LocalDateTime.of(day, date.toLocalTime());
+            if (remainderOfDuration == 0) return LocalDateTime.of(day, time);
 
-            //common part
             // reclaim remainderOfDuration to add it to the time
             remainderOfDuration =+ numberOfSecondsInWorkingDay;
 
@@ -407,6 +357,8 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         public LocalDateTime decreaseDateByDuration() {
 
+            if (duration < 0) throw new StandardError("Illegal argument");
+
             initiate();
 
             if (secondOfDay <= startTime) {
@@ -415,13 +367,15 @@ public class TermsCalculationImpl implements TermsCalculation {
             } else if (secondOfDay >= finishTime) {
                 time = LocalTime.ofSecondOfDay(finishTime);
             } else {
-                if (secondOfDay + remainderOfDuration < finishTime) {
-                    time.plusSeconds(remainderOfDuration);
+                if (secondOfDay + remainderOfDuration > startTime) {
+                    time.minusSeconds(-remainderOfDuration);
                     return LocalDateTime.of(day, time);
                 } else {
-                    computingDataOfWorkingDay.increaseDay();
-                    time = LocalTime.ofSecondOfDay(startTime);
-                    int numberOfSecondUntilEndOfWorkingDay = finishTime - secondOfDay;
+                    computingDataOfWorkingDay.decreaseDay();
+                    time = LocalTime.ofSecondOfDay(finishTime);
+                    int numberOfSecondUntilEndOfWorkingDay = startTime - secondOfDay;
+                    // numberOfSecondUntilEndOfWorkingDay < 0 by the condition above, so after
+                    // the operation below is completed, remainderOfDuration will be increased
                     remainderOfDuration =- numberOfSecondUntilEndOfWorkingDay;
                 }
             }
@@ -430,22 +384,19 @@ public class TermsCalculationImpl implements TermsCalculation {
             int numberOfSecondsInWorkingDay;
             do {
                 numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-                //common part
-                remainderOfDuration =- numberOfSecondsInWorkingDay;
-                if (remainderOfDuration > 0L) {
-                    computingDataOfWorkingDay.increaseDay();
+                remainderOfDuration =+ numberOfSecondsInWorkingDay;
+                if (remainderOfDuration < 0L) {
+                    computingDataOfWorkingDay.decreaseDay();
                 }
 
-                //common part
-            } while (remainderOfDuration > 0L);
+            } while (remainderOfDuration < 0L);
 
-            if (remainderOfDuration == 0) return LocalDateTime.of(day, date.toLocalTime());
+            if (remainderOfDuration == 0) return LocalDateTime.of(day, time);
 
-            //common part
             // reclaim remainderOfDuration to add it to the time
-            remainderOfDuration =+ numberOfSecondsInWorkingDay;
+            remainderOfDuration =- numberOfSecondsInWorkingDay;
 
-            time.plusSeconds(remainderOfDuration);
+            time.minusSeconds(-remainderOfDuration);
 
             return LocalDateTime.of(day, time);
 
