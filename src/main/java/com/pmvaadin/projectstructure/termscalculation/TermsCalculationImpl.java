@@ -204,7 +204,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private LocalDateTime calculateStartDateFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
 
-        LocalDateTime minStartDate = LocalDateTime.of(0, 0, 0, 0, 0);
+        LocalDateTime maxStartDate = LocalDateTime.of(0, 0, 0, 0, 0);
         CalendarData calendarData = calendarsData.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
         long duration = calculatedTask.getDuration();
         for (LinkRef item : links) {
@@ -228,13 +228,13 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
             else throw new StandardError("Illegal link type of the predecessor: " + linkedTask);
 
-            if (minStartDate.compareTo(startDate) > 0) {
-                minStartDate = startDate;
+            if (maxStartDate.compareTo(startDate) < 0) {
+                maxStartDate = startDate;
             }
 
         }
 
-        return minStartDate;
+        return maxStartDate;
 
     }
 
@@ -254,7 +254,9 @@ public class TermsCalculationImpl implements TermsCalculation {
         } else {
             startDate = dateComputation.decreaseDateByDuration();
         }
+
         return startDate;
+
     }
 
     private long getDuration(LocalDateTime start, LocalDateTime finish, CalendarData calendarData) {

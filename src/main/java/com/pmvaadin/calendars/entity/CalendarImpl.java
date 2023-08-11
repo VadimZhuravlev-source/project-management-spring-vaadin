@@ -21,7 +21,6 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Table(name = "calendars")
-@Transactional
 public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
     @Id
@@ -94,6 +93,15 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @Override
     public String toString() {
         return name;
+    }
+
+    @Override
+    public Calendar getDefaultCalendar() {
+
+        Calendar calendar = new CalendarImpl("Standard");
+        calendar.setSetting(CalendarSettings.EIGHTHOURWORKINGDAY);
+        return calendar;
+
     }
 
 }

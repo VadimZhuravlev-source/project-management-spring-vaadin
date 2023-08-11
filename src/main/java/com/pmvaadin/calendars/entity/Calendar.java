@@ -37,4 +37,6 @@ public interface Calendar {
     BigDecimal getStartTime();
     void setStartTime(BigDecimal time);
 
+    Calendar getDefaultCalendar();
+
 }

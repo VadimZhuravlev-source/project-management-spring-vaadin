@@ -12,6 +12,8 @@ public interface TermCalculationData {
     List<Link> getLinks();
     boolean isCycle();
     List<Calendar> getCalendars();
+    void setCalendars(List<Calendar> calendars);
     Calendar getDefaultCalendar();
+    void setDefaultCalendar(Calendar calendar);
 
 }

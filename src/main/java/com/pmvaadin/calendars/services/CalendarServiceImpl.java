@@ -5,6 +5,8 @@ import com.pmvaadin.calendars.entity.CalendarImpl;
 import com.pmvaadin.calendars.repositories.CalendarRepository;
 import com.pmvaadin.calendars.repositories.CalendarRowTableRepository;
 import com.pmvaadin.calendars.repositories.DayOfWeekSettingsRepository;
+import com.pmvaadin.projectstructure.termscalculation.TermCalculationData;
+import com.pmvaadin.projecttasks.entity.ProjectTask;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +14,8 @@ import java.util.List;
 
 @Service
 public class CalendarServiceImpl implements CalendarService {
+
+    private Calendar defaultCalendar = new CalendarImpl().getDefaultCalendar();
 
     private CalendarRepository calendarRepository;
     private CalendarRowTableRepository calendarRowTableRepository;
@@ -54,6 +58,18 @@ public class CalendarServiceImpl implements CalendarService {
         calendarRepository.deleteById(calendar.getId());
     }
 
+    @Override
+    public void fillCalendars(TermCalculationData termCalculationData) {
+
+        var calendarIds = termCalculationData.getProjectTasks().stream()
+                .map(ProjectTask::getCalendarId).toList();
+
+        List<Calendar> calendars = calendarRepository.findAllById(calendarIds);
+
+        termCalculationData.setDefaultCalendar(defaultCalendar);
+        termCalculationData.setCalendars(calendars);
+
+    }
 
     public Calendar saveCalendar(Calendar calendar) {
         return calendarRepository.save(calendar);
