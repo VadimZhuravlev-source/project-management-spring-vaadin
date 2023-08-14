@@ -1,20 +1,27 @@
 package com.pmvaadin.calendars.entity;
 
 import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
+import com.pmvaadin.calendars.dayofweeksettings.DefaultDaySetting;
 import com.pmvaadin.calendars.exceptiondays.ExceptionDays;
 import com.pmvaadin.calendars.OperationListenerForCalendar;
+import com.pmvaadin.projectstructure.StandardError;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Entity
 @EntityListeners(OperationListenerForCalendar.class)
@@ -35,18 +42,18 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @OneToMany(mappedBy = "calendar",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
-    private List<ExceptionDays> calendarException;
+    private List<ExceptionDays> calendarException = new ArrayList<>();
 
     @Setter
     private String name;
 
     @Setter
-    @Enumerated(EnumType.STRING)
+    @Column(name = "setting_id")
     private CalendarSettings setting = CalendarSettings.EIGHTHOURWORKINGDAY;
 
     @Setter
     @Column(name = "start_time")
-    private BigDecimal startTime;
+    private LocalTime startTime = LocalTime.of(9, 0);
 
     @Setter
     @Transient
@@ -57,7 +64,10 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             cascade = {CascadeType.PERSIST, CascadeType.MERGE})//, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dayOfWeek ASC")
     @LazyCollection(LazyCollectionOption.FALSE)
-    private List<DayOfWeekSettings> daysOfWeekSettings;
+    private List<DayOfWeekSettings> daysOfWeekSettings = new ArrayList<>();
+
+    @Transient
+    private CalendarData calendarData;
 
     public CalendarImpl(String name) {
         this.name = name;
@@ -101,6 +111,284 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
         Calendar calendar = new CalendarImpl("Standard");
         calendar.setSetting(CalendarSettings.EIGHTHOURWORKINGDAY);
         return calendar;
+
+    }
+
+    @Override
+    public long getDuration(LocalDateTime start, LocalDateTime finish) {
+
+        initiateCacheData();
+        return getDurationWithoutInitiateCache(start, finish);
+
+    }
+
+    @Override
+    public LocalDateTime getDateByDuration(LocalDateTime date, long duration) {
+
+        initiateCacheData();
+        return getDateByDurationWithoutInitiateCache(date, duration);
+
+    }
+
+    @Override
+    public long getDurationWithoutInitiateCache(LocalDateTime start, LocalDateTime finish) {
+
+        if (start.compareTo(finish) > 0) throw new StandardError("Illegal argument exception");
+
+        LocalDate startDay = LocalDate.ofEpochDay(start.toLocalDate().toEpochDay());
+        LocalTime startTime = LocalTime.ofSecondOfDay(start.toLocalTime().toSecondOfDay());
+
+        if (calendarData == null) initiateCacheData();
+
+        ComputingDataOfWorkingDay computingDataOfWorkingDay =
+                new ComputingDataOfWorkingDay(startDay, start.getDayOfWeek().getValue());
+
+        int startTimeCalendar = calendarData.startTime();
+        int finishTimeCalendar = startTimeCalendar + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+
+        long duration = finishTimeCalendar - startTime.toSecondOfDay();
+
+        LocalDate finishDay = finish.toLocalDate();
+        while (startDay.compareTo(finishDay) < 0) {
+            computingDataOfWorkingDay.increaseDay();
+            duration = duration + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+        }
+
+        if (startTimeCalendar < finish.toLocalTime().toSecondOfDay()) {
+            duration = duration + finish.toLocalTime().toSecondOfDay() - startTimeCalendar;
+        }
+
+        return duration;
+
+    }
+
+    @Override
+    public LocalDateTime getDateByDurationWithoutInitiateCache(LocalDateTime date, long duration) {
+
+        if (duration == 0L) return LocalDateTime.of(
+                LocalDate.ofEpochDay(date.toLocalDate().toEpochDay()),
+                LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay())
+        );
+
+        boolean isAscend = duration > 0L;
+
+        DateComputation dateComputation = new DateComputation();
+        if (calendarData == null) initiateCacheData();
+
+        LocalDateTime startDate;
+        if (isAscend) {
+            startDate = dateComputation.increaseDateByDuration(date, duration);
+        } else {
+            startDate = dateComputation.decreaseDateByDuration(date, duration);
+        }
+
+        return startDate;
+
+    }
+
+    @Override
+    public void initiateCacheData() {
+
+        List<ExceptionDays> exceptionDaysList = this.getCalendarException();
+
+        List<DefaultDaySetting> settingList;
+        if (this.getSetting() == CalendarSettings.DAYSOFWEEKSETTINGS) {
+            List<DayOfWeekSettings> list = this.getDaysOfWeekSettings();
+            settingList = list.stream().map(d -> new DefaultDaySetting(d.getDayOfWeek(), d.getCountHours())).toList();
+        } else {
+            settingList = this.getSetting().getDefaultDaySettings();
+        }
+
+        Map<LocalDate, Integer> mapExceptions =
+                exceptionDaysList.stream().collect(
+                        Collectors.toMap(ExceptionDays::getDate, ExceptionDays::getDuration)
+                );
+
+        int secondFromBeggingOfDay = startTime.toSecondOfDay();
+        if (setting == CalendarSettings.HOURSHIFT24) {
+            secondFromBeggingOfDay = 0;
+        }
+
+        calendarData = new CalendarData(secondFromBeggingOfDay, settingList, mapExceptions);
+
+    }
+
+    // Classes
+
+    private record CalendarData(int startTime, List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, Integer> exceptionDays) {}
+
+    private class DateComputation {
+
+        private LocalDateTime date;
+        private long duration;
+
+        // general variables
+        private LocalDate day;
+        private LocalTime time;
+        private ComputingDataOfWorkingDay computingDataOfWorkingDay;
+        private int startTime;
+        private int finishTime;
+        private long remainderOfDuration;
+        private int secondOfDay;
+
+        private LocalDateTime increaseDateByDuration(LocalDateTime date, long duration) {
+
+            if (duration < 0) throw new StandardError("Illegal argument exception");
+            this.duration = duration;
+            this.date = date;
+
+            initiate();
+
+            if (secondOfDay >= finishTime) {
+                computingDataOfWorkingDay.increaseDay();
+                time = LocalTime.ofSecondOfDay(startTime);
+            } else if (secondOfDay <= startTime) {
+                time = LocalTime.ofSecondOfDay(startTime);
+            } else {
+                if (secondOfDay + remainderOfDuration < finishTime) {
+                    time = time.plusSeconds(remainderOfDuration);
+                    return LocalDateTime.of(day, time);
+                } else {
+                    computingDataOfWorkingDay.increaseDay();
+                    time = LocalTime.ofSecondOfDay(startTime);
+                    int numberOfSecondUntilEndOfWorkingDay = finishTime - secondOfDay;
+                    remainderOfDuration =- numberOfSecondUntilEndOfWorkingDay;
+                }
+            }
+
+            // increase/decrease days
+            int numberOfSecondsInWorkingDay;
+            do {
+                numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+                remainderOfDuration = remainderOfDuration - numberOfSecondsInWorkingDay;
+                if (remainderOfDuration > 0L) {
+                    computingDataOfWorkingDay.increaseDay();
+                }
+
+            } while (remainderOfDuration > 0L);
+
+            if (remainderOfDuration == 0) return LocalDateTime.of(day, time);
+
+            // reclaim remainderOfDuration to add it to the time
+            remainderOfDuration = remainderOfDuration + numberOfSecondsInWorkingDay;
+
+            time = time.plusSeconds(remainderOfDuration);
+
+            return LocalDateTime.of(day, time);
+
+        }
+
+        private LocalDateTime decreaseDateByDuration(LocalDateTime date, long duration) {
+
+            if (duration > 0) throw new StandardError("Illegal argument");
+            this.duration = duration;
+            this.date = date;
+
+            initiate();
+
+            if (secondOfDay <= startTime) {
+                computingDataOfWorkingDay.decreaseDay();
+                time = LocalTime.ofSecondOfDay(finishTime);
+            } else if (secondOfDay >= finishTime) {
+                time = LocalTime.ofSecondOfDay(finishTime);
+            } else {
+                if (secondOfDay + remainderOfDuration > startTime) {
+                    time = time.minusSeconds(-remainderOfDuration);
+                    return LocalDateTime.of(day, time);
+                } else {
+                    computingDataOfWorkingDay.decreaseDay();
+                    time = LocalTime.ofSecondOfDay(finishTime);
+                    int numberOfSecondUntilEndOfWorkingDay = startTime - secondOfDay;
+                    // numberOfSecondUntilEndOfWorkingDay < 0 by the condition above, so after
+                    // the operation below is completed, remainderOfDuration will be increased
+                    remainderOfDuration = remainderOfDuration - numberOfSecondUntilEndOfWorkingDay;
+                }
+            }
+
+            // increase/decrease days
+            int numberOfSecondsInWorkingDay;
+            do {
+                numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+                remainderOfDuration = remainderOfDuration + numberOfSecondsInWorkingDay;
+                if (remainderOfDuration < 0L) {
+                    computingDataOfWorkingDay.decreaseDay();
+                }
+
+            } while (remainderOfDuration < 0L);
+
+            if (remainderOfDuration == 0) return LocalDateTime.of(day, time);
+
+            // reclaim remainderOfDuration to add it to the time
+            remainderOfDuration = remainderOfDuration - numberOfSecondsInWorkingDay;
+
+            time = time.minusSeconds(-remainderOfDuration);
+
+            return LocalDateTime.of(day, time);
+
+        }
+
+        private void initiate() {
+
+            day = LocalDate.ofEpochDay(date.toLocalDate().toEpochDay());
+            time = LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay());
+
+            computingDataOfWorkingDay =
+                    new ComputingDataOfWorkingDay(day, date.getDayOfWeek().getValue());
+
+            startTime = calendarData.startTime();
+            finishTime = startTime + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+
+            remainderOfDuration = duration;
+            secondOfDay = time.toSecondOfDay();
+
+        }
+
+    }
+
+    private class ComputingDataOfWorkingDay {
+
+        private int index;
+        private LocalDate day;
+
+        ComputingDataOfWorkingDay(LocalDate day, int dayOfWeek) {
+
+            this.day = day;
+
+            List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay();
+            int index = 0;
+            for (int i = 0; i < durationOfDaysOfWeek.size(); i++) {
+                if (durationOfDaysOfWeek.get(i).dayOfWeek() == dayOfWeek) {
+                    index = i;
+                    break;
+                }
+            }
+            this.index = index;
+
+        }
+
+        public void increaseDay() {
+            index++;
+            if (index == calendarData.amountOfHourInDay().size()) index = 0;
+            day = day.plusDays(1L);
+        }
+
+        public void decreaseDay() {
+            if (index == 0) index = calendarData.amountOfHourInDay().size();
+            index--;
+            day = day.minusDays(1L);
+        }
+
+        public int getNumberOfSecondsInWorkingTime() {
+
+            int durationDay = calendarData.amountOfHourInDay().get(index).countSeconds();
+            Integer durationOfException = calendarData.exceptionDays().get(day);
+
+            int numberOfSecondsInDay;
+            numberOfSecondsInDay = Objects.requireNonNullElse(durationOfException, durationDay);
+
+            return numberOfSecondsInDay;
+
+        }
 
     }
 

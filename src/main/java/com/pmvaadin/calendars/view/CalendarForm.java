@@ -132,7 +132,7 @@ public class CalendarForm extends FormLayout {
 
         binderWorkDays.forField(dayOfWeek).bind(DayOfWeekSettings::getDayOfWeek, DayOfWeekSettings::setDayOfWeek);
         dayOfWeekColumn.setEditorComponent(dayOfWeek);
-        binderWorkDays.forField(hourOfWork).bind(DayOfWeekSettings::getCountHours, DayOfWeekSettings::setCountHours);
+       // binderWorkDays.forField(hourOfWork).bind(DayOfWeekSettings::getCountHours, DayOfWeekSettings::setCountHours);
         countHoursColumn.setEditorComponent(hourOfWork);
         Button saveButton = new Button("Save", e -> editor.save());
         Button cancelButton = new Button(VaadinIcon.CLOSE.create(),

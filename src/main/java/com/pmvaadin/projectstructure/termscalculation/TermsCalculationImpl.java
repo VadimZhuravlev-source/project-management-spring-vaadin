@@ -1,10 +1,6 @@
 package com.pmvaadin.projectstructure.termscalculation;
 
-import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
-import com.pmvaadin.calendars.dayofweeksettings.DefaultDaySetting;
 import com.pmvaadin.calendars.entity.Calendar;
-import com.pmvaadin.calendars.entity.CalendarSettings;
-import com.pmvaadin.calendars.exceptiondays.ExceptionDays;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ScheduleMode;
@@ -14,10 +10,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,10 +18,8 @@ import java.util.stream.Collectors;
 @Scope("prototype")
 public class TermsCalculationImpl implements TermsCalculation {
 
-    private Map<?, CalendarData> calendarsData = new HashMap<>();
-    private CalendarData defaultCalendar;
-
-    private final DateComputation dateComputation = new DateComputation();
+    private Map<?, Calendar> mapIdCalendar = new HashMap<>();
+    private Calendar defaultCalendar;
 
     @Override
     public Set<ProjectTask> calculate(TermCalculationData termCalculationData) {
@@ -50,35 +41,13 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private void fillParameters(TermCalculationData termCalculationData) {
 
-        calendarsData = termCalculationData.getCalendars().stream()
-                .collect(Collectors.toMap(Calendar::getId, this::getCalendarData));
+        List<Calendar> calendars = termCalculationData.getCalendars();
+        calendars.forEach(Calendar::initiateCacheData);
 
-        defaultCalendar = getCalendarData(termCalculationData.getDefaultCalendar());
+        mapIdCalendar = calendars.stream()
+                .collect(Collectors.toMap(Calendar::getId, c -> c));
 
-    }
-
-    private CalendarData getCalendarData(Calendar calendar) {
-
-        List<ExceptionDays> exceptionDaysList = calendar.getCalendarException();
-
-        List<DefaultDaySetting> settingList;
-        if (calendar.getSetting() == CalendarSettings.DAYSOFWEEKSETTINGS) {
-            List<DayOfWeekSettings> list = calendar.getDaysOfWeekSettings();
-            settingList = list.stream().map(d -> new DefaultDaySetting(d.getDayOfWeek(), d.getCountHours())).toList();
-        } else {
-            settingList = calendar.getSetting().getDefaultDaySettings();
-        }
-
-        Map<LocalDate, Integer> mapExceptions =
-                exceptionDaysList.stream().collect(
-                        Collectors.toMap(ExceptionDays::getDate, ExceptionDays::getDuration)
-                );
-
-        BigDecimal startTime = calendar.getStartTime();
-        BigDecimal secondInHour = new BigDecimal(3600);
-        int secondFromBeggingOfDay = startTime.multiply(secondInHour).intValue();
-
-        return new CalendarData(secondFromBeggingOfDay, settingList, mapExceptions);
+        defaultCalendar = termCalculationData.getDefaultCalendar();
 
     }
 
@@ -177,25 +146,40 @@ public class TermsCalculationImpl implements TermsCalculation {
             return;
         }
 
-        LocalDateTime minStartDate = LocalDateTime.of(0, 0, 0, 0, 0, 0);
+        LocalDateTime nullTime = getNullDateTime();
+        LocalDateTime minStartDate = nullTime;
+        LocalDateTime maxFinishDate = nullTime;
         boolean isSumTask = !treeItem.getChildren().isEmpty() || currentTask.getChildrenCount() != 0;
         for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
+            // a method below are also called in the method calculateStartDateFromLinks
             calculateRecursively(item, savedTasks);
             ProjectTask task = item.getValue();
             LocalDateTime startDate = task.getStartDate();
+            LocalDateTime finishDate = task.getFinishDate();
             if (minStartDate.compareTo(startDate) > 0) {
                 minStartDate = startDate;
             }
+            if (maxFinishDate.compareTo(finishDate) < 0) {
+                maxFinishDate = finishDate;
+            }
+        }
+
+        if (!treeItem.getChildren().isEmpty() && minStartDate != nullTime && maxFinishDate != nullTime) {
+            currentTask.setStartDate(minStartDate);
+            currentTask.setFinishDate(maxFinishDate);
+            Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
+            long duration = calendar.getDurationWithoutInitiateCache(minStartDate, maxFinishDate);
+            currentTask.setDuration(duration);
         }
 
         if (!isSumTask) {
             minStartDate = calculateStartDateFromLinks(treeItem.links, currentTask, savedTasks);
-        }
-
-        LocalDateTime startDate = currentTask.getStartDate();
-        if (startDate.compareTo(minStartDate) > 0) {
-            currentTask.setStartDate(minStartDate);
-            savedTasks.add(currentTask);
+            if (minStartDate.compareTo(nullTime) != 0) {
+                Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
+                maxFinishDate = calendar.getDateByDurationWithoutInitiateCache(minStartDate, currentTask.getDuration());
+                currentTask.setStartDate(minStartDate);
+                currentTask.setFinishDate(maxFinishDate);
+            }
         }
 
         treeItem.isCalculated = true;
@@ -204,8 +188,8 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private LocalDateTime calculateStartDateFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
 
-        LocalDateTime maxStartDate = LocalDateTime.of(0, 0, 0, 0, 0);
-        CalendarData calendarData = calendarsData.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
+        LocalDateTime maxStartDate = getNullDateTime();
+        Calendar calendar = mapIdCalendar.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
         long duration = calculatedTask.getDuration();
         for (LinkRef item : links) {
             calculateRecursively(item.refToTreeItem, savedTasks);
@@ -215,16 +199,16 @@ public class TermsCalculationImpl implements TermsCalculation {
             LinkType linkType = link.getLinkType();
             LocalDateTime startDate;
             if (linkType == LinkType.STARTSTART) {
-                startDate = calculateDate(calendarData, linkedTask.getStartDate(), link.getLag());
+                startDate = calendar.getDateByDurationWithoutInitiateCache(linkedTask.getStartDate(), link.getLag());
             }
             else if (linkType == LinkType.STARTFINISH) {
-                startDate = calculateDate(calendarData, linkedTask.getStartDate(), -duration + link.getLag());
+                startDate = calendar.getDateByDurationWithoutInitiateCache(linkedTask.getStartDate(), -duration + link.getLag());
             }
             else if (linkType == LinkType.FINISHSTART) {
-                startDate = calculateDate(calendarData, linkedTask.getFinishDate(), link.getLag());
+                startDate = calendar.getDateByDurationWithoutInitiateCache(linkedTask.getFinishDate(), link.getLag());
             }
             else if (linkType == LinkType.FINISHFINISH) {
-                startDate = calculateDate(calendarData, linkedTask.getFinishDate(), duration + link.getLag());
+                startDate = calendar.getDateByDurationWithoutInitiateCache(linkedTask.getFinishDate(), duration + link.getLag());
             }
             else throw new StandardError("Illegal link type of the predecessor: " + linkedTask);
 
@@ -238,244 +222,11 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private LocalDateTime calculateDate(CalendarData calendarData, LocalDateTime date, long duration) {
-
-        if (duration == 0L) return LocalDateTime.of(
-                LocalDate.ofEpochDay(date.toLocalDate().toEpochDay()),
-                LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay())
-        );
-
-        boolean isAscend = duration > 0L;
-
-        dateComputation.setDateComputation(date, duration, calendarData);
-        LocalDateTime startDate;
-        if (isAscend) {
-            startDate = dateComputation.increaseDateByDuration();
-        } else {
-            startDate = dateComputation.decreaseDateByDuration();
-        }
-
-        return startDate;
-
+    private LocalDateTime getNullDateTime() {
+        return LocalDateTime.of(0, 1, 1, 0, 0);
     }
 
-    private long getDuration(LocalDateTime start, LocalDateTime finish, CalendarData calendarData) {
-
-        if (start.compareTo(finish) > 0) throw new StandardError("Illegal argument exception");
-
-        LocalDate startDay = LocalDate.ofEpochDay(start.toLocalDate().toEpochDay());
-        LocalTime startTime = LocalTime.ofSecondOfDay(start.toLocalTime().toSecondOfDay());
-
-        ComputingDataOfWorkingDay computingDataOfWorkingDay =
-                new ComputingDataOfWorkingDay(startDay, calendarData, start.getDayOfWeek().getValue());
-
-        int startTimeCalendar = calendarData.startTime();
-        int finishTimeCalendar = startTimeCalendar + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-
-        long duration = finishTimeCalendar - startTime.toSecondOfDay();
-
-        LocalDate finishDay = finish.toLocalDate();
-        while (startDay.compareTo(finishDay) < 0) {
-            computingDataOfWorkingDay.increaseDay();
-            duration =+ computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-        }
-
-        if (startTimeCalendar < finish.toLocalTime().toSecondOfDay()) {
-            duration =+ finish.toLocalTime().toSecondOfDay() - startTimeCalendar;
-        }
-
-        return duration;
-
-    }
-
-    // classes
-
-    private class DateComputation {
-
-        private LocalDateTime date;
-        private long duration;
-        private CalendarData calendarData;
-
-        // general variables
-        private LocalDate day;
-        private LocalTime time;
-        private ComputingDataOfWorkingDay computingDataOfWorkingDay;
-        private int startTime;
-        private int finishTime;
-        private long remainderOfDuration;
-        private int secondOfDay;
-
-        public void setDateComputation(LocalDateTime date, long duration,
-                        CalendarData calendarData) {
-            this.date = date;
-            this.duration = duration;
-            this.calendarData = calendarData;
-        }
-
-        public LocalDateTime increaseDateByDuration() {
-
-            if (duration < 0) throw new StandardError("Illegal argument exception");
-
-            initiate();
-
-            if (secondOfDay >= finishTime) {
-                computingDataOfWorkingDay.increaseDay();
-                time = LocalTime.ofSecondOfDay(startTime);
-            } else if (secondOfDay <= startTime) {
-                time = LocalTime.ofSecondOfDay(startTime);
-            } else {
-                if (secondOfDay + remainderOfDuration < finishTime) {
-                    time.plusSeconds(remainderOfDuration);
-                    return LocalDateTime.of(day, time);
-                } else {
-                    computingDataOfWorkingDay.increaseDay();
-                    time = LocalTime.ofSecondOfDay(startTime);
-                    int numberOfSecondUntilEndOfWorkingDay = finishTime - secondOfDay;
-                    remainderOfDuration =- numberOfSecondUntilEndOfWorkingDay;
-                }
-            }
-
-            // increase/decrease days
-            int numberOfSecondsInWorkingDay;
-            do {
-                numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-                remainderOfDuration =- numberOfSecondsInWorkingDay;
-                if (remainderOfDuration > 0L) {
-                    computingDataOfWorkingDay.increaseDay();
-                }
-
-            } while (remainderOfDuration > 0L);
-
-            if (remainderOfDuration == 0) return LocalDateTime.of(day, time);
-
-            // reclaim remainderOfDuration to add it to the time
-            remainderOfDuration =+ numberOfSecondsInWorkingDay;
-
-            time.plusSeconds(remainderOfDuration);
-
-            return LocalDateTime.of(day, time);
-
-        }
-
-        public LocalDateTime decreaseDateByDuration() {
-
-            if (duration < 0) throw new StandardError("Illegal argument");
-
-            initiate();
-
-            if (secondOfDay <= startTime) {
-                computingDataOfWorkingDay.decreaseDay();
-                time = LocalTime.ofSecondOfDay(finishTime);
-            } else if (secondOfDay >= finishTime) {
-                time = LocalTime.ofSecondOfDay(finishTime);
-            } else {
-                if (secondOfDay + remainderOfDuration > startTime) {
-                    time.minusSeconds(-remainderOfDuration);
-                    return LocalDateTime.of(day, time);
-                } else {
-                    computingDataOfWorkingDay.decreaseDay();
-                    time = LocalTime.ofSecondOfDay(finishTime);
-                    int numberOfSecondUntilEndOfWorkingDay = startTime - secondOfDay;
-                    // numberOfSecondUntilEndOfWorkingDay < 0 by the condition above, so after
-                    // the operation below is completed, remainderOfDuration will be increased
-                    remainderOfDuration =- numberOfSecondUntilEndOfWorkingDay;
-                }
-            }
-
-            // increase/decrease days
-            int numberOfSecondsInWorkingDay;
-            do {
-                numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-                remainderOfDuration =+ numberOfSecondsInWorkingDay;
-                if (remainderOfDuration < 0L) {
-                    computingDataOfWorkingDay.decreaseDay();
-                }
-
-            } while (remainderOfDuration < 0L);
-
-            if (remainderOfDuration == 0) return LocalDateTime.of(day, time);
-
-            // reclaim remainderOfDuration to add it to the time
-            remainderOfDuration =- numberOfSecondsInWorkingDay;
-
-            time.minusSeconds(-remainderOfDuration);
-
-            return LocalDateTime.of(day, time);
-
-        }
-
-        private void initiate() {
-
-            day = LocalDate.ofEpochDay(date.toLocalDate().toEpochDay());
-            time = LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay());
-
-            computingDataOfWorkingDay =
-                    new ComputingDataOfWorkingDay(day, calendarData, date.getDayOfWeek().getValue());
-
-            startTime = calendarData.startTime();
-            finishTime = startTime + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-
-            remainderOfDuration = duration;
-            secondOfDay = time.toSecondOfDay();
-
-        }
-
-    }
-
-    private class ComputingDataOfWorkingDay {
-
-        private int index;
-        private LocalDate day;
-        private CalendarData calendarData;
-
-        ComputingDataOfWorkingDay(LocalDate day, CalendarData calendarData, int dayOfWeek) {
-
-            this.day = day;
-            this.calendarData = calendarData;
-
-            List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay();
-            int index = 0;
-            for (int i = 0; i < durationOfDaysOfWeek.size(); i++) {
-                if (durationOfDaysOfWeek.get(i).dayOfWeek() == dayOfWeek) {
-                    index = i;
-                    break;
-                }
-            }
-            this.index = index;
-
-        }
-
-        public void increaseDay() {
-            index++;
-            if (index == calendarData.amountOfHourInDay().size()) index = 0;
-            day.plusDays(1L);
-        }
-
-        public void decreaseDay() {
-            if (index == 0) index = calendarData.amountOfHourInDay().size();
-            index--;
-            day = day.minusDays(1L);
-        }
-
-        public int getNumberOfSecondsInWorkingTime() {
-
-            int durationDay = calendarData.amountOfHourInDay().get(index).countSeconds();
-            Integer durationOfException = calendarData.exceptionDays().get(day);
-
-            int numberOfSecondsInDay;
-            if (durationOfException != null) {
-                numberOfSecondsInDay = durationOfException;
-            } else {
-                numberOfSecondsInDay = durationDay;
-            }
-
-            return numberOfSecondsInDay;
-
-        }
-
-    }
-
-    private record CalendarData(int startTime, List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, Integer> exceptionDays) {}
+    // Classes
 
     private static class SimpleLinkedTreeItem {
 

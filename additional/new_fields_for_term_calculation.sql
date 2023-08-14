@@ -35,3 +35,7 @@ ADD COLUMN duration INT NOT NULL DEFAULT 1;
 ALTER TABLE calendars
 ADD COLUMN start_time NUMERIC(4, 2);
 
+ALTER TABLE calendars
+DROP COLUMN IF EXISTS settings;
+ALTER TABLE calendars
+ADD settings_id SMALLINT NOT NULL DEFAULT 0;

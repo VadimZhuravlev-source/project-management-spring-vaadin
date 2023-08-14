@@ -3,21 +3,26 @@ package com.pmvaadin.calendars.entity;
 import com.pmvaadin.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.calendars.dayofweeksettings.DefaultDaySetting;
 
-import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.util.*;
 
 public enum CalendarSettings {
     // after new value has been added, there is a need to add an initialization of DayOfWeekSettings set in the class Sets below
-    EIGHTHOURWORKINGDAY,
-    HOURSHIFT12,
-    HOURSHIFT24,
-    DAYSOFWEEKSETTINGS;
+    EIGHTHOURWORKINGDAY(0),
+    HOURSHIFT12(1),
+    HOURSHIFT24(2),
+    DAYSOFWEEKSETTINGS(3);
+
+    private final Integer code;
 
     private static final CalendarSettings[] ENUMS = values();
 
-    CalendarSettings(){
+    CalendarSettings(int code) {
+        this.code = code;
+    }
 
+    public Integer getCode() {
+        return code;
     }
 
     public static CalendarSettings of(int calendarSettings) {
@@ -57,7 +62,7 @@ public enum CalendarSettings {
     private static class Sets {
 
         public static Map<CalendarSettings, List<DefaultDaySetting>> map = initiateMap();
-        private static int secondsInHour = 3600;
+        private static final int secondsInHour = 3600;
 
         private static Map<CalendarSettings, List<DefaultDaySetting>> initiateMap() {
 
