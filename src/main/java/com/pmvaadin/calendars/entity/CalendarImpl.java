@@ -13,7 +13,6 @@ import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -140,10 +139,10 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
         if (calendarData == null) initiateCacheData();
 
-        ComputingDataOfWorkingDay computingDataOfWorkingDay =
-                new ComputingDataOfWorkingDay(startDay, start.getDayOfWeek().getValue());
-
         int startTimeCalendar = calendarData.startTime();
+        ComputingDataOfWorkingDay computingDataOfWorkingDay =
+                new ComputingDataOfWorkingDay(startDay, start.getDayOfWeek().getValue(), startTimeCalendar);
+
         int finishTimeCalendar = startTimeCalendar + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
 
         long duration = finishTimeCalendar - startTime.toSecondOfDay();
@@ -252,7 +251,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
                     computingDataOfWorkingDay.increaseDay();
                     time = LocalTime.ofSecondOfDay(startTime);
                     int numberOfSecondUntilEndOfWorkingDay = finishTime - secondOfDay;
-                    remainderOfDuration =- numberOfSecondUntilEndOfWorkingDay;
+                    remainderOfDuration = remainderOfDuration - numberOfSecondUntilEndOfWorkingDay;
                 }
             }
 
@@ -272,9 +271,13 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             // reclaim remainderOfDuration to add it to the time
             remainderOfDuration = remainderOfDuration + numberOfSecondsInWorkingDay;
 
-            time = time.plusSeconds(remainderOfDuration);
+            int startTimeSeconds = startTime;
+            int newStartTimeSeconds = startTimeSeconds + (int) remainderOfDuration;
+            time = LocalTime.ofSecondOfDay(newStartTimeSeconds);
+            //time = time.plusSeconds(remainderOfDuration);
+            LocalDate newDay = computingDataOfWorkingDay.day;
 
-            return LocalDateTime.of(day, time);
+            return LocalDateTime.of(newDay, time);
 
         }
 
@@ -288,16 +291,16 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
             if (secondOfDay <= startTime) {
                 computingDataOfWorkingDay.decreaseDay();
-                time = LocalTime.ofSecondOfDay(finishTime);
+                time = LocalTime.ofSecondOfDay(computingDataOfWorkingDay.getFinishTimeSeconds());
             } else if (secondOfDay >= finishTime) {
-                time = LocalTime.ofSecondOfDay(finishTime);
+                time = LocalTime.ofSecondOfDay(computingDataOfWorkingDay.getFinishTimeSeconds());
             } else {
                 if (secondOfDay + remainderOfDuration > startTime) {
                     time = time.minusSeconds(-remainderOfDuration);
                     return LocalDateTime.of(day, time);
                 } else {
                     computingDataOfWorkingDay.decreaseDay();
-                    time = LocalTime.ofSecondOfDay(finishTime);
+                    time = LocalTime.ofSecondOfDay(computingDataOfWorkingDay.getFinishTimeSeconds());
                     int numberOfSecondUntilEndOfWorkingDay = startTime - secondOfDay;
                     // numberOfSecondUntilEndOfWorkingDay < 0 by the condition above, so after
                     // the operation below is completed, remainderOfDuration will be increased
@@ -321,9 +324,12 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             // reclaim remainderOfDuration to add it to the time
             remainderOfDuration = remainderOfDuration - numberOfSecondsInWorkingDay;
 
-            time = time.minusSeconds(-remainderOfDuration);
+            int newStartTimeSeconds = computingDataOfWorkingDay.getFinishTimeSeconds() + (int) remainderOfDuration;
+            time = LocalTime.ofSecondOfDay(newStartTimeSeconds);
 
-            return LocalDateTime.of(day, time);
+            LocalDate newDay = computingDataOfWorkingDay.day;
+
+            return LocalDateTime.of(newDay, time);
 
         }
 
@@ -332,11 +338,11 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             day = LocalDate.ofEpochDay(date.toLocalDate().toEpochDay());
             time = LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay());
 
-            computingDataOfWorkingDay =
-                    new ComputingDataOfWorkingDay(day, date.getDayOfWeek().getValue());
-
             startTime = calendarData.startTime();
-            finishTime = startTime + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+            computingDataOfWorkingDay =
+                    new ComputingDataOfWorkingDay(day, date.getDayOfWeek().getValue(), startTime);
+
+            finishTime = computingDataOfWorkingDay.getFinishTimeSeconds();
 
             remainderOfDuration = duration;
             secondOfDay = time.toSecondOfDay();
@@ -347,12 +353,16 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
     private class ComputingDataOfWorkingDay {
 
+        private int startTimeSeconds;
         private int index;
         private LocalDate day;
 
-        ComputingDataOfWorkingDay(LocalDate day, int dayOfWeek) {
+        private int numberOfSecondsInDay;
+
+        ComputingDataOfWorkingDay(LocalDate day, int dayOfWeek, int startTimeSeconds) {
 
             this.day = day;
+            this.startTimeSeconds = startTimeSeconds;
 
             List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay();
             int index = 0;
@@ -363,6 +373,8 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
                 }
             }
             this.index = index;
+
+            getNumberOfSecondsInWorkingTime();
 
         }
 
@@ -383,11 +395,14 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             int durationDay = calendarData.amountOfHourInDay().get(index).countSeconds();
             Integer durationOfException = calendarData.exceptionDays().get(day);
 
-            int numberOfSecondsInDay;
             numberOfSecondsInDay = Objects.requireNonNullElse(durationOfException, durationDay);
 
             return numberOfSecondsInDay;
 
+        }
+
+        public int getFinishTimeSeconds() {
+            return startTimeSeconds + numberOfSecondsInDay;
         }
 
     }

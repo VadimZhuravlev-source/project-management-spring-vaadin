@@ -3,6 +3,7 @@ package com.pmvaadin.calendars.exceptiondays;
 import com.pmvaadin.calendars.entity.CalendarImpl;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.*;
@@ -32,6 +33,11 @@ public class ExceptionDays {
 
     @Transient
     private BigDecimal durationRepresentation;
+
+    public ExceptionDays(LocalDate date, int duration) {
+        this.date = date;
+        this.duration = duration;
+    }
 
     public static String getExceptionDaysName(){return "Date";}
 }
