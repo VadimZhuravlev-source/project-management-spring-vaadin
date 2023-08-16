@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,6 +19,7 @@ class CalendarImplTest {
 
     private LocalDateTime date20211223 = LocalDateTime.of(2021, 12, 23, 11, 56, 23);
 
+    private LocalDate shortWorkingDay = LocalDate.of(2021, 12, 31);
 
     private CalendarImpl calendar = new CalendarImpl();
     private CalendarImpl calendarWithExceptions = new CalendarImpl();
@@ -46,22 +48,52 @@ class CalendarImplTest {
         exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 5), 0));
         exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 4), 0));
         exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 3), 0));
-        exceptions.add(new ExceptionDays(LocalDate.of(2021, 12, 31), 7 * secondInHour));
+        exceptions.add(new ExceptionDays(shortWorkingDay, 7 * secondInHour));
 
         return exceptions;
 
     }
 
-    @Test
-    void getDuration() {
+    // getDateByDuration tests
 
+    @Test
+    void getDuration_WhereDifferenceBetweenDatesIsSomeSecond() {
+
+        LocalDateTime startDate = LocalDateTime.of(2022, 1, 25, 10, 30, 29);
+        LocalDateTime finishDate = LocalDateTime.of(2022, 1, 25, 10, 30, 34);
+        long calcDuration = calendarWithExceptions.getDuration(startDate, finishDate);
+        assertEquals(5, calcDuration);
 
     }
 
     @Test
-    void getDateByDuration_WhereDurationPlus3Seconds() {
+    void getDuration_WhereDifferenceBetweenDatesIsDay() {
 
-        long duration = 3;
+        LocalDateTime startDate = LocalDateTime.of(2022, 1, 25, 10, 30, 29);
+        LocalDateTime finishDate = LocalDateTime.of(2022, 1, 26, 10, 30, 34);
+        long calcDuration = calendarWithExceptions.getDuration(startDate, finishDate);
+        int duration = 8 * secondInHour + 5;
+        assertEquals(duration, calcDuration);
+
+    }
+
+    @Test
+    void getDuration_WhereDifferenceBetweenDatesIsPeriodWithHoliday() {
+
+        LocalDateTime startDate = LocalDateTime.of(2021, 12, 30, 10, 30, 29);
+        LocalDateTime finishDate = LocalDateTime.of(2022, 1, 11, 10, 30, 34);
+        long calcDuration = calendarWithExceptions.getDuration(startDate, finishDate);
+        int duration = 1 * 8 * secondInHour + 5 + 7 * secondInHour;
+        assertEquals(duration, calcDuration);
+
+    }
+
+    // getDateByDuration tests
+
+    @Test
+    void getDateByDuration_WhereDurationIsPlus3Seconds() {
+
+        long duration = 3L;
         LocalDateTime aheadDate = date20220125.plusSeconds(duration);
         LocalDateTime newDate = calendar.getDateByDuration(date20220125, duration);
         assertEquals(aheadDate, newDate);
@@ -69,9 +101,9 @@ class CalendarImplTest {
     }
 
     @Test
-    void getDateByDuration_WhereDurationMinus3Seconds() {
+    void getDateByDuration_WhereDurationIsMinus3Seconds() {
 
-        long duration = 3;
+        long duration = 3L;
         LocalDateTime backDate = date20220125.minusSeconds(duration);
         LocalDateTime newDate = calendar.getDateByDuration(date20220125, -duration);
         assertEquals(backDate, newDate);
@@ -79,19 +111,104 @@ class CalendarImplTest {
     }
 
     @Test
-    void getDateByDuration_WhereDurationPlus3Hours() {
+    void getDateByDuration_Plus3Hours_WhereDateEndsAfterFinishTime() {
 
-        long duration = 3 * secondInHour;
-        LocalDateTime aheadDate = date20220125.plusSeconds(duration);
-        LocalDateTime newDate = calendar.getDateByDuration(date20220125, duration);
+        long numberOfHours = 3L;
+        long duration = numberOfHours * secondInHour;
+        LocalDate day = date20220125.toLocalDate();
+        LocalDateTime date = LocalDateTime.of(
+                date20220125.toLocalDate(),
+                LocalTime.of(20, 0)
+        );
+        day = day.plusDays(1);
+        LocalTime newTime = calendar.getStartTime().plusHours(numberOfHours);
+        LocalDateTime aheadDate = LocalDateTime.of(day, newTime);
+        LocalDateTime newDate = calendar.getDateByDuration(date, duration);
+
         assertEquals(aheadDate, newDate);
 
     }
 
     @Test
-    void getDateByDuration_WhereDurationMinus3Hours() {
+    void getDateByDuration_Plus3Hours_WhereDateStartsBeforeStartTime() {
 
-        long duration = 3 * secondInHour;
+        long numberOfHours = 3L;
+        long duration = numberOfHours * secondInHour;
+        LocalDate day = date20220125.toLocalDate();
+        LocalDateTime date = LocalDateTime.of(
+                date20220125.toLocalDate(),
+                LocalTime.of(7, 0)
+        );
+        LocalTime newTime = calendar.getStartTime().plusHours(numberOfHours);
+        LocalDateTime aheadDate = LocalDateTime.of(day, newTime);
+        LocalDateTime newDate = calendar.getDateByDuration(date, duration);
+
+        assertEquals(aheadDate, newDate);
+
+    }
+
+    @Test
+    void getDateByDuration_Minus3Hours_WhereDateEndsAfterFinishTime() {
+
+        long numberOfHours = 3L;
+        long duration = - numberOfHours * secondInHour;
+        LocalDate day = date20220125.toLocalDate();
+        LocalDateTime date = LocalDateTime.of(
+                date20220125.toLocalDate(),
+                LocalTime.of(20, 0)
+        );
+        LocalTime newTime = LocalTime.of(17, 0);
+        newTime = newTime.minusHours(numberOfHours);
+        LocalDateTime backDate = LocalDateTime.of(day, newTime);
+        LocalDateTime newDate = calendar.getDateByDuration(date, duration);
+
+        assertEquals(backDate, newDate);
+
+    }
+
+    @Test
+    void getDateByDuration_Minus3Hours_WhereDateStartsBeforeStartTime() {
+
+        long numberOfHours = 3L;
+        long duration = - numberOfHours * secondInHour;
+        LocalDate day = date20220125.toLocalDate();
+        LocalDateTime date = LocalDateTime.of(
+                date20220125.toLocalDate(),
+                LocalTime.of(7, 0)
+        );
+        day = day.minusDays(1);
+        LocalTime newTime = LocalTime.of(17, 0);
+        newTime = newTime.minusHours(numberOfHours);
+        LocalDateTime backDate = LocalDateTime.of(day, newTime);
+        LocalDateTime newDate = calendar.getDateByDuration(date, duration);
+
+        assertEquals(backDate, newDate);
+
+    }
+
+    @Test
+    void getDateByDuration_Minus6Hours_WhereDateEndsOnShortDay() {
+
+        long numberOfHours = 6L;
+        long duration = - numberOfHours * secondInHour;
+        LocalDateTime date = LocalDateTime.of(
+                LocalDate.of(2022, 1, 11),
+                LocalTime.of(11, 0)
+        );
+
+        LocalTime newTime = LocalTime.of(16, 0);
+        newTime = newTime.minusHours(4);
+        LocalDateTime backDate = LocalDateTime.of(shortWorkingDay, newTime);
+        LocalDateTime newDate = calendarWithExceptions.getDateByDuration(date, duration);
+
+        assertEquals(backDate, newDate);
+
+    }
+
+    @Test
+    void getDateByDuration_WhereDurationIsMinus3Hours() {
+
+        long duration = 3L * secondInHour;
         LocalDateTime backDate = date20220125.minusSeconds(duration);
         LocalDateTime newDate = calendar.getDateByDuration(date20220125, -duration);
         assertEquals(backDate, newDate);
@@ -99,9 +216,9 @@ class CalendarImplTest {
     }
 
     @Test
-    void getDateByDuration_WhereDurationPlus3WorkingDays() {
+    void getDateByDuration_WhereDurationIsPlus3WorkingDays() {
 
-        long duration = 3 * 8 * secondInHour;
+        long duration = 3L * 8 * secondInHour;
         LocalDateTime aheadDate = date20220125.plusDays(3);
         LocalDateTime newDate = calendar.getDateByDuration(date20220125, duration);
         assertEquals(aheadDate, newDate);
@@ -109,19 +226,19 @@ class CalendarImplTest {
     }
 
     @Test
-    void getDateByDuration_WhereDurationMinus3WorkingDays() {
+    void getDateByDuration_WhereDurationIsMinus3WorkingDays() {
 
-        long duration = 3 * 8 * secondInHour;
+        long duration = - 3L * 8 * secondInHour;
         LocalDateTime backDate = date20220125.minusDays(5);
-        LocalDateTime newDate = calendar.getDateByDuration(date20220125, -duration);
+        LocalDateTime newDate = calendar.getDateByDuration(date20220125, duration);
         assertEquals(backDate, newDate);
 
     }
 
     @Test
-    void getDateByDuration_WhereDurationPlus3WorkingMonths() {
+    void getDateByDuration_WhereDurationIsPlus3WorkingMonths() {
 
-        long duration = 3 * 20 * 8 * secondInHour;
+        long duration = 3L * 20 * 8 * secondInHour;
         LocalDateTime aheadDate = date20220125.plusDays(84);
         LocalDateTime newDate = calendar.getDateByDuration(date20220125, duration);
         assertEquals(aheadDate, newDate);
@@ -129,19 +246,19 @@ class CalendarImplTest {
     }
 
     @Test
-    void getDateByDuration_WhereDurationMinus3WorkingMonths() {
+    void getDateByDuration_WhereDurationIsMinus3WorkingMonths() {
 
-        long duration = 3 * 20 * 8 * secondInHour;
+        long duration = - 3L * 20 * 8 * secondInHour;
         LocalDateTime backDate = date20220125.minusDays(84);
-        LocalDateTime newDate = calendar.getDateByDuration(date20220125, -duration);
+        LocalDateTime newDate = calendar.getDateByDuration(date20220125, duration);
         assertEquals(backDate, newDate);
 
     }
 
     @Test
-    void getDateByDuration_WhereDurationPlus3Week() {
+    void getDateByDuration_WhereDurationIsPlus3Week() {
 
-        long duration =  14 * 8 * secondInHour;
+        long duration =  14L * 8L * secondInHour;
         LocalDateTime aheadDate = LocalDateTime.of(
                 LocalDate.of(2022, 1, 20),
                 date20211223.toLocalTime().plusHours(1)
@@ -152,14 +269,14 @@ class CalendarImplTest {
     }
 
     @Test
-    void getDateByDuration_WhereDurationMinus3Week() {
+    void getDateByDuration_WhereDurationIsMinus3Week() {
 
-        long duration =  14 * 8 * secondInHour;
+        long duration = - 14L * 8L * secondInHour;
         LocalDateTime backDate = LocalDateTime.of(
                 LocalDate.of(2021, 12, 28),
                 date20220125.toLocalTime().minusHours(1)
         );
-        LocalDateTime newDate = calendarWithExceptions.getDateByDuration(date20220125, -duration);
+        LocalDateTime newDate = calendarWithExceptions.getDateByDuration(date20220125, duration);
         assertEquals(backDate, newDate);
 
     }

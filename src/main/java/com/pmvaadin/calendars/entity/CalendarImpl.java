@@ -143,19 +143,48 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
         ComputingDataOfWorkingDay computingDataOfWorkingDay =
                 new ComputingDataOfWorkingDay(startDay, start.getDayOfWeek().getValue(), startTimeCalendar);
 
-        int finishTimeCalendar = startTimeCalendar + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+        int finishTimeCalendar = computingDataOfWorkingDay.getFinishTimeSeconds();
 
-        long duration = finishTimeCalendar - startTime.toSecondOfDay();
+        ////////////////////////
+
+        if (startDay.equals(finish.toLocalDate())) {
+
+            int startTimeSeconds = startTime.toSecondOfDay();
+            if (startTimeSeconds < startTimeCalendar) startTimeSeconds = startTimeCalendar;
+            if (startTimeSeconds > finishTimeCalendar) startTimeSeconds = finishTimeCalendar;
+
+            int finishDateTimeSeconds = finish.toLocalTime().toSecondOfDay();
+            if (finishDateTimeSeconds < startTimeCalendar) finishDateTimeSeconds = startTimeCalendar;
+            if (finishDateTimeSeconds > finishTimeCalendar) finishDateTimeSeconds = finishTimeCalendar;
+
+            return finishDateTimeSeconds - startTimeSeconds;
+
+        }
+
+        /////////////////////////////
+
+        int startTimeSeconds = startTime.toSecondOfDay();
+        if (startTimeSeconds < startTimeCalendar) startTimeSeconds = startTimeCalendar;
+        if (startTimeSeconds > finishTimeCalendar) {
+            startTimeSeconds = finishTimeCalendar;
+        }
+        computingDataOfWorkingDay.increaseDay();
+        long duration = finishTimeCalendar - startTimeSeconds;
 
         LocalDate finishDay = finish.toLocalDate();
-        while (startDay.compareTo(finishDay) < 0) {
-            computingDataOfWorkingDay.increaseDay();
+        while (computingDataOfWorkingDay.getDay().compareTo(finishDay) < 0) {
             duration = duration + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
+            computingDataOfWorkingDay.increaseDay();
         }
 
-        if (startTimeCalendar < finish.toLocalTime().toSecondOfDay()) {
-            duration = duration + finish.toLocalTime().toSecondOfDay() - startTimeCalendar;
-        }
+        // finishDate duration
+        int finishDateTimeSeconds = finish.toLocalTime().toSecondOfDay();
+        if (finishDateTimeSeconds < startTimeCalendar) finishDateTimeSeconds = startTimeCalendar;
+        finishTimeCalendar = computingDataOfWorkingDay.getFinishTimeSeconds();
+        if (finishDateTimeSeconds > finishTimeCalendar) finishDateTimeSeconds = finishTimeCalendar;
+        int durationFinishDay = finishDateTimeSeconds - startTimeCalendar;
+
+        duration = duration + durationFinishDay;
 
         return duration;
 
@@ -255,7 +284,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
                 }
             }
 
-            // increase/decrease days
+            // increase days
             int numberOfSecondsInWorkingDay;
             do {
                 numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
@@ -308,7 +337,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
                 }
             }
 
-            // increase/decrease days
+            // decrease days
             int numberOfSecondsInWorkingDay;
             do {
                 numberOfSecondsInWorkingDay = computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
@@ -356,7 +385,6 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
         private int startTimeSeconds;
         private int index;
         private LocalDate day;
-
         private int numberOfSecondsInDay;
 
         ComputingDataOfWorkingDay(LocalDate day, int dayOfWeek, int startTimeSeconds) {
@@ -374,7 +402,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             }
             this.index = index;
 
-            getNumberOfSecondsInWorkingTime();
+            refreshNumberOfSecondsInDay();
 
         }
 
@@ -382,27 +410,33 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             index++;
             if (index == calendarData.amountOfHourInDay().size()) index = 0;
             day = day.plusDays(1L);
+            refreshNumberOfSecondsInDay();
         }
 
         public void decreaseDay() {
             if (index == 0) index = calendarData.amountOfHourInDay().size();
             index--;
             day = day.minusDays(1L);
+            refreshNumberOfSecondsInDay();
         }
 
         public int getNumberOfSecondsInWorkingTime() {
-
-            int durationDay = calendarData.amountOfHourInDay().get(index).countSeconds();
-            Integer durationOfException = calendarData.exceptionDays().get(day);
-
-            numberOfSecondsInDay = Objects.requireNonNullElse(durationOfException, durationDay);
-
             return numberOfSecondsInDay;
-
         }
 
         public int getFinishTimeSeconds() {
             return startTimeSeconds + numberOfSecondsInDay;
+        }
+
+        public LocalDate getDay() {
+            return day;
+        }
+
+        private void refreshNumberOfSecondsInDay() {
+            int durationDay = calendarData.amountOfHourInDay().get(index).countSeconds();
+            Integer durationOfException = calendarData.exceptionDays().get(day);
+
+            numberOfSecondsInDay = Objects.requireNonNullElse(durationOfException, durationDay);
         }
 
     }
