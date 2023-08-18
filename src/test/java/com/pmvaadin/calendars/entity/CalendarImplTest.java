@@ -88,6 +88,28 @@ class CalendarImplTest {
 
     }
 
+    @Test
+    void getDuration_WhereDatesAreInPeriodWithHoliday() {
+
+        LocalDateTime startDate = LocalDateTime.of(2022, 1, 1, 10, 30, 29);
+        LocalDateTime finishDate = LocalDateTime.of(2022, 1, 9, 10, 30, 34);
+        long calcDuration = calendarWithExceptions.getDuration(startDate, finishDate);
+        int duration = 0;
+        assertEquals(duration, calcDuration);
+
+    }
+
+    @Test
+    void getDuration_WhereDatesStartBeforeStartTimeAndAfterFinishTime() {
+
+        LocalDateTime startDate = LocalDateTime.of(2021, 12, 31, 7, 30, 29);
+        LocalDateTime finishDate = LocalDateTime.of(2021, 12, 31, 20, 30, 34);
+        long calcDuration = calendarWithExceptions.getDuration(startDate, finishDate);
+        int duration = 7 * secondInHour;
+        assertEquals(duration, calcDuration);
+
+    }
+
     // getDateByDuration tests
 
     @Test
@@ -277,6 +299,42 @@ class CalendarImplTest {
                 date20220125.toLocalTime().minusHours(1)
         );
         LocalDateTime newDate = calendarWithExceptions.getDateByDuration(date20220125, duration);
+        assertEquals(backDate, newDate);
+
+    }
+
+    @Test
+    void getDateByDuration_WhereDurationIsMinus3DayAndBackDateIsInShortDay() {
+
+        long duration = - 2L * 8L * secondInHour - 4L * secondInHour;
+        LocalDateTime backDate = LocalDateTime.of(2021, 12, 31, 13, 0);
+        LocalDateTime date = LocalDateTime.of(2022, 1, 13, 10, 0);
+
+        LocalDateTime newDate = calendarWithExceptions.getDateByDuration(date, duration);
+        assertEquals(backDate, newDate);
+
+    }
+
+    @Test
+    void getDateByDuration_WhereDurationIsYearForCalendar12() {
+
+        long duration = 365L * 24L * secondInHour;
+        LocalDateTime date = LocalDateTime.of(2022, 1, 13, 10, 0);
+        LocalDateTime backDate = date.plusDays(2 * 365);
+
+        LocalDateTime newDate = calendar12.getDateByDuration(date, duration);
+        assertEquals(backDate, newDate);
+
+    }
+
+    @Test
+    void getDateByDuration_WhereDurationIsYearForCalendar24() {
+
+        long duration = 365L * 24L * secondInHour;
+        LocalDateTime date = LocalDateTime.of(2022, 1, 13, 10, 0);
+        LocalDateTime backDate = date.plusDays(365);
+
+        LocalDateTime newDate = calendar24.getDateByDuration(date, duration);
         assertEquals(backDate, newDate);
 
     }

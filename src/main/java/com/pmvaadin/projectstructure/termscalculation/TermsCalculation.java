@@ -7,6 +7,6 @@ import java.util.Set;
 
 public interface TermsCalculation {
 
-    Set<ProjectTask> calculate(TermCalculationData termCalculationData);
+    TermCalculationRespond calculate(TermCalculationData termCalculationData);
 
 }

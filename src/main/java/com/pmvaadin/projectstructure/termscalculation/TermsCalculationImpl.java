@@ -22,20 +22,17 @@ public class TermsCalculationImpl implements TermsCalculation {
     private Calendar defaultCalendar;
 
     @Override
-    public Set<ProjectTask> calculate(TermCalculationData termCalculationData) {
+    public TermCalculationRespond calculate(TermCalculationData termCalculationData) {
 
         if (termCalculationData.isCycle()) throw new StandardError("Cycle detected in the dependent tasks. Terms calculation is not possible.");
 
         SimpleLinkedTreeItem rootItem = constructTree(termCalculationData);
-
         fillParameters(termCalculationData);
 
-        Map<SimpleLinkedTreeItem, Boolean> path = new HashMap<>();
-        detectCycle(rootItem, path);
+        detectCycle(rootItem);
+        TermCalculationRespond termCalculationRespond = calculate(rootItem);
 
-        calculate(rootItem);
-
-        return new HashSet<>(0);
+        return termCalculationRespond;
 
     }
 
@@ -99,7 +96,14 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private void detectCycle(SimpleLinkedTreeItem treeItem, Map<SimpleLinkedTreeItem, Boolean> path) {
+    private void detectCycle(SimpleLinkedTreeItem treeItem) {
+
+        Map<SimpleLinkedTreeItem, Boolean> path = new HashMap<>();
+        detectCycleRecursively(treeItem, path);
+
+    }
+
+    private void detectCycleRecursively(SimpleLinkedTreeItem treeItem, Map<SimpleLinkedTreeItem, Boolean> path) {
 
         for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
             checkCycle(item, path);
@@ -116,21 +120,37 @@ public class TermsCalculationImpl implements TermsCalculation {
         if (path.containsKey(treeItem)) throw new StandardError("Detect cycle in the data of term calculation.");
 
         path.put(treeItem, true);
-        detectCycle(treeItem, path);
+        detectCycleRecursively(treeItem, path);
         path.remove(treeItem);
 
     }
 
-    private void calculate(SimpleLinkedTreeItem rootItem) {
+    private TermCalculationRespond calculate(SimpleLinkedTreeItem rootItem) {
 
         Set<ProjectTask> savedTasks = new HashSet<>();
+        Set<ProjectTask> projectsForRecalculation = new HashSet<>();
         for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
-            calculateRecursively(item, savedTasks);
+            calculateRecursively(item, savedTasks, projectsForRecalculation);
         }
+
+        for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
+            ProjectTask project = item.getValue();
+            if (projectsForRecalculation.contains(project)) continue;
+            changeStartDateFromProjectRecursively(item, project.getStartDate(), savedTasks, projectsForRecalculation);
+        }
+
+        for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
+            calculateRecursively(item, savedTasks, projectsForRecalculation);
+        }
+
+        TermCalculationRespond termCalculationRespond = new TermCalculationRespondImpl(savedTasks, projectsForRecalculation);
+
+        return termCalculationRespond;
 
     }
 
-    private void calculateRecursively(SimpleLinkedTreeItem treeItem, Set<ProjectTask> savedTasks) {
+    private void calculateRecursively(SimpleLinkedTreeItem treeItem, Set<ProjectTask> savedTasks,
+                                      Set<ProjectTask> projectsForRecalculation) {
 
         if (treeItem.isCalculated) return;
 
@@ -149,10 +169,11 @@ public class TermsCalculationImpl implements TermsCalculation {
         LocalDateTime nullTime = getNullDateTime();
         LocalDateTime minStartDate = nullTime;
         LocalDateTime maxFinishDate = nullTime;
-        boolean isSumTask = !treeItem.getChildren().isEmpty() || currentTask.getChildrenCount() != 0;
+        boolean isChildren = currentTask.getChildrenCount() != 0;
+        boolean isSumTask = !treeItem.getChildren().isEmpty() || isChildren;
         for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
             // a method below are also called in the method calculateStartDateFromLinks
-            calculateRecursively(item, savedTasks);
+            calculateRecursively(item, savedTasks, projectsForRecalculation);
             ProjectTask task = item.getValue();
             LocalDateTime startDate = task.getStartDate();
             LocalDateTime finishDate = task.getFinishDate();
@@ -165,6 +186,9 @@ public class TermsCalculationImpl implements TermsCalculation {
         }
 
         if (!treeItem.getChildren().isEmpty() && minStartDate != nullTime && maxFinishDate != nullTime) {
+            if (currentTask.getParentId() == null) {
+                projectsForRecalculation.add(currentTask);
+            }
             currentTask.setStartDate(minStartDate);
             currentTask.setFinishDate(maxFinishDate);
             Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
@@ -173,7 +197,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         }
 
         if (!isSumTask) {
-            minStartDate = calculateStartDateFromLinks(treeItem.links, currentTask, savedTasks);
+            minStartDate = calculateStartDateFromLinks(treeItem.links, currentTask, savedTasks, projectsForRecalculation);
             if (minStartDate.compareTo(nullTime) != 0) {
                 Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
                 maxFinishDate = calendar.getDateByDurationWithoutInitiateCache(minStartDate, currentTask.getDuration());
@@ -186,13 +210,14 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     }
 
-    private LocalDateTime calculateStartDateFromLinks(List<LinkRef> links, ProjectTask calculatedTask, Set<ProjectTask> savedTasks) {
+    private LocalDateTime calculateStartDateFromLinks(List<LinkRef> links, ProjectTask calculatedTask,
+                                                      Set<ProjectTask> savedTasks, Set<ProjectTask> projectsForRecalculation) {
 
         LocalDateTime maxStartDate = getNullDateTime();
         Calendar calendar = mapIdCalendar.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
         long duration = calculatedTask.getDuration();
         for (LinkRef item : links) {
-            calculateRecursively(item.refToTreeItem, savedTasks);
+            calculateRecursively(item.refToTreeItem, savedTasks, projectsForRecalculation);
             ProjectTask linkedTask = item.refToTreeItem.getValue();
 
             Link link = item.value;
@@ -224,6 +249,29 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private LocalDateTime getNullDateTime() {
         return LocalDateTime.of(0, 1, 1, 0, 0);
+    }
+
+    private void changeStartDateFromProjectRecursively(SimpleLinkedTreeItem treeItem, LocalDateTime newDate, Set<ProjectTask> savedTasks,
+                                            Set<ProjectTask> projects) {
+
+        ProjectTask currentTask = treeItem.getValue();
+
+        for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
+            changeStartDateFromProjectRecursively(item, newDate, savedTasks, projects);
+        }
+
+        if (currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY)) return;
+        if (currentTask.getChildrenCount() != 0) return;
+        if (currentTask.getStartDate().equals(newDate)) return;
+
+        currentTask.setStartDate(newDate);
+        Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
+        LocalDateTime newFinishDate = calendar.getDateByDurationWithoutInitiateCache(newDate, currentTask.getDuration());
+        currentTask.setFinishDate(newFinishDate);
+        savedTasks.add(currentTask);
+
+        if (currentTask.getParentId() == null || currentTask.isProject()) projects.add(currentTask);
+
     }
 
     // Classes

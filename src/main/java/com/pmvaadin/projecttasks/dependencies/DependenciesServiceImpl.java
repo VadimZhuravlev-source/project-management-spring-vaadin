@@ -146,7 +146,7 @@ public class DependenciesServiceImpl implements DependenciesService {
 
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
 
-        if (isNullElement) throw new IllegalArgumentException("Passed parameters haven't to be null.");
+        if (isNullElement) throw new IllegalArgumentException("Passed parameters haven't to contain null.");
 
         String pairsOfValues = String.join(";", ids.stream().map(Object::toString).toList());
 
@@ -170,13 +170,20 @@ public class DependenciesServiceImpl implements DependenciesService {
         var isCycleIndex = 0;
         var projectTaskIdIndex = 1;
         var linkIdIndex = 2;
+        var childrenCountIndex = 2;
         var isCycle = false;
+        Map<Object, Integer> childrenCountMap = new HashMap<>(rows.size());
+
         for (Object[] row: rows) {
             isCycle = (boolean) row[isCycleIndex];
             if (isCycle) break;
             I id = (I) row[projectTaskIdIndex];
             L linkId = (L) row[linkIdIndex];
-            if (id != null) projectTaskIds.add(id);
+            if (id != null) {
+                projectTaskIds.add(id);
+                int childrenCount = (int) row[childrenCountIndex];
+                childrenCountMap.put(id, childrenCount);
+            }
             if (linkId != null) linkIds.add(linkId);
         }
 
@@ -186,6 +193,10 @@ public class DependenciesServiceImpl implements DependenciesService {
         }
 
         var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
+        projectTasks.forEach(projectTask -> {
+            Integer childrenCount = childrenCountMap.getOrDefault(projectTask.getId(), 0);
+            projectTask.setChildrenCount(childrenCount);
+        });
         var links = linkRepository.findAllById(linkIds);
 
         return new TermCalculationDataImpl(projectTasks, links, isCycle);
@@ -308,14 +319,27 @@ public class DependenciesServiceImpl implements DependenciesService {
         FROM unique_ids
         JOIN links
             ON unique_ids.id = links.project_task
-        )
+        ),
+        
+        searched_ids_with_children_count AS (
+        SELECT
+            searched_ids.id,
+            searched_ids.link_id,
+            count(p.id) children_count
+        FROM searched_ids
+        LEFT JOIN project_tasks p
+            searched_ids.id = p.parent_id
+        GROUPING BY
+            searched_ids.id,
+            searched_ids.link_id
         
         SELECT
             proceeding_execution.is_cycle,
             searched_ids.id,
-            searched_ids.link_id
+            searched_ids.link_id,
+            searched_ids.children_count
         FROM proceeding_execution
-        LEFT JOIN searched_ids
+        LEFT JOIN searched_ids_with_children_count searched_ids
             ON TRUE
         """;
 
