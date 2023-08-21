@@ -32,6 +32,9 @@ public class TermsCalculationImpl implements TermsCalculation {
         detectCycle(rootItem);
         TermCalculationRespond termCalculationRespond = calculate(rootItem);
 
+        mapIdCalendar.clear();
+        defaultCalendar = null;
+
         return termCalculationRespond;
 
     }
@@ -143,9 +146,7 @@ public class TermsCalculationImpl implements TermsCalculation {
             calculateRecursively(item, savedTasks, projectsForRecalculation);
         }
 
-        TermCalculationRespond termCalculationRespond = new TermCalculationRespondImpl(savedTasks, projectsForRecalculation);
-
-        return termCalculationRespond;
+        return new TermCalculationRespondImpl(savedTasks, projectsForRecalculation);
 
     }
 

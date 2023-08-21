@@ -328,10 +328,10 @@ public class DependenciesServiceImpl implements DependenciesService {
             count(p.id) children_count
         FROM searched_ids
         LEFT JOIN project_tasks p
-            searched_ids.id = p.parent_id
-        GROUPING BY
+            ON searched_ids.id = p.parent_id
+        GROUP BY
             searched_ids.id,
-            searched_ids.link_id
+            searched_ids.link_id)
         
         SELECT
             proceeding_execution.is_cycle,

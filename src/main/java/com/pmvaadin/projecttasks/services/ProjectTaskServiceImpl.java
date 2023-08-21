@@ -88,8 +88,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         if (!recalculateTerms) {
             return savedProjectTask;
         }
-        Set<ProjectTask> tasks = recalculateTerms(savedProjectTask);
-        projectTaskRepository.saveAll(tasks);
+        recalculateTerms(savedProjectTask);
         return savedProjectTask;
 
     }
@@ -225,8 +224,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         var taskIdsForRecalculate = changeHierarchy(projectTasks, target, dropLocation);
 
-        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculate);
-        projectTaskRepository.saveAll(tasksWithChangedTerms);
+        recalculateTerms(taskIdsForRecalculate);
 
         List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(taskIdsForRecalculate);
         projectTaskRepository.saveAll(savedElements);
@@ -284,8 +282,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         projectTaskRepository.saveAll(savedTasks);
 
-        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculateTerm);
-        projectTaskRepository.saveAll(tasksWithChangedTerms);
+        recalculateTerms(taskIdsForRecalculateTerm);
 
         List<ProjectTask> recalculatedTasks = recalculateLevelOrderByParentIds(parentIds);
         projectTaskRepository.saveAll(recalculatedTasks);
@@ -364,8 +361,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             taskIdsForRecalculate.addAll(modifiedTaskIds);
         }
 
-        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculate);
-        projectTaskRepository.saveAll(tasksWithChangedTerms);
+        recalculateTerms(taskIdsForRecalculate);
 
         List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(taskIdsForRecalculate);
         projectTaskRepository.saveAll(savedElements);
@@ -653,7 +649,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private Set<ProjectTask> recalculateTerms(Set<?> taskIds) {
+    private void recalculateTerms(Set<?> taskIds) {
         //return new HashSet(0);
 
         TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(taskIds);
@@ -664,14 +660,16 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
         TermCalculationRespond respond = termsCalculation.calculate(termCalculationData);
 
-        return respond.getChangedTasks();
+        projectTaskRepository.saveAll(respond.getChangedTasks());
+
+
 
     }
 
-    private Set<ProjectTask> recalculateTerms(ProjectTask projectTask) {
-        HashSet<Object> parentIds = new HashSet<>(1);
-        parentIds.add(projectTask.getParentId());
-        return recalculateTerms(parentIds);
+    private void recalculateTerms(ProjectTask projectTask) {
+        HashSet<Object> ids = new HashSet<>(1);
+        ids.add(projectTask.getId());
+        recalculateTerms(ids);
     }
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {
