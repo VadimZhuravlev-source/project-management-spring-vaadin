@@ -19,13 +19,13 @@ public enum LinkType {
     @Override
     public String toString() {
         if (this.code.equals(0)) {
-            return "Start-to-start(SS)";
+            return "Start-to-start (SS)";
         }else if (this.code.equals(1)) {
-            return "Start-to-finish(SF)";
+            return "Start-to-finish (SF)";
         }else if (this.code.equals(2)) {
-            return "Finish-to-start(FS)";
+            return "Finish-to-start (FS)";
         }else if (this.code.equals(3)) {
-            return "Finish-to-Finish(FF)";
+            return "Finish-to-Finish (FF)";
         }
         return "";
     }

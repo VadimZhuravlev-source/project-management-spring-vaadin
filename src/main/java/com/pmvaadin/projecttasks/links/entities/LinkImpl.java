@@ -62,7 +62,7 @@ public class LinkImpl implements Link {
     private String representation;
 
     public LinkImpl() {
-        linkType = LinkType.STARTFINISH;
+        linkType = LinkType.FINISHSTART;
     }
 
     public LinkImpl(Link link) {

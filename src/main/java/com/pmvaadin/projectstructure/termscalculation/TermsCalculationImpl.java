@@ -142,8 +142,11 @@ public class TermsCalculationImpl implements TermsCalculation {
             changeStartDateFromProjectRecursively(item, project.getStartDate(), savedTasks, projectsForRecalculation);
         }
 
-        for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
-            calculateRecursively(item, savedTasks, projectsForRecalculation);
+        if (!projectsForRecalculation.isEmpty()) {
+            // at first, there is a need for clearing of "isCalculated" field in all tree elements
+            for (SimpleLinkedTreeItem item : rootItem.getChildren()) {
+                calculateRecursively(item, savedTasks, projectsForRecalculation);
+            }
         }
 
         return new TermCalculationRespondImpl(savedTasks, projectsForRecalculation);
@@ -195,6 +198,7 @@ public class TermsCalculationImpl implements TermsCalculation {
             Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
             long duration = calendar.getDurationWithoutInitiateCache(minStartDate, maxFinishDate);
             currentTask.setDuration(duration);
+            savedTasks.add(currentTask);
         }
 
         if (!isSumTask) {
@@ -204,6 +208,7 @@ public class TermsCalculationImpl implements TermsCalculation {
                 maxFinishDate = calendar.getDateByDurationWithoutInitiateCache(minStartDate, currentTask.getDuration());
                 currentTask.setStartDate(minStartDate);
                 currentTask.setFinishDate(maxFinishDate);
+                savedTasks.add(currentTask);
             }
         }
 
