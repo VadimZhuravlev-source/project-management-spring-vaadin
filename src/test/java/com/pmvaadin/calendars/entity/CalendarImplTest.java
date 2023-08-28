@@ -113,6 +113,28 @@ class CalendarImplTest {
     // getDateByDuration tests
 
     @Test
+    void getDateByDuration_WhereDurationIsPlusOneDay() {
+
+        long duration = 8L * secondInHour;
+        LocalDateTime date = LocalDateTime.of(2023, 8, 29, 9, 0);
+        LocalDateTime aheadDate = date.plusDays(1);
+        LocalDateTime newDate = calendar.getDateByDuration(date, duration);
+        assertEquals(aheadDate, newDate);
+
+    }
+
+    @Test
+    void getDateByDuration_WhereDurationIsMinusOneDay() {
+
+        long duration = - 8L * secondInHour;
+        LocalDateTime date = LocalDateTime.of(2023, 8, 29, 9, 0);
+        LocalDateTime aheadDate = date.minusDays(1);
+        LocalDateTime newDate = calendar.getDateByDuration(date, duration);
+        assertEquals(aheadDate, newDate);
+
+    }
+
+    @Test
     void getDateByDuration_WhereDurationIsPlus3Seconds() {
 
         long duration = 3L;

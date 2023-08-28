@@ -270,7 +270,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             if (secondOfDay >= finishTime) {
                 computingDataOfWorkingDay.increaseDay();
                 time = LocalTime.ofSecondOfDay(startTime);
-            } else if (secondOfDay <= startTime) {
+            } else if (secondOfDay < startTime) {
                 time = LocalTime.ofSecondOfDay(startTime);
             } else {
                 if (secondOfDay + remainderOfDuration < finishTime) {
@@ -295,7 +295,8 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
             } while (remainderOfDuration > 0L);
 
-            if (remainderOfDuration == 0) return LocalDateTime.of(day, time);
+//            LocalDate newDay = computingDataOfWorkingDay.day;
+//            if (remainderOfDuration == 0) return LocalDateTime.of(newDay, time);
 
             // reclaim remainderOfDuration to add it to the time
             remainderOfDuration = remainderOfDuration + numberOfSecondsInWorkingDay;
@@ -303,9 +304,8 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             int startTimeSeconds = startTime;
             int newStartTimeSeconds = startTimeSeconds + (int) remainderOfDuration;
             time = LocalTime.ofSecondOfDay(newStartTimeSeconds);
-            //time = time.plusSeconds(remainderOfDuration);
-            LocalDate newDay = computingDataOfWorkingDay.day;
 
+            LocalDate newDay = computingDataOfWorkingDay.day;
             return LocalDateTime.of(newDay, time);
 
         }
@@ -348,7 +348,8 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
             } while (remainderOfDuration < 0L);
 
-            if (remainderOfDuration == 0) return LocalDateTime.of(day, time);
+//            LocalDate newDay = computingDataOfWorkingDay.day;
+//            if (remainderOfDuration == 0) return LocalDateTime.of(newDay, time);
 
             // reclaim remainderOfDuration to add it to the time
             remainderOfDuration = remainderOfDuration - numberOfSecondsInWorkingDay;
@@ -357,7 +358,6 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             time = LocalTime.ofSecondOfDay(newStartTimeSeconds);
 
             LocalDate newDay = computingDataOfWorkingDay.day;
-
             return LocalDateTime.of(newDay, time);
 
         }

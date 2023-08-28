@@ -22,18 +22,22 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TermsCalculationImplTest {
 
-    private int secondInHour = 3600;
-    private int durationDay = 3600 * 8;
-    private TermCalculationData termData = initiateTermCalculationData();
+    private final int secondInHour = 3600;
+    private final int durationDay = 3600 * 8;
 
     @Test
     void calculate() {
 
+        TermsCalculation termsCalculation = new TermsCalculationImpl();
+        TermCalculationData termData = initiateTermCalculationData();
+        termsCalculation.calculate(termData);
+
         Map<?, ProjectTask> map = termData.getProjectTasks().stream().collect(
                 Collectors.toMap(ProjectTask::getId, p -> p));
 
-        TermsCalculation termsCalculation = new TermsCalculationImpl();
-        termsCalculation.calculate(termData);
+        ProjectTask projectTask = map.get(6);
+        LocalDateTime start = LocalDateTime.of(2022, 1, 27, 9, 0);
+        assertEquals(start, projectTask.getStartDate());
 
     }
 
@@ -48,7 +52,7 @@ class TermsCalculationImplTest {
 
         List<ProjectTask> projectTasks = new ArrayList<>();
 
-        LocalDateTime start = LocalDateTime.of(2022, 1, 25, 12, 23, 11);
+        LocalDateTime start = LocalDateTime.of(2022, 1, 25, 9, 0);
         LocalDateTime finish = calendar.getDateByDuration(start, durationDay);
         ProjectTask projectTask = getInstanceOfProjectTask(1, null, 3,
                 start,

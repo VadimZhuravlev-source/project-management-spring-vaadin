@@ -170,9 +170,9 @@ public class TermsCalculationImpl implements TermsCalculation {
             return;
         }
 
-        LocalDateTime nullTime = getNullDateTime();
-        LocalDateTime minStartDate = nullTime;
-        LocalDateTime maxFinishDate = nullTime;
+        //LocalDateTime nullTime = getNullDateTime();
+        LocalDateTime minStartDate = LocalDateTime.MAX;
+        LocalDateTime maxFinishDate = LocalDateTime.MIN;
         boolean isChildren = currentTask.getChildrenCount() != 0;
         boolean isSumTask = !treeItem.getChildren().isEmpty() || isChildren;
         for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
@@ -189,7 +189,9 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
         }
 
-        if (!treeItem.getChildren().isEmpty() && minStartDate != nullTime && maxFinishDate != nullTime) {
+        if (!treeItem.getChildren().isEmpty() &&
+                minStartDate != LocalDateTime.MAX && maxFinishDate != LocalDateTime.MIN
+                && (!minStartDate.equals(currentTask.getStartDate()) || !maxFinishDate.equals(currentTask.getFinishDate()))) {
             if (currentTask.getParentId() == null) {
                 projectsForRecalculation.add(currentTask);
             }
@@ -203,7 +205,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         if (!isSumTask) {
             minStartDate = calculateStartDateFromLinks(treeItem.links, currentTask, savedTasks, projectsForRecalculation);
-            if (minStartDate.compareTo(nullTime) != 0) {
+            if (!minStartDate.equals(LocalDateTime.MIN) && !minStartDate.equals(currentTask.getStartDate())) {
                 Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
                 maxFinishDate = calendar.getDateByDurationWithoutInitiateCache(minStartDate, currentTask.getDuration());
                 currentTask.setStartDate(minStartDate);
@@ -219,7 +221,7 @@ public class TermsCalculationImpl implements TermsCalculation {
     private LocalDateTime calculateStartDateFromLinks(List<LinkRef> links, ProjectTask calculatedTask,
                                                       Set<ProjectTask> savedTasks, Set<ProjectTask> projectsForRecalculation) {
 
-        LocalDateTime maxStartDate = getNullDateTime();
+        LocalDateTime maxStartDate = LocalDateTime.MIN;
         Calendar calendar = mapIdCalendar.getOrDefault(calculatedTask.getCalendarId(), defaultCalendar);
         long duration = calculatedTask.getDuration();
         for (LinkRef item : links) {
@@ -251,10 +253,6 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         return maxStartDate;
 
-    }
-
-    private LocalDateTime getNullDateTime() {
-        return LocalDateTime.of(0, 1, 1, 0, 0);
     }
 
     private void changeStartDateFromProjectRecursively(SimpleLinkedTreeItem treeItem, LocalDateTime newDate, Set<ProjectTask> savedTasks,
