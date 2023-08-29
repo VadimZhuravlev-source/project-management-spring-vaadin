@@ -15,6 +15,7 @@ public class TermCalculationDataImpl implements TermCalculationData {
     private boolean isCycle;
     private List<Calendar> calendars;
     private Calendar defaultCalendar;
+    private boolean calculateFinishAlways;
 
     public TermCalculationDataImpl(List<ProjectTask> projectTasks, List<Link> links, boolean isCycle) {
         this.projectTasks = projectTasks;

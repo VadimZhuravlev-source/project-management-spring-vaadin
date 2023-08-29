@@ -39,6 +39,17 @@ class TermsCalculationImplTest {
         LocalDateTime start = LocalDateTime.of(2022, 1, 27, 9, 0);
         assertEquals(start, projectTask.getStartDate());
 
+        // if we change start date of the task with manually schedule mode, almost the all task is changed
+        // TODO Have to add asserts to remained tasks
+        projectTask = map.get(7);
+        projectTask.setStartDate(projectTask.getStartDate().minusDays(1));
+        projectTask.setFinishDate(projectTask.getFinishDate().minusDays(1));
+
+        termsCalculation.calculate(termData);
+        projectTask = map.get(6);
+        start = start.minusDays(1);
+        assertEquals(start, projectTask.getStartDate());
+
     }
 
     private TermCalculationData initiateTermCalculationData() {

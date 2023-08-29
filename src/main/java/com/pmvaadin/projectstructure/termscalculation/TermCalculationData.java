@@ -16,4 +16,7 @@ public interface TermCalculationData {
     Calendar getDefaultCalendar();
     void setDefaultCalendar(Calendar calendar);
 
+    boolean isCalculateFinishAlways();
+    void setCalculateFinishAlways(boolean calculateFinishAlways);
+
 }

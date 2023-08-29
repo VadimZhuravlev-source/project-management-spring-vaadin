@@ -20,6 +20,7 @@ public class TermsCalculationImpl implements TermsCalculation {
 
     private Map<?, Calendar> mapIdCalendar = new HashMap<>();
     private Calendar defaultCalendar;
+    private boolean calculateFinishAlways;
 
     @Override
     public TermCalculationRespond calculate(TermCalculationData termCalculationData) {
@@ -48,6 +49,7 @@ public class TermsCalculationImpl implements TermsCalculation {
                 .collect(Collectors.toMap(Calendar::getId, c -> c));
 
         defaultCalendar = termCalculationData.getDefaultCalendar();
+        calculateFinishAlways = termCalculationData.isCalculateFinishAlways();
 
     }
 
@@ -138,12 +140,14 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         for (SimpleLinkedTreeItem item: rootItem.getChildren()) {
             ProjectTask project = item.getValue();
-            if (projectsForRecalculation.contains(project)) continue;
+            if (!projectsForRecalculation.contains(project)) continue;
             changeStartDateFromProjectRecursively(item, project.getStartDate(), savedTasks, projectsForRecalculation);
         }
 
+        // recalculate again if it is necessary
         if (!projectsForRecalculation.isEmpty()) {
             // at first, there is a need for clearing of "isCalculated" field in all tree elements
+            clearIsCalculatedRecursively(rootItem);
             for (SimpleLinkedTreeItem item : rootItem.getChildren()) {
                 calculateRecursively(item, savedTasks, projectsForRecalculation);
             }
@@ -158,13 +162,15 @@ public class TermsCalculationImpl implements TermsCalculation {
 
         if (treeItem.isCalculated) return;
 
+        ProjectTask currentTask = treeItem.getValue();
+        fillFinish(currentTask);
+
         // It is a condition that this task is the last one in the chain of dependencies.
         if (treeItem.getChildren().isEmpty() && treeItem.links.isEmpty()) {
             treeItem.isCalculated = true;
             return;
         }
 
-        ProjectTask currentTask = treeItem.getValue();
         if (currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY)) {
             treeItem.isCalculated = true;
             return;
@@ -189,6 +195,7 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
         }
 
+        Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
         if (!treeItem.getChildren().isEmpty() &&
                 minStartDate != LocalDateTime.MAX && maxFinishDate != LocalDateTime.MIN
                 && (!minStartDate.equals(currentTask.getStartDate()) || !maxFinishDate.equals(currentTask.getFinishDate()))) {
@@ -197,7 +204,6 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
             currentTask.setStartDate(minStartDate);
             currentTask.setFinishDate(maxFinishDate);
-            Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
             long duration = calendar.getDurationWithoutInitiateCache(minStartDate, maxFinishDate);
             currentTask.setDuration(duration);
             savedTasks.add(currentTask);
@@ -206,7 +212,6 @@ public class TermsCalculationImpl implements TermsCalculation {
         if (!isSumTask) {
             minStartDate = calculateStartDateFromLinks(treeItem.links, currentTask, savedTasks, projectsForRecalculation);
             if (!minStartDate.equals(LocalDateTime.MIN) && !minStartDate.equals(currentTask.getStartDate())) {
-                Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
                 maxFinishDate = calendar.getDateByDurationWithoutInitiateCache(minStartDate, currentTask.getDuration());
                 currentTask.setStartDate(minStartDate);
                 currentTask.setFinishDate(maxFinishDate);
@@ -275,6 +280,30 @@ public class TermsCalculationImpl implements TermsCalculation {
         savedTasks.add(currentTask);
 
         if (currentTask.getParentId() == null || currentTask.isProject()) projects.add(currentTask);
+
+    }
+
+    private void clearIsCalculatedRecursively(SimpleLinkedTreeItem item) {
+
+        item.isCalculated = false;
+        for (SimpleLinkedTreeItem treeItem : item.getChildren()) {
+            clearIsCalculatedRecursively(treeItem);
+        }
+
+    }
+
+    private void fillFinish(ProjectTask currentTask) {
+
+        if (!calculateFinishAlways) {
+            return;
+        }
+
+        Calendar calendar = mapIdCalendar.getOrDefault(currentTask.getCalendarId(), defaultCalendar);
+        LocalDateTime start = currentTask.getStartDate();
+        long duration = currentTask.getDuration();
+        LocalDateTime finish = currentTask.getFinishDate();
+        LocalDateTime calculatedFinish = calendar.getDateByDurationWithoutInitiateCache(start, duration);
+        if (!finish.equals(calculatedFinish)) currentTask.setFinishDate(calculatedFinish);
 
     }
 
