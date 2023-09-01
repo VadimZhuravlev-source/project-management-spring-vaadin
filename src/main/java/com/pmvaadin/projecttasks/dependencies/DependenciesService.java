@@ -1,6 +1,6 @@
 package com.pmvaadin.projecttasks.dependencies;
 
-import com.pmvaadin.projectstructure.termscalculation.TermCalculationData;
+import com.pmvaadin.terms.calculation.TermCalculationData;
 
 import java.util.List;
 import java.util.Set;

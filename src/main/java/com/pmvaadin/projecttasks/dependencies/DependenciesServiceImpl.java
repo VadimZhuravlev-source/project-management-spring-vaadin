@@ -1,8 +1,8 @@
 package com.pmvaadin.projecttasks.dependencies;
 
 import com.pmvaadin.AppConfiguration;
-import com.pmvaadin.projectstructure.termscalculation.TermCalculationData;
-import com.pmvaadin.projectstructure.termscalculation.TermCalculationDataImpl;
+import com.pmvaadin.terms.calculation.TermCalculationData;
+import com.pmvaadin.terms.calculation.TermCalculationDataImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;

@@ -1,6 +1,6 @@
 package com.pmvaadin;
 
-import com.pmvaadin.calendars.view.CalendarsView;
+import com.pmvaadin.terms.calendars.view.CalendarsView;
 import com.pmvaadin.projectview.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;
 import com.pmvaadin.security.AdminUsersView;

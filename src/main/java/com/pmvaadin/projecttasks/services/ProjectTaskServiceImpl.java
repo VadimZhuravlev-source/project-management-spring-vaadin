@@ -1,14 +1,14 @@
 package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.AppConfiguration;
-import com.pmvaadin.calendars.services.CalendarService;
+import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
-import com.pmvaadin.projectstructure.termscalculation.TermCalculationData;
-import com.pmvaadin.projectstructure.termscalculation.TermCalculationRespond;
-import com.pmvaadin.projectstructure.termscalculation.TermsCalculation;
+import com.pmvaadin.terms.calculation.TermCalculationData;
+import com.pmvaadin.terms.calculation.TermCalculationRespond;
+import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.entity.ProjectTask;

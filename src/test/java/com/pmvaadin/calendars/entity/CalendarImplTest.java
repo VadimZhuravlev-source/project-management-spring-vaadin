@@ -1,6 +1,8 @@
 package com.pmvaadin.calendars.entity;
 
-import com.pmvaadin.calendars.exceptiondays.ExceptionDays;
+import com.pmvaadin.terms.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.calendars.entity.CalendarSettings;
+import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;

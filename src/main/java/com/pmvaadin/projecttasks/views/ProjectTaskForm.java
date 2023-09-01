@@ -1,12 +1,11 @@
 package com.pmvaadin.projecttasks.views;
 
-import com.pmvaadin.calendars.entity.Calendar;
+import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.NotificationDialogs;
-import com.pmvaadin.calendars.view.CalendarSelectionForm;
+import com.pmvaadin.terms.calendars.view.CalendarSelectionForm;
 import com.pmvaadin.commonobjects.SelectableTextField;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.data.ProjectTaskDataImpl;
-import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.views.LinksProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.ProjectTaskDataService;
@@ -31,7 +30,6 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 import java.util.ArrayList;
-import java.util.List;
 
 @SpringComponent
 public class ProjectTaskForm extends Dialog {
