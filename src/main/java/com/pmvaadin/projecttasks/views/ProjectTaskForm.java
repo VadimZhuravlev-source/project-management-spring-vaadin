@@ -26,10 +26,20 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.Result;
+import com.vaadin.flow.data.binder.ValueContext;
+import com.vaadin.flow.data.converter.Converter;
+import com.vaadin.flow.data.converter.LocalDateTimeToDateConverter;
+import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 
 @SpringComponent
 public class ProjectTaskForm extends Dialog {
@@ -73,7 +83,8 @@ public class ProjectTaskForm extends Dialog {
         customizeFields();
         createButtons();
         addTabs();
-
+        binder.forField(startDate).withConverter(getLocaleDateTimeConverter())
+                .bind(ProjectTask::getStartDate, ProjectTask::setStartDate);
         binder.bindInstanceFields(this);
 
         VerticalLayout mainLayout = new VerticalLayout();
@@ -84,6 +95,22 @@ public class ProjectTaskForm extends Dialog {
 
         add(mainLayout);
 
+    }
+
+    private Converter<LocalDate, Date> getLocaleDateTimeConverter() {
+        return new Converter<LocalDateTime, Date>() {
+
+            private ZoneId zoneId = ZoneId.systemDefault();
+            @Override
+            public Result<Date> convertToModel(LocalDateTime localDateTime, ValueContext valueContext) {
+                return localDateTime == null ? Result.ok((Object) null) : Result.ok(Date.from(localDateTime.atZone(this.zoneId).toInstant()));;
+            }
+
+            @Override
+            public LocalDateTime convertToPresentation(Date date, ValueContext valueContext) {
+                return date == null ? null : Instant.ofEpochMilli(date.getTime()).atZone(this.zoneId).toLocalDateTime();;
+            }
+        }
     }
 
     public ProjectTaskForm newInstance() {

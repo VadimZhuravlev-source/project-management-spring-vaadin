@@ -1,4 +1,4 @@
--- time_unit 
+-- time_unit
 CREATE TABLE time_unit(
    id SERIAL,
    version INT,

@@ -1,4 +1,4 @@
-package com.pmvaadin.terms.timeunit;
+package com.pmvaadin.terms.timeunit.entity;
 
 import java.math.BigDecimal;
 
@@ -19,5 +19,8 @@ public interface TimeUnit {
     BigDecimal getNumberOfHours();
 
     void setNumberOfHours(BigDecimal numberOfHours);
+
+    long getDuration(BigDecimal duration);
+    BigDecimal getDurationRepresentation(long duration);
 
 }

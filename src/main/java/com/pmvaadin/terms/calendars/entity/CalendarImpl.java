@@ -47,7 +47,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     private String name;
 
     @Setter
-    @Column(name = "setting_id")
+    @Column(name = "settings_id")
     private CalendarSettings setting = CalendarSettings.EIGHTHOURWORKINGDAY;
 
     @Setter

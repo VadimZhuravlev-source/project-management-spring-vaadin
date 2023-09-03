@@ -1,5 +1,7 @@
 package com.pmvaadin.projecttasks.entity;
 
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -101,6 +103,15 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Setter
     @Transient
     private ProjectTask parent;
+
+    @ManyToOne
+    @JoinColumn(name = "time_unit_id", nullable = false)
+    private TimeUnitImpl timeUnit;
+
+    @Override
+    public void setTimeUnit(TimeUnit timeUnit) {
+        this.timeUnit = (TimeUnitImpl) timeUnit;
+    };
 
     @Override
     public boolean equals(Object o) {

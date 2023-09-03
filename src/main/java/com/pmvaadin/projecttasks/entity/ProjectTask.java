@@ -1,5 +1,7 @@
 package com.pmvaadin.projecttasks.entity;
 
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -72,5 +74,8 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     ProjectTask getParent();
     void setParent(ProjectTask parent);
+
+    TimeUnit getTimeUnit();
+    void setTimeUnit(TimeUnit timeUnit);
 
 }
