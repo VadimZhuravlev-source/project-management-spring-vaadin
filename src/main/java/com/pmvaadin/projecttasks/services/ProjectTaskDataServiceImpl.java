@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -57,7 +58,9 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         ProjectTask syncedProjectTask = projectTaskService.sync(projectTask);
         List<Link> links = linkService.getLinksWithProjectTaskRepresentation(syncedProjectTask);
 
-        return new ProjectTaskDataImpl(syncedProjectTask, null, links);
+        // TODO getting of project start date from a project
+        LocalDateTime projectStartDate = LocalDateTime.now();
+        return new ProjectTaskDataImpl(syncedProjectTask, null, links, projectStartDate);
 
     }
 
@@ -101,7 +104,9 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
         projectTaskService.fillParent(projectTask);
 
-        return new ProjectTaskDataImpl(projectTask, null, links);
+        // TODO getting of project start date from a project
+        LocalDateTime projectStartDate = LocalDateTime.now();
+        return new ProjectTaskDataImpl(projectTask, null, links, projectStartDate);
 
     }
 

@@ -22,11 +22,11 @@ public class CommandLineRunnerForTests implements CommandLineRunner {
     @Override
     public void run(String...args) throws Exception {
         //Optional<ProjectTask> projectTask = projectTaskRepository.findById(3);
-        ArrayList<Integer> ids = new ArrayList<>(2);
-        ids.add(2);
-        ids.add(10000);
-        List<LinkedProjectTaskDTO> linkedProjectTasks = projectTaskRepository.findAllByIdIn(ids, LinkedProjectTaskDTO.class);
-        linkedProjectTasks = null;
+//        ArrayList<Integer> ids = new ArrayList<>(2);
+//        ids.add(2);
+//        ids.add(10000);
+//        List<LinkedProjectTaskDTO> linkedProjectTasks = projectTaskRepository.findAllByIdIn(ids, LinkedProjectTaskDTO.class);
+//        linkedProjectTasks = null;
     }
 
 }

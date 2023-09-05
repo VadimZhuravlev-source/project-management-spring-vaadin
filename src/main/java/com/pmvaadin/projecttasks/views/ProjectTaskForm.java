@@ -34,10 +34,7 @@ import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -48,6 +45,8 @@ public class ProjectTaskForm extends Dialog {
     private final ProjectTaskDataService projectTaskDataService;
     private final LinksProjectTask linksGrid;
     private final CalendarSelectionForm calendarSelectionForm;
+
+    private LocalDateTime projectStartDate = LocalDateTime.now();
 
     private final TextField version = new TextField(ProjectTask.getHeaderVersion());
     private final DatePicker dateOfCreation = new DatePicker(ProjectTask.getHeaderDateOfCreation());
@@ -83,9 +82,7 @@ public class ProjectTaskForm extends Dialog {
         customizeFields();
         createButtons();
         addTabs();
-        binder.forField(startDate).withConverter(getLocaleDateTimeConverter())
-                .bind(ProjectTask::getStartDate, ProjectTask::setStartDate);
-        binder.bindInstanceFields(this);
+        customizeBinder();
 
         VerticalLayout mainLayout = new VerticalLayout();
         mainLayout.setSpacing(false);
@@ -95,22 +92,6 @@ public class ProjectTaskForm extends Dialog {
 
         add(mainLayout);
 
-    }
-
-    private Converter<LocalDate, Date> getLocaleDateTimeConverter() {
-        return new Converter<LocalDateTime, Date>() {
-
-            private ZoneId zoneId = ZoneId.systemDefault();
-            @Override
-            public Result<Date> convertToModel(LocalDateTime localDateTime, ValueContext valueContext) {
-                return localDateTime == null ? Result.ok((Object) null) : Result.ok(Date.from(localDateTime.atZone(this.zoneId).toInstant()));;
-            }
-
-            @Override
-            public LocalDateTime convertToPresentation(Date date, ValueContext valueContext) {
-                return date == null ? null : Instant.ofEpochMilli(date.getTime()).atZone(this.zoneId).toLocalDateTime();;
-            }
-        }
     }
 
     public ProjectTaskForm newInstance() {
@@ -235,9 +216,10 @@ public class ProjectTaskForm extends Dialog {
             ProjectTaskData projectTaskData = new ProjectTaskDataImpl(
                     projectTask,
                     linksGrid.getChanges(),
-                    new ArrayList<>()
-            );
+                    new ArrayList<>(),
+                    projectStartDate);
             ProjectTaskData savedData = projectTaskDataService.save(projectTaskData);
+            projectStartDate = savedData.getProjectStartDate();
             readData(savedData);
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
@@ -253,6 +235,7 @@ public class ProjectTaskForm extends Dialog {
 
             if (projectTask.isNew()) return;
             ProjectTaskData projectTaskData = projectTaskDataService.read(projectTask);
+            projectStartDate = projectTaskData.getProjectStartDate();
             readData(projectTaskData);
 
         } catch (Throwable e) {
@@ -287,6 +270,57 @@ public class ProjectTaskForm extends Dialog {
 
         binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
         getFooter().add(save, sync, close);
+
+    }
+
+    private void customizeBinder() {
+
+        binder.forField(startDate).withConverter(new LocalDateToDateConverter())
+                .bind(this::getStartDate, this::setStartDate);
+        binder.forField(finishDate).withConverter(new LocalDateToDateConverter())
+                .bind(this::getFinishDate, this::setFinishDate);
+        binder.bindInstanceFields(this);
+
+    }
+
+    private Date convertLocalDateTimeToDate(LocalDateTime date) {
+        if (date == null) return new Date();
+        return Date.from(date.toLocalDate().atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    private LocalDateTime convertDateToLocalDateTime(LocalDateTime localDate, Date date) {
+        LocalDate chosenDate = Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+        if (localDate == null) localDate = projectStartDate;
+        LocalTime time = localDate.toLocalTime();
+        // TODO check is from working day of the task calendar
+        return LocalDateTime.of(chosenDate, time);
+    }
+
+    private Date getStartDate(ProjectTask task) {
+
+        LocalDateTime startDate = task.getStartDate();
+        return convertLocalDateTimeToDate(startDate);
+
+    }
+
+    private void setStartDate(ProjectTask task, Date date) {
+
+        LocalDateTime startDate = task.getStartDate();
+        LocalDateTime newDate = convertDateToLocalDateTime(startDate, date);
+        task.setStartDate(newDate);
+
+    }
+
+    private Date getFinishDate(ProjectTask task) {
+
+        return convertLocalDateTimeToDate(task.getFinishDate());
+
+    }
+
+    private void setFinishDate(ProjectTask task, Date date) {
+
+        LocalDateTime newDate = convertDateToLocalDateTime(task.getFinishDate(), date);
+        task.setFinishDate(newDate);
 
     }
 

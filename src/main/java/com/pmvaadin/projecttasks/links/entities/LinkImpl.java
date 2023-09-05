@@ -52,10 +52,6 @@ public class LinkImpl implements Link {
     private BigDecimal lagRepresentation;
 
     @Setter
-    @Column(name = "calendar_id")
-    private Integer calendarId;
-
-    @Setter
     @Transient
     private ProjectTask linkedProjectTask;
 

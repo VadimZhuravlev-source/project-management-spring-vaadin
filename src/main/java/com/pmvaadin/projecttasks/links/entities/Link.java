@@ -29,9 +29,6 @@ public interface Link {
     long getLag();
     void setLag(long lag);
 
-    Integer getCalendarId();
-    void setCalendarId(Integer id);
-
     BigDecimal getLagRepresentation();
     void setLagRepresentation(BigDecimal lagRepresentation);
 

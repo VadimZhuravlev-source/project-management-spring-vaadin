@@ -6,6 +6,7 @@ import com.pmvaadin.projecttasks.links.entities.Link;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -17,5 +18,7 @@ public class ProjectTaskDataImpl implements ProjectTaskData {
     // Links
     private ChangedTableData<? extends Link> linksChangedTableData;
     private List<Link> links;
+
+    private LocalDateTime projectStartDate;
 
 }
