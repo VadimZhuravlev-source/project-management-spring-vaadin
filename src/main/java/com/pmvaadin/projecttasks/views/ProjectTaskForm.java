@@ -15,6 +15,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datepicker.DatePickerVariant;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -48,6 +49,7 @@ public class ProjectTaskForm extends Dialog {
 
     private LocalDateTime projectStartDate = LocalDateTime.now();
 
+    //private final TextField id = new TextField(ProjectTask.getHeaderId());
     private final TextField version = new TextField(ProjectTask.getHeaderVersion());
     private final DatePicker dateOfCreation = new DatePicker(ProjectTask.getHeaderDateOfCreation());
     private final DatePicker updateDate = new DatePicker(ProjectTask.getHeaderUpdateDate());
@@ -88,6 +90,7 @@ public class ProjectTaskForm extends Dialog {
         mainLayout.setSpacing(false);
 
         content.add(mainDataLayout);
+
         mainLayout.add(getMetadataFields(), tabs, content);
 
         add(mainLayout);
@@ -108,12 +111,13 @@ public class ProjectTaskForm extends Dialog {
 
     private void customizeForm() {
 
-        setWidth("80%");
-        setHeight("80%");
+        setWidth("90%");
+        setHeight("90%");
         setDraggable(true);
         setResizable(true);
         addClassName("project-task-form");
         addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+        setModal(false);
 
     }
 
@@ -169,6 +173,7 @@ public class ProjectTaskForm extends Dialog {
         dateOfCreation.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         updateDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         version.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        //id.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         wbs.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
@@ -191,18 +196,23 @@ public class ProjectTaskForm extends Dialog {
                 (e) -> close());
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         getHeader().add(closeButton);
+        //TODO reduce padding size of header though
 
     }
 
-    private FormLayout getMetadataFields() {
+    private Details getMetadataFields() {
+
         FormLayout formLayout = new FormLayout();
+        //formLayout.add(id);
         formLayout.add(version);
         formLayout.add(dateOfCreation);
         formLayout.add(updateDate);
-        //formLayout.add(version, dateOfCreation, updateDate);
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1),
                 new FormLayout.ResponsiveStep("300px", 3));
-        return formLayout;
+        Details details = new Details("Metadata fields", formLayout);
+        details.setOpened(false);
+        return details;
+
     }
 
     private boolean validateAndSave() {

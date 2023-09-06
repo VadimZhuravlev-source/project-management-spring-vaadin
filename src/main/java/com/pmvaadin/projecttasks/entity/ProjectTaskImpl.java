@@ -104,14 +104,14 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Transient
     private ProjectTask parent;
 
-    @ManyToOne
-    @JoinColumn(name = "time_unit_id", nullable = false)
-    private TimeUnitImpl timeUnit;
+//    @ManyToOne
+//    @JoinColumn(name = "time_unit_id", nullable = false)
+//    private TimeUnitImpl timeUnit;
 
-    @Override
-    public void setTimeUnit(TimeUnit timeUnit) {
-        this.timeUnit = (TimeUnitImpl) timeUnit;
-    };
+//    @Override
+//    public void setTimeUnit(TimeUnit timeUnit) {
+//        this.timeUnit = (TimeUnitImpl) timeUnit;
+//    };
 
     @Override
     public boolean equals(Object o) {

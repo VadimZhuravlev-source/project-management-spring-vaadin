@@ -19,6 +19,10 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
         return "wbs";
     }
 
+    static String getHeaderId() {
+        return "Id";
+    }
+
     static String getHeaderVersion() {
         return "Version";
     }
@@ -75,7 +79,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     ProjectTask getParent();
     void setParent(ProjectTask parent);
 
-    TimeUnit getTimeUnit();
-    void setTimeUnit(TimeUnit timeUnit);
+//    TimeUnit getTimeUnit();
+//    void setTimeUnit(TimeUnit timeUnit);
 
 }

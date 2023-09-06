@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 @Entity
 @Getter
-@Table(name = "project_tasks")
+@Table(name = "time_unit")
 public class TimeUnitImpl implements TimeUnit {
 
     private static final BigDecimal numberOfSecondsInHour = new BigDecimal(3600);

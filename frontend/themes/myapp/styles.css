@@ -1,0 +1,7 @@
+@import url('./main-layout.css');
+
+
+vaadin-dialog.project-task-form::header {
+  padding: 1px;
+  border: 1px solid gray;
+}

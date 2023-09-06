@@ -274,12 +274,10 @@ public class ProjectTreeView extends VerticalLayout {
     private void editProjectTask(ProjectTask projectTask) {
 
         editingForm = projectTaskForm.newInstance();
-        removeClassName("editing");
         editingForm.setProjectTask(projectTask);
         editingForm.addListener(ProjectTaskForm.SaveEvent.class, this::saveProjectTask);
         editingForm.addListener(ProjectTaskForm.CloseEvent.class, event -> closeEditor());
         editingForm.open();
-        addClassName("editing");
 
     }
 
