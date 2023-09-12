@@ -9,6 +9,7 @@ import com.pmvaadin.projecttasks.data.ProjectTaskDataImpl;
 import com.pmvaadin.projecttasks.links.views.LinksProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.ProjectTaskDataService;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
@@ -22,50 +23,51 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
-import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.Result;
-import com.vaadin.flow.data.binder.ValueContext;
-import com.vaadin.flow.data.converter.Converter;
-import com.vaadin.flow.data.converter.LocalDateTimeToDateConverter;
 import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.*;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.function.Function;
 
 @SpringComponent
 public class ProjectTaskForm extends Dialog {
 
     private ProjectTask projectTask;
+    private ProjectTaskData projectTaskData;
     private final ProjectTaskDataService projectTaskDataService;
     private final LinksProjectTask linksGrid;
     private final CalendarSelectionForm calendarSelectionForm;
+    private final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");;
 
     private LocalDateTime projectStartDate = LocalDateTime.now();
 
-    //private final TextField id = new TextField(ProjectTask.getHeaderId());
+    private final TextField id = new TextField(ProjectTask.getHeaderId());
     private final TextField version = new TextField(ProjectTask.getHeaderVersion());
-    private final DatePicker dateOfCreation = new DatePicker(ProjectTask.getHeaderDateOfCreation());
-    private final DatePicker updateDate = new DatePicker(ProjectTask.getHeaderUpdateDate());
+    private final TextField dateOfCreation = new TextField(ProjectTask.getHeaderDateOfCreation());
+    private final TextField updateDate = new TextField(ProjectTask.getHeaderUpdateDate());
     private final TextField name = new TextField();
     private final TextField wbs = new TextField();
-    private final SelectableTextField<Calendar> calendar = new SelectableTextField<>();
+    private final SelectableTextField<Calendar> calendarField = new SelectableTextField<>();
     private final DatePicker startDate = new DatePicker();
     private final DatePicker finishDate = new DatePicker();
     private final Binder<ProjectTask> binder = new BeanValidationBinder<>(ProjectTask.class);
 
-    private final Tabs tabs = new Tabs();
-    private final VerticalLayout content = new VerticalLayout();
     private final Tab mainDataTab = new Tab("Main");
-    private final VerticalLayout mainDataLayout = new VerticalLayout();
     private final Tab linksTab = new Tab("Predecessors");
-    private final VerticalLayout linksLayout = new VerticalLayout();
+    private final TabSheet tabSheet = new TabSheet();
+
+    // this need to stretch a grid in a tab
+    private final VerticalLayout linksGridContainer = new VerticalLayout();
 
     private final Button save = new Button("Save");
     private final Button close = new Button("Cancel");
@@ -83,15 +85,13 @@ public class ProjectTaskForm extends Dialog {
         customizeTabs();
         customizeFields();
         createButtons();
-        addTabs();
         customizeBinder();
 
         VerticalLayout mainLayout = new VerticalLayout();
+        mainLayout.setPadding(false);
         mainLayout.setSpacing(false);
 
-        content.add(mainDataLayout);
-
-        mainLayout.add(getMetadataFields(), tabs, content);
+        mainLayout.add(getMetadataFields(), tabSheet);
 
         add(mainLayout);
 
@@ -103,8 +103,10 @@ public class ProjectTaskForm extends Dialog {
 
     public void setProjectTask(ProjectTask projectTask) {
         this.projectTask = projectTask;
+        projectTaskData = projectTaskDataService.getInstance(projectTask);
         refreshHeader();
-        linksGrid.setProjectTask(projectTask);
+        linksGrid.setProjectTask(projectTaskData.getProjectTask());
+        linksGrid.setItems(projectTaskData.getLinks());
         binder.readBean(projectTask);
         name.focus();
     }
@@ -127,17 +129,13 @@ public class ProjectTaskForm extends Dialog {
         setHeaderTitle("Project task: " + projectTaskName);
     }
 
-    private void addTabs() {
-
-        tabs.add(mainDataTab, linksTab);
-        tabs.addSelectedChangeListener(this::tabsSelectedListener);
-
-    }
-
     private void customizeTabs() {
 
+        tabSheet.setSizeFull();
         customizeMainDataLayout();
-        linksLayout.add(linksGrid);
+        linksGridContainer.add(linksGrid);
+        linksGridContainer.setSizeFull();
+        tabSheet.add(linksTab, linksGridContainer);
 
     }
 
@@ -146,11 +144,11 @@ public class ProjectTaskForm extends Dialog {
         FormLayout formLayout = new FormLayout();
         formLayout.addFormItem(name, ProjectTask.getHeaderName());
         formLayout.addFormItem(wbs, ProjectTask.getHeaderWbs());
-        formLayout.addFormItem(calendar, ProjectTask.getHeaderCalendar());
+        formLayout.addFormItem(calendarField, ProjectTask.getHeaderCalendar());
         formLayout.addFormItem(startDate, ProjectTask.getHeaderStartDate());
         formLayout.addFormItem(finishDate, ProjectTask.getHeaderFinishDate());
 
-        mainDataLayout.add(formLayout);
+        tabSheet.add(mainDataTab, formLayout);
 
     }
 
@@ -160,34 +158,25 @@ public class ProjectTaskForm extends Dialog {
         dateOfCreation.setEnabled(false);
         updateDate.setEnabled(false);
         name.setAutofocus(true);
-        calendar.setSelectable(true);
-        calendar.addSelectionListener(event -> {
+        calendarField.setSelectable(true);
+        calendarField.addSelectionListener(event -> {
             calendarSelectionForm.addSelectionListener(
-                    selectedProjectTask -> {
-                        calendar.setValue(selectedProjectTask);
-                        calendar.refreshTextValue();
-                        calendar.setReadOnly(true);
+                    selectedItem -> {
+                        calendarField.setValue(selectedItem);
+                        calendarField.refreshTextValue();
+                        calendarField.setReadOnly(true);
                     });
             calendarSelectionForm.open();
         });
-        dateOfCreation.addThemeVariants(DatePickerVariant.LUMO_SMALL);
-        updateDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
+        dateOfCreation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        updateDate.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         version.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        //id.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        id.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         wbs.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         finishDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
 
-    }
-
-    private void tabsSelectedListener(Tabs.SelectedChangeEvent selectedChangeEvent) {
-        content.removeAll();
-        if (selectedChangeEvent.getSelectedTab() == mainDataTab) {
-            content.add(mainDataLayout);
-        } else if (selectedChangeEvent.getSelectedTab() == linksTab) {
-            content.add(linksLayout);
-        }
     }
 
     private void customizeHeader() {
@@ -196,20 +185,19 @@ public class ProjectTaskForm extends Dialog {
                 (e) -> close());
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         getHeader().add(closeButton);
-        //TODO reduce padding size of header though
 
     }
 
-    private Details getMetadataFields() {
+    private Component getMetadataFields() {
 
         FormLayout formLayout = new FormLayout();
-        //formLayout.add(id);
+        formLayout.add(id);
         formLayout.add(version);
         formLayout.add(dateOfCreation);
         formLayout.add(updateDate);
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1),
-                new FormLayout.ResponsiveStep("300px", 3));
-        Details details = new Details("Metadata fields", formLayout);
+                new FormLayout.ResponsiveStep("300px", 4));
+        Details details = new Details("Metadata", formLayout);
         details.setOpened(false);
         return details;
 
@@ -220,7 +208,7 @@ public class ProjectTaskForm extends Dialog {
             binder.writeBean(projectTask);
             boolean isOk = linksGrid.validate();
             if (!isOk) {
-                tabs.setSelectedTab(linksTab);
+                tabSheet.setSelectedTab(linksTab);
                 return false;
             }
             ProjectTaskData projectTaskData = new ProjectTaskDataImpl(
@@ -285,12 +273,31 @@ public class ProjectTaskForm extends Dialog {
 
     private void customizeBinder() {
 
+        binder.forField(id).bindReadOnly((p) -> {
+            Object id = p.getId();
+            String idString = "";
+            if (id != null) {
+                idString = id.toString();
+            }
+            return idString;
+        });
+
+        binder.forField(dateOfCreation).bindReadOnly((p) -> convertDateToString(ProjectTask::getDateOfCreation, p));
+        binder.forField(updateDate).bindReadOnly((p) -> convertDateToString(ProjectTask::getUpdateDate, p));
+
         binder.forField(startDate).withConverter(new LocalDateToDateConverter())
                 .bind(this::getStartDate, this::setStartDate);
         binder.forField(finishDate).withConverter(new LocalDateToDateConverter())
                 .bind(this::getFinishDate, this::setFinishDate);
         binder.bindInstanceFields(this);
 
+    }
+
+    private String convertDateToString(Function<ProjectTask, Date> dateGetter, ProjectTask projectTask) {
+        Date date = dateGetter.apply(projectTask);
+        String dateString = "";
+        if (date != null) dateString = dateFormat.format(date);
+        return dateString;
     }
 
     private Date convertLocalDateTimeToDate(LocalDateTime date) {

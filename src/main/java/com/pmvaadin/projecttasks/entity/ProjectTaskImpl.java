@@ -91,6 +91,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Column(name = "links_check_sum")
     private int linksCheckSum;
 
+    @Setter
+    @Column(name = "time_unit_id")
+    private Integer timeUnitId;
+
     // The field is not intended to store data
     @Setter
     @Transient

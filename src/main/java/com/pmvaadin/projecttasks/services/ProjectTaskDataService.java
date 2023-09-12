@@ -9,4 +9,6 @@ public interface ProjectTaskDataService {
 
     ProjectTaskData read(ProjectTask projectTask);
 
+    ProjectTaskData getInstance(ProjectTask projectTask);
+
 }

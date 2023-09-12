@@ -64,6 +64,18 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
     }
 
+    @Override
+    public ProjectTaskData getInstance(ProjectTask projectTask) {
+
+        // TODO receiving project task and subsidiary data
+        //ProjectTask projectTask1 = projectTaskService.
+        List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
+        LocalDateTime projectStartDate = LocalDateTime.now();
+        ProjectTaskDataImpl projectTaskData = new ProjectTaskDataImpl(projectTask, null, links, projectStartDate);
+        return projectTaskData;
+
+    }
+
     private void fillLinksByChanges(ProjectTaskData projectTaskData) {
 
         if (projectTaskData.getLinksChangedTableData() == null && projectTaskData.getLinks() != null) return;

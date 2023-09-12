@@ -10,6 +10,7 @@ import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.pmvaadin.projecttasks.views.ProjectTaskForm;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -56,7 +57,8 @@ public class ProjectTreeView extends VerticalLayout {
         setSizeFull();
         configureTreeGrid();
 
-        add(getToolbar(), treeGrid);
+        Component toolBar = getToolbar();
+        add(toolBar, treeGrid);
 
         updateTreeGrid();
 
@@ -155,7 +157,9 @@ public class ProjectTreeView extends VerticalLayout {
 
         Button deleteProjectTask = new Button("Delete");
         deleteProjectTask.addClickListener(this::deleteProjectTaskClick);
-        deleteProjectTask.addClickShortcut(Key.DELETE);
+        // TODO check if this is focused
+        //  and after then there is could be added the addClickShortcut in the deleteProjectTask button
+        //deleteProjectTask.addClickShortcut(Key.DELETE);
 
         Button moveUp = new Button("Move up");
         moveUp.addClickListener(event -> moveTasks(ProjectTreeService.Direction.UP));

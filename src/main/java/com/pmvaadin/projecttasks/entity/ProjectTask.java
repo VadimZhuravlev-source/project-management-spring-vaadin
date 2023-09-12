@@ -79,7 +79,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     ProjectTask getParent();
     void setParent(ProjectTask parent);
 
-//    TimeUnit getTimeUnit();
-//    void setTimeUnit(TimeUnit timeUnit);
+    Integer getTimeUnitId();
+    void setTimeUnitId(Integer timeUnitId);
 
 }

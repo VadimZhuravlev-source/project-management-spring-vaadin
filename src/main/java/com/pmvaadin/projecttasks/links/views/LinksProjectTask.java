@@ -48,8 +48,8 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     public void setProjectTask(ProjectTask projectTask) {
         this.projectTask = projectTask;
-        List<Link> links = (List<Link>) (linkService.getLinksWithProjectTaskRepresentation(projectTask));
-        setItems(links);
+        //List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
+        //setItems(links);
     }
 
     public boolean validate() {
