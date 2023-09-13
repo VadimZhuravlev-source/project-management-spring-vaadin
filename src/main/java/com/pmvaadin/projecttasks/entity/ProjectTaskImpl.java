@@ -11,6 +11,7 @@ import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Objects;
@@ -107,6 +108,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Setter
     @Transient
     private ProjectTask parent;
+
+    @Setter
+    @Transient
+    private BigDecimal durationRepresentation;
 
 //    @ManyToOne
 //    @JoinColumn(name = "time_unit_id", nullable = false)

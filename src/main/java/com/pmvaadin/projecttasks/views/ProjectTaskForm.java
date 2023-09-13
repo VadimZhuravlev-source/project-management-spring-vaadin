@@ -42,7 +42,6 @@ import java.util.function.Function;
 @SpringComponent
 public class ProjectTaskForm extends Dialog {
 
-    private ProjectTask projectTask;
     private ProjectTaskData projectTaskData;
     private final ProjectTaskDataService projectTaskDataService;
     private final LinksProjectTask linksGrid;
@@ -57,9 +56,16 @@ public class ProjectTaskForm extends Dialog {
     private final TextField updateDate = new TextField(ProjectTask.getHeaderUpdateDate());
     private final TextField name = new TextField();
     private final TextField wbs = new TextField();
+
+    // Term fields
     private final SelectableTextField<Calendar> calendarField = new SelectableTextField<>();
     private final DatePicker startDate = new DatePicker();
     private final DatePicker finishDate = new DatePicker();
+    private final TextField duration = new TextField();
+    private final TextField durationRepresentation = new TextField();
+    private final TextField timeUnitId = new TextField();
+    // End term fields
+
     private final Binder<ProjectTask> binder = new BeanValidationBinder<>(ProjectTask.class);
 
     private final Tab mainDataTab = new Tab("Main");
@@ -102,12 +108,12 @@ public class ProjectTaskForm extends Dialog {
     }
 
     public void setProjectTask(ProjectTask projectTask) {
-        this.projectTask = projectTask;
+        //this.projectTask = projectTask;
         projectTaskData = projectTaskDataService.getInstance(projectTask);
         refreshHeader();
         linksGrid.setProjectTask(projectTaskData.getProjectTask());
         linksGrid.setItems(projectTaskData.getLinks());
-        binder.readBean(projectTask);
+        binder.readBean(projectTaskData.getProjectTask());
         name.focus();
     }
 
@@ -124,7 +130,7 @@ public class ProjectTaskForm extends Dialog {
     }
 
     private void refreshHeader() {
-        String projectTaskName = projectTask.getName();
+        String projectTaskName = projectTaskData.getProjectTask().getName();
         if (projectTaskName == null) projectTaskName = "";
         setHeaderTitle("Project task: " + projectTaskName);
     }
@@ -144,11 +150,16 @@ public class ProjectTaskForm extends Dialog {
         FormLayout formLayout = new FormLayout();
         formLayout.addFormItem(name, ProjectTask.getHeaderName());
         formLayout.addFormItem(wbs, ProjectTask.getHeaderWbs());
-        formLayout.addFormItem(calendarField, ProjectTask.getHeaderCalendar());
-        formLayout.addFormItem(startDate, ProjectTask.getHeaderStartDate());
-        formLayout.addFormItem(finishDate, ProjectTask.getHeaderFinishDate());
+        FormLayout termsLayout = new FormLayout();
+        termsLayout.addFormItem(calendarField, ProjectTask.getHeaderCalendar());
+        termsLayout.addFormItem(startDate, ProjectTask.getHeaderStartDate());
+        termsLayout.addFormItem(finishDate, ProjectTask.getHeaderFinishDate());
+        termsLayout.addFormItem(duration, "Duration seconds");
+        termsLayout.addFormItem(durationRepresentation, ProjectTask.getHeaderDurationRepresentation());
+        termsLayout.addFormItem(timeUnitId, "Time unit id");
 
-        tabSheet.add(mainDataTab, formLayout);
+        VerticalLayout verticalLayout = new VerticalLayout(formLayout, termsLayout);
+        tabSheet.add(mainDataTab, verticalLayout);
 
     }
 
@@ -165,6 +176,7 @@ public class ProjectTaskForm extends Dialog {
                         calendarField.setValue(selectedItem);
                         calendarField.refreshTextValue();
                         calendarField.setReadOnly(true);
+                        projectTaskData.getProjectTask().setCalendarId(selectedItem.getId());
                     });
             calendarSelectionForm.open();
         });
@@ -205,17 +217,19 @@ public class ProjectTaskForm extends Dialog {
 
     private boolean validateAndSave() {
         try {
-            binder.writeBean(projectTask);
+            binder.writeBean(projectTaskData.getProjectTask());
             boolean isOk = linksGrid.validate();
             if (!isOk) {
                 tabSheet.setSelectedTab(linksTab);
                 return false;
             }
-            ProjectTaskData projectTaskData = new ProjectTaskDataImpl(
-                    projectTask,
-                    linksGrid.getChanges(),
-                    new ArrayList<>(),
-                    projectStartDate);
+//            ProjectTaskData projectTaskData = new ProjectTaskDataImpl(
+//                    projectTask,
+//                    linksGrid.getChanges(),
+//                    new ArrayList<>(),
+//                    projectStartDate);
+            projectTaskData.setLinksChangedTableData(linksGrid.getChanges());
+            projectTaskData.setLinks(new ArrayList<>());
             ProjectTaskData savedData = projectTaskDataService.save(projectTaskData);
             projectStartDate = savedData.getProjectStartDate();
             readData(savedData);
@@ -231,6 +245,7 @@ public class ProjectTaskForm extends Dialog {
     private void syncData() {
         try {
 
+            ProjectTask projectTask = projectTaskData.getProjectTask();
             if (projectTask.isNew()) return;
             ProjectTaskData projectTaskData = projectTaskDataService.read(projectTask);
             projectStartDate = projectTaskData.getProjectStartDate();
@@ -243,8 +258,8 @@ public class ProjectTaskForm extends Dialog {
     }
 
     private void readData(ProjectTaskData projectTaskData) {
-        this.projectTask = projectTaskData.getProjectTask();
-        binder.readBean(projectTask);
+        //this.projectTask = projectTaskData.getProjectTask();
+        binder.readBean(projectTaskData.getProjectTask());
         linksGrid.setItems(projectTaskData.getLinks());
         refreshHeader();
     }
@@ -258,7 +273,7 @@ public class ProjectTaskForm extends Dialog {
 
             boolean validationDone = validateAndSave();
             if (!validationDone) return;
-            fireEvent(new SaveEvent(this, projectTask));
+            fireEvent(new SaveEvent(this, projectTaskData.getProjectTask()));
 
         });
 //        save.getStyle().set("margin-right", "auto");

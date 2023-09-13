@@ -43,8 +43,13 @@ public class CalendarServiceImpl implements CalendarService {
     }
 
     @Override
-    public Calendar getCalendarById(Integer id) {
-        return (Calendar) calendarRepository.findById(id).orElse(new CalendarImpl());
+    public <I> Calendar getCalendarById(I id) {
+        return calendarRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Calendar getDefaultCalendar() {
+        return calendarRepository.findById(1).orElse(null);
     }
 
     @Override

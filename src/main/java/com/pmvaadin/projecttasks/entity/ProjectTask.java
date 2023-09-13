@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.entity;
 
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
 
@@ -47,6 +48,10 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
         return "Calendar";
     }
 
+    static String getHeaderDurationRepresentation() {
+        return "Duration";
+    }
+
     String getName();
     void setName(String name);
     LocalDateTime getStartDate();
@@ -81,5 +86,8 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     Integer getTimeUnitId();
     void setTimeUnitId(Integer timeUnitId);
+
+    BigDecimal getDurationRepresentation();
+    void setDurationRepresentation(BigDecimal durationRepresentation);
 
 }

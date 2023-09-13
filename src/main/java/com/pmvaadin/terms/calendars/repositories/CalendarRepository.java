@@ -11,7 +11,7 @@ public interface CalendarRepository extends Repository<CalendarImpl, Integer> {
 
     List<Calendar> findAll();
     List<Calendar> findAllById(Iterable<?> ids);
-    Optional<Calendar> findById(Integer id);
+    <I> Optional<Calendar> findById(I id);
     Calendar save(Calendar calendar);
     void deleteAllById(Iterable<?> ids);
     void deleteById(Integer id);

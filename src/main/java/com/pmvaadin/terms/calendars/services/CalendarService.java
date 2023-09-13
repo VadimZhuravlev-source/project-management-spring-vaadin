@@ -9,7 +9,9 @@ public interface CalendarService {
 
     List<Calendar> getCalendars();
 
-    Calendar getCalendarById(Integer id);
+    <I> Calendar getCalendarById(I id);
+
+    Calendar getDefaultCalendar();
 
     void saveCalendars(Calendar calendar);
 

@@ -6,6 +6,10 @@ import com.pmvaadin.projecttasks.data.ProjectTaskDataImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.services.LinkService;
+import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.terms.calendars.entity.Calendar;
+import com.pmvaadin.terms.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.calendars.services.CalendarService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +25,8 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
     private ProjectTaskService projectTaskService;
     private LinkService linkService;
+    private CalendarService calendarService;
+    private ProjectTaskRepository projectTaskRepository;
 
     @Autowired
     void setProjectTaskService(ProjectTaskService projectTaskService) {
@@ -30,6 +36,16 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     @Autowired
     void setLinkService(LinkService linkService) {
         this.linkService = linkService;
+    }
+
+    @Autowired
+    void setCalendarService(CalendarService calendarService) {
+        this.calendarService = calendarService;
+    }
+
+    @Autowired
+    void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository) {
+        this.projectTaskRepository = projectTaskRepository;
     }
 
     @Override
@@ -53,14 +69,29 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     @Transactional(readOnly = true)
     public ProjectTaskData read(ProjectTask projectTask) {
 
-        if (projectTask.isNew()) return null;
+        ProjectTask syncedProjectTask = projectTask;
+        List<Link> links = new ArrayList<>(0);
+        if (!projectTask.isNew()) {
+            syncedProjectTask = projectTaskService.sync(projectTask);
+            links = linkService.getLinksWithProjectTaskRepresentation(syncedProjectTask);
+        }
 
-        ProjectTask syncedProjectTask = projectTaskService.sync(projectTask);
-        List<Link> links = linkService.getLinksWithProjectTaskRepresentation(syncedProjectTask);
+        Object calendarId = syncedProjectTask.getCalendarId();
+        if (calendarId == null) {
+            Object pid = projectTask.getParentId();
+            if (pid != null) {
+                ProjectTask parent = projectTaskRepository.findById(pid).orElse(null);
+                calendarId = parent.getCalendarId();
+            }
+        }
+        Calendar calendar;
+        if (calendarId != null) calendar = calendarService.getCalendarById(calendarId);
+        else calendar = calendarService.getDefaultCalendar();
 
         // TODO getting of project start date from a project
         LocalDateTime projectStartDate = LocalDateTime.now();
-        return new ProjectTaskDataImpl(syncedProjectTask, null, links, projectStartDate);
+        return new ProjectTaskDataImpl(syncedProjectTask, null, links, projectStartDate,
+        new CalendarImpl().getDefaultCalendar());
 
     }
 

@@ -62,3 +62,9 @@ ALTER TABLE calendars
 DROP COLUMN IF EXISTS setting;
 ALTER TABLE calendars
 ADD settings_id SMALLINT NOT NULL DEFAULT 0;
+
+ALTER TABLE calendars
+ADD predefined BOOLEAN NOT NULL DEFAULT FALSE;
+
+INSERT INTO calendars(id, version, predefined, name, start_time, settings_id)
+VALUES(1, 0, TRUE, 'Standard','9:00:00', 0);
