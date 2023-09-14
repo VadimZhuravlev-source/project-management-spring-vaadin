@@ -4,6 +4,7 @@ import com.pmvaadin.commonobjects.ChangedTableData;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.terms.calendars.entity.Calendar;
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -23,5 +24,7 @@ public class ProjectTaskDataImpl implements ProjectTaskData {
     private LocalDateTime projectStartDate;
 
     private Calendar calendar;
+
+    private TimeUnit timeUnit;
 
 }

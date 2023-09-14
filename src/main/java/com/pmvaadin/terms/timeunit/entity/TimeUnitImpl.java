@@ -1,10 +1,12 @@
 package com.pmvaadin.terms.timeunit.entity;
 
+import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -29,6 +31,32 @@ public class TimeUnitImpl implements TimeUnit {
     @Setter
     @Column(name = "number_of_hours")
     private BigDecimal numberOfHours;
+
+    @Override
+    public int hashCode() {
+        if (id != null) return Objects.hash(id);
+        else return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof TimeUnitImpl that)) {
+            return false;
+        }
+
+        return getId().equals(that.getId());
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
 
     @Override
     public long getDuration(BigDecimal duration) {

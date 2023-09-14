@@ -52,6 +52,14 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
         return "Duration";
     }
 
+    static String getHeaderTimeUnit() {
+        return "Time unit";
+    }
+
+    static String getHeaderScheduleMode() {
+        return "Schedule mode";
+    }
+
     String getName();
     void setName(String name);
     LocalDateTime getStartDate();

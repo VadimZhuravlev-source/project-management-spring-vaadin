@@ -1,19 +1,24 @@
 package com.pmvaadin.projecttasks.views;
 
+import com.pmvaadin.projecttasks.entity.ScheduleMode;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.view.CalendarSelectionForm;
 import com.pmvaadin.commonobjects.SelectableTextField;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
-import com.pmvaadin.projecttasks.data.ProjectTaskDataImpl;
 import com.pmvaadin.projecttasks.links.views.LinksProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.ProjectTaskDataService;
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.services.TimeUnitService;
+import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.ComboBoxVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datepicker.DatePickerVariant;
 import com.vaadin.flow.component.details.Details;
@@ -29,8 +34,10 @@ import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.converter.LocalDateToDateConverter;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import org.springframework.data.domain.PageRequest;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -38,17 +45,17 @@ import java.time.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 @SpringComponent
 public class ProjectTaskForm extends Dialog {
 
     private ProjectTaskData projectTaskData;
     private final ProjectTaskDataService projectTaskDataService;
+    private final TimeUnitService timeUnitService;
     private final LinksProjectTask linksGrid;
     private final CalendarSelectionForm calendarSelectionForm;
-    private final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");;
-
-    private LocalDateTime projectStartDate = LocalDateTime.now();
+    private final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
     private final TextField id = new TextField(ProjectTask.getHeaderId());
     private final TextField version = new TextField(ProjectTask.getHeaderVersion());
@@ -64,6 +71,8 @@ public class ProjectTaskForm extends Dialog {
     private final TextField duration = new TextField();
     private final TextField durationRepresentation = new TextField();
     private final TextField timeUnitId = new TextField();
+    private final ComboBox<ScheduleMode> scheduleMode = new ComboBox<>();
+    private final ComboBox<TimeUnit> timeUnitComboBox = new ComboBox<>();
     // End term fields
 
     private final Binder<ProjectTask> binder = new BeanValidationBinder<>(ProjectTask.class);
@@ -80,11 +89,12 @@ public class ProjectTaskForm extends Dialog {
     private final Button sync = new Button("Refresh", new Icon("lumo", "reload"));
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
-                           CalendarSelectionForm calendarSelectionForm) {
+                           CalendarSelectionForm calendarSelectionForm, TimeUnitService timeUnitService) {
 
         this.projectTaskDataService = projectTaskDataService;
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
+        this.timeUnitService = timeUnitService;
 
         customizeForm();
         customizeHeader();
@@ -104,17 +114,19 @@ public class ProjectTaskForm extends Dialog {
     }
 
     public ProjectTaskForm newInstance() {
-        return new ProjectTaskForm(projectTaskDataService, linksGrid.newInstance(), calendarSelectionForm);
+        return new ProjectTaskForm(projectTaskDataService, linksGrid.newInstance(), calendarSelectionForm,
+                timeUnitService);
     }
 
     public void setProjectTask(ProjectTask projectTask) {
-        //this.projectTask = projectTask;
-        projectTaskData = projectTaskDataService.getInstance(projectTask);
+
+        projectTaskData = projectTaskDataService.read(projectTask);
         refreshHeader();
         linksGrid.setProjectTask(projectTaskData.getProjectTask());
         linksGrid.setItems(projectTaskData.getLinks());
         binder.readBean(projectTaskData.getProjectTask());
         name.focus();
+
     }
 
     private void customizeForm() {
@@ -151,11 +163,14 @@ public class ProjectTaskForm extends Dialog {
         formLayout.addFormItem(name, ProjectTask.getHeaderName());
         formLayout.addFormItem(wbs, ProjectTask.getHeaderWbs());
         FormLayout termsLayout = new FormLayout();
-        termsLayout.addFormItem(calendarField, ProjectTask.getHeaderCalendar());
         termsLayout.addFormItem(startDate, ProjectTask.getHeaderStartDate());
         termsLayout.addFormItem(finishDate, ProjectTask.getHeaderFinishDate());
-        termsLayout.addFormItem(duration, "Duration seconds");
+        termsLayout.addFormItem(scheduleMode, ProjectTask.getHeaderScheduleMode());
+        termsLayout.addFormItem(calendarField, ProjectTask.getHeaderCalendar());
         termsLayout.addFormItem(durationRepresentation, ProjectTask.getHeaderDurationRepresentation());
+        termsLayout.addFormItem(timeUnitComboBox, ProjectTask.getHeaderTimeUnit());
+
+        termsLayout.addFormItem(duration, "Duration seconds");
         termsLayout.addFormItem(timeUnitId, "Time unit id");
 
         VerticalLayout verticalLayout = new VerticalLayout(formLayout, termsLayout);
@@ -188,7 +203,29 @@ public class ProjectTaskForm extends Dialog {
         wbs.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         finishDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
+        durationRepresentation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        scheduleMode.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        scheduleMode.setItems(ScheduleMode.values());
+        timeUnitComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+        timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
+        timeUnitComboBox.addValueChangeListener(this::TimeUnitChangeListener);
 
+    }
+
+    private void TimeUnitChangeListener(AbstractField.ComponentValueChangeEvent<ComboBox<TimeUnit>, TimeUnit> component) {
+        TimeUnit timeUnit = component.getValue();
+        projectTaskData.getProjectTask().setTimeUnitId(timeUnit.getId());
+    }
+
+    private Stream<TimeUnit> getPageTimeUnit(Query<TimeUnit, String> query) {
+        return timeUnitService.getPageByName(
+                "%" + query.getFilter().orElse("") + "%",
+                PageRequest.of(query.getPage(), query.getPageSize())).stream();
+    }
+
+    private int getCountItemsInPageByName(Query<TimeUnit, String> query) {
+        return timeUnitService.getCountPageItemsByName(
+                "%" + query.getFilter().orElse("") + "%");
     }
 
     private void customizeHeader() {
@@ -231,7 +268,6 @@ public class ProjectTaskForm extends Dialog {
             projectTaskData.setLinksChangedTableData(linksGrid.getChanges());
             projectTaskData.setLinks(new ArrayList<>());
             ProjectTaskData savedData = projectTaskDataService.save(projectTaskData);
-            projectStartDate = savedData.getProjectStartDate();
             readData(savedData);
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
@@ -248,7 +284,6 @@ public class ProjectTaskForm extends Dialog {
             ProjectTask projectTask = projectTaskData.getProjectTask();
             if (projectTask.isNew()) return;
             ProjectTaskData projectTaskData = projectTaskDataService.read(projectTask);
-            projectStartDate = projectTaskData.getProjectStartDate();
             readData(projectTaskData);
 
         } catch (Throwable e) {
@@ -262,6 +297,9 @@ public class ProjectTaskForm extends Dialog {
         binder.readBean(projectTaskData.getProjectTask());
         linksGrid.setItems(projectTaskData.getLinks());
         refreshHeader();
+        calendarField.setValue(projectTaskData.getCalendar());
+        calendarField.refreshTextValue();
+        timeUnitComboBox.setValue(projectTaskData.getTimeUnit());
     }
 
     private void createButtons() {
@@ -322,7 +360,7 @@ public class ProjectTaskForm extends Dialog {
 
     private LocalDateTime convertDateToLocalDateTime(LocalDateTime localDate, Date date) {
         LocalDate chosenDate = Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
-        if (localDate == null) localDate = projectStartDate;
+        if (localDate == null) localDate = projectTaskData.getProjectStartDate();
         LocalTime time = localDate.toLocalTime();
         // TODO check is from working day of the task calendar
         return LocalDateTime.of(chosenDate, time);

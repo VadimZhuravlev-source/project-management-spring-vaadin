@@ -82,7 +82,8 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id);
+        if (id != null) return Objects.hash(id);
+        else return super.hashCode();
     }
 
     @Override

@@ -8,8 +8,9 @@ import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.terms.calendars.entity.Calendar;
-import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.services.CalendarService;
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     private ProjectTaskService projectTaskService;
     private LinkService linkService;
     private CalendarService calendarService;
+    private TimeUnitService timeUnitService;
     private ProjectTaskRepository projectTaskRepository;
 
     @Autowired
@@ -46,6 +48,11 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     @Autowired
     void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository) {
         this.projectTaskRepository = projectTaskRepository;
+    }
+
+    @Autowired
+    public void setTimeUnitService(TimeUnitService timeUnitService) {
+        this.timeUnitService = timeUnitService;
     }
 
     @Override
@@ -76,34 +83,49 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
             links = linkService.getLinksWithProjectTaskRepresentation(syncedProjectTask);
         }
 
-        Object calendarId = syncedProjectTask.getCalendarId();
-        if (calendarId == null) {
-            Object pid = projectTask.getParentId();
-            if (pid != null) {
-                ProjectTask parent = projectTaskRepository.findById(pid).orElse(null);
-                calendarId = parent.getCalendarId();
-            }
+        AdditionalData additionalData = getAdditionalData(syncedProjectTask);
+
+
+
+        return new ProjectTaskDataImpl(syncedProjectTask, null, links,
+                additionalData.defaultStartDate,
+                additionalData.calendar,
+                additionalData.timeUnit);
+
+    }
+
+    private AdditionalData getAdditionalData(ProjectTask projectTask) {
+
+        ProjectTask parent = null;
+        if (projectTask.getParentId() != null)
+            parent = projectTaskRepository.findById(projectTask.getParentId()).orElse(null);
+
+        Object calendarId = projectTask.getCalendarId();
+        LocalDateTime defaultStartDate = null;
+        if (calendarId == null && parent != null) {
+            calendarId = parent.getCalendarId();
+            defaultStartDate = parent.getStartDate();
         }
+
         Calendar calendar;
         if (calendarId != null) calendar = calendarService.getCalendarById(calendarId);
         else calendar = calendarService.getDefaultCalendar();
 
-        // TODO getting of project start date from a project
-        LocalDateTime projectStartDate = LocalDateTime.now();
-        return new ProjectTaskDataImpl(syncedProjectTask, null, links, projectStartDate,
-        new CalendarImpl().getDefaultCalendar());
+        if (defaultStartDate == null) {
+            LocalDateTime nowDate = LocalDateTime.now();
+            defaultStartDate = LocalDateTime.of(nowDate.toLocalDate(), calendar.getStartTime());
+        }
 
-    }
+        Integer timeUnitId = projectTask.getTimeUnitId();
+        if (timeUnitId == null && parent != null) {
+            timeUnitId = parent.getTimeUnitId();
+        }
 
-    @Override
-    public ProjectTaskData getInstance(ProjectTask projectTask) {
+        TimeUnit timeUnit;
+        if (timeUnitId != null) timeUnit = timeUnitService.getTimeUnitById(timeUnitId);
+        else timeUnit = timeUnitService.getPredefinedTimeUnit();
 
-        // TODO receiving project task and subsidiary data
-        //ProjectTask projectTask1 = projectTaskService.
-        List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
-        LocalDateTime projectStartDate = LocalDateTime.now();
-        ProjectTaskDataImpl projectTaskData = new ProjectTaskDataImpl(projectTask, null, links, projectStartDate);
-        return projectTaskData;
+        return new AdditionalData(calendar, defaultStartDate, timeUnit);
 
     }
 
@@ -147,9 +169,11 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
         projectTaskService.fillParent(projectTask);
 
-        // TODO getting of project start date from a project
-        LocalDateTime projectStartDate = LocalDateTime.now();
-        return new ProjectTaskDataImpl(projectTask, null, links, projectStartDate);
+        AdditionalData additionalData = getAdditionalData(projectTask);
+        return new ProjectTaskDataImpl(projectTask, null, links,
+                additionalData.defaultStartDate,
+                additionalData.calendar,
+                additionalData.timeUnit);
 
     }
 
@@ -226,5 +250,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         return anyMatch;
 
     }
+
+    private record AdditionalData(Calendar calendar, LocalDateTime defaultStartDate, TimeUnit timeUnit) {}
 
 }
