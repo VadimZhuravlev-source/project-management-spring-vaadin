@@ -29,16 +29,19 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.textfield.BigDecimalField;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
-import com.vaadin.flow.data.binder.BeanValidationBinder;
-import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.*;
+import com.vaadin.flow.data.converter.Converter;
 import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import org.springframework.data.domain.PageRequest;
 
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -68,9 +71,7 @@ public class ProjectTaskForm extends Dialog {
     private final SelectableTextField<Calendar> calendarField = new SelectableTextField<>();
     private final DatePicker startDate = new DatePicker();
     private final DatePicker finishDate = new DatePicker();
-    private final TextField duration = new TextField();
-    private final TextField durationRepresentation = new TextField();
-    private final TextField timeUnitId = new TextField();
+    private final NumberField durationRepresentation = new NumberField();
     private final ComboBox<ScheduleMode> scheduleMode = new ComboBox<>();
     private final ComboBox<TimeUnit> timeUnitComboBox = new ComboBox<>();
     // End term fields
@@ -125,6 +126,9 @@ public class ProjectTaskForm extends Dialog {
         linksGrid.setProjectTask(projectTaskData.getProjectTask());
         linksGrid.setItems(projectTaskData.getLinks());
         binder.readBean(projectTaskData.getProjectTask());
+        calendarField.setValue(projectTaskData.getCalendar());
+        calendarField.setReadOnly(true);
+        timeUnitComboBox.setValue(projectTaskData.getTimeUnit());
         name.focus();
 
     }
@@ -170,9 +174,6 @@ public class ProjectTaskForm extends Dialog {
         termsLayout.addFormItem(durationRepresentation, ProjectTask.getHeaderDurationRepresentation());
         termsLayout.addFormItem(timeUnitComboBox, ProjectTask.getHeaderTimeUnit());
 
-        termsLayout.addFormItem(duration, "Duration seconds");
-        termsLayout.addFormItem(timeUnitId, "Time unit id");
-
         VerticalLayout verticalLayout = new VerticalLayout(formLayout, termsLayout);
         tabSheet.add(mainDataTab, verticalLayout);
 
@@ -204,6 +205,12 @@ public class ProjectTaskForm extends Dialog {
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         finishDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         durationRepresentation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        durationRepresentation.setStepButtonsVisible(true);
+        durationRepresentation.setStep(1);
+//        durationRepresentation.addValidationStatusChangeListener(event -> {
+//            int a = 0;
+//        });
+        durationRepresentation.addValueChangeListener(this::durationValueChangeListener);
         scheduleMode.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
         scheduleMode.setItems(ScheduleMode.values());
         timeUnitComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
@@ -212,9 +219,24 @@ public class ProjectTaskForm extends Dialog {
 
     }
 
+    private void durationValueChangeListener(AbstractField.ComponentValueChangeEvent<NumberField, Double> component) {
+
+        Double value = component.getValue();
+
+        if (value == null) return;
+        TimeUnit timeUnit = projectTaskData.getTimeUnit();
+        BigDecimal bigDecimal = new BigDecimal(value);
+        // TODO add a check that round the bigDecimal to two decimal number
+        long duration = timeUnit.getDuration(bigDecimal);
+        projectTaskData.getProjectTask().setDuration(duration);
+        // TODO change finish date
+
+    }
+
     private void TimeUnitChangeListener(AbstractField.ComponentValueChangeEvent<ComboBox<TimeUnit>, TimeUnit> component) {
         TimeUnit timeUnit = component.getValue();
         projectTaskData.getProjectTask().setTimeUnitId(timeUnit.getId());
+        projectTaskData.setTimeUnit(timeUnit);
     }
 
     private Stream<TimeUnit> getPageTimeUnit(Query<TimeUnit, String> query) {
@@ -300,6 +322,8 @@ public class ProjectTaskForm extends Dialog {
         calendarField.setValue(projectTaskData.getCalendar());
         calendarField.refreshTextValue();
         timeUnitComboBox.setValue(projectTaskData.getTimeUnit());
+        durationRepresentation.setValue(projectTaskData.getProjectTask().getDurationRepresentation().doubleValue());
+
     }
 
     private void createButtons() {
@@ -342,7 +366,28 @@ public class ProjectTaskForm extends Dialog {
                 .bind(this::getStartDate, this::setStartDate);
         binder.forField(finishDate).withConverter(new LocalDateToDateConverter())
                 .bind(this::getFinishDate, this::setFinishDate);
+        binder.forField(durationRepresentation).withConverter(new BigDecimalToDoubleConverter())
+                .bind(ProjectTask::getDurationRepresentation, ProjectTask::setDurationRepresentation);
+
         binder.bindInstanceFields(this);
+
+    }
+
+    private static class BigDecimalToDoubleConverter implements Converter<Double, BigDecimal> {
+
+        @Override
+        public Result<BigDecimal> convertToModel(Double aDouble, ValueContext valueContext) {
+            double value = 0;
+            if (aDouble == null) value = 0;
+            else value = aDouble;
+            return Result.ok(BigDecimal.valueOf(value));
+        }
+
+        @Override
+        public Double convertToPresentation(BigDecimal bigDecimal, ValueContext valueContext) {
+            if (bigDecimal == null) return 0d;
+            return bigDecimal.doubleValue();
+        }
 
     }
 

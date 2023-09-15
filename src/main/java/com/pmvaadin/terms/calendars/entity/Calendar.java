@@ -9,6 +9,8 @@ import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
 
 public interface Calendar {
 
+    static long dayDurationSeconds = 8 * 3600;
+
     static String getHeaderName() {
         return "Name";
     }

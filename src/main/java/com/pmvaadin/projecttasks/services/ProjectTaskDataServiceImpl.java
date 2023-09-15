@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -83,19 +84,67 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
             links = linkService.getLinksWithProjectTaskRepresentation(syncedProjectTask);
         }
 
+        if (syncedProjectTask.isNew()) syncedProjectTask.setDuration(Calendar.dayDurationSeconds);
+
         AdditionalData additionalData = getAdditionalData(syncedProjectTask);
 
-
-
-        return new ProjectTaskDataImpl(syncedProjectTask, null, links,
+        ProjectTaskData projectTaskData = new ProjectTaskDataImpl(syncedProjectTask, null, links,
                 additionalData.defaultStartDate,
                 additionalData.calendar,
                 additionalData.timeUnit);
+
+        fillAdditionalData(projectTaskData);
+
+        return projectTaskData;
+
+    }
+
+    private void fillAdditionalData(ProjectTaskData projectTaskData) {
+
+        fillTerms(projectTaskData);
+        fillTimeUnitId(projectTaskData);
+        fillDurationRepresentation(projectTaskData);
+
+    };
+
+    private void fillTimeUnitId(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        if (projectTask.getTimeUnitId() != null) return;
+        projectTask.setTimeUnitId(projectTaskData.getTimeUnit().getId());
+
+    }
+
+    private void fillDurationRepresentation(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        TimeUnit timeUnit = projectTaskData.getTimeUnit();
+        BigDecimal durationRep = timeUnit.getDurationRepresentation(projectTask.getDuration());
+        projectTask.setDurationRepresentation(durationRep);
+
+    }
+
+    private void fillTerms(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        LocalDateTime start = projectTask.getStartDate();
+        LocalDateTime finish = projectTask.getFinishDate();
+        if (start != null && finish != null) return;
+        Calendar calendar = projectTaskData.getCalendar();
+        long duration = projectTask.getDuration();
+        if (start == null) {
+            start = projectTaskData.getProjectStartDate();
+            projectTask.setStartDate(start);
+            projectTask.setFinishDate(calendar.getDateByDuration(start, duration));
+        }
+        if (finish == null)
+            projectTask.setFinishDate(calendar.getDateByDuration(start, duration));
 
     }
 
     private AdditionalData getAdditionalData(ProjectTask projectTask) {
 
+        // TODO getting a project of the task, instead of the parent
         ProjectTask parent = null;
         if (projectTask.getParentId() != null)
             parent = projectTaskRepository.findById(projectTask.getParentId()).orElse(null);
@@ -170,10 +219,13 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         projectTaskService.fillParent(projectTask);
 
         AdditionalData additionalData = getAdditionalData(projectTask);
-        return new ProjectTaskDataImpl(projectTask, null, links,
+        ProjectTaskData projectTaskData1 = new ProjectTaskDataImpl(projectTask, null, links,
                 additionalData.defaultStartDate,
                 additionalData.calendar,
                 additionalData.timeUnit);
+
+        fillAdditionalData(projectTaskData1);
+        return projectTaskData1;
 
     }
 

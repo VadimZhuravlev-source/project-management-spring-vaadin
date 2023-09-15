@@ -274,7 +274,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             } else if (secondOfDay < startTime) {
                 time = LocalTime.ofSecondOfDay(startTime);
             } else {
-                if (secondOfDay + remainderOfDuration < finishTime) {
+                if (secondOfDay + remainderOfDuration <= finishTime) {
                     time = time.plusSeconds(remainderOfDuration);
                     return LocalDateTime.of(day, time);
                 } else {
@@ -325,7 +325,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
             } else if (secondOfDay >= finishTime) {
                 time = LocalTime.ofSecondOfDay(computingDataOfWorkingDay.getFinishTimeSeconds());
             } else {
-                if (secondOfDay + remainderOfDuration > startTime) {
+                if (secondOfDay + remainderOfDuration >= startTime) {
                     time = time.minusSeconds(-remainderOfDuration);
                     return LocalDateTime.of(day, time);
                 } else {
