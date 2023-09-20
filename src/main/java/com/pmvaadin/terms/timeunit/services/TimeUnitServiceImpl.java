@@ -31,12 +31,12 @@ public class TimeUnitServiceImpl implements TimeUnitService{
 
     @Override
     public List<TimeUnit> getPageByName(String name, Pageable pageable) {
-        return timeUnitRepositoryPaging.findByNameLikeIgnoreCase(name, pageable);
+        return timeUnitRepositoryPaging.findByNameLikeIgnoreCase("%" + name + "%", pageable);
     }
 
     @Override
     public int getCountPageItemsByName(String name) {
-        return timeUnitRepositoryPaging.countByNameLikeIgnoreCase(name);
+        return timeUnitRepositoryPaging.countByNameLikeIgnoreCase("%" + name + "%");
     }
 
     @Override

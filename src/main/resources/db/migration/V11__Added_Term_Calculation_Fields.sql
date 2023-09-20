@@ -4,13 +4,18 @@ CREATE TABLE time_unit(
    version INT,
    predefined BOOLEAN NOT NULL DEFAULT FALSE,
    name VARCHAR(150),
-   number_of_hours NUMERIC(5, 2),
+   number_of_hours NUMERIC(9, 2),
    CONSTRAINT time_unit_pkey PRIMARY KEY (id)
 );
 
 INSERT INTO time_unit(
     id, version, predefined, name, number_of_hours)
-    VALUES (1, 0, TRUE, 'day', 8);
+    VALUES (1, 1, TRUE, 'Day', 8),
+           (2, 1, TRUE, '12 hours', 12),
+           (3, 1, TRUE, '24 hours', 24),
+           (4, 1, TRUE, 'Week', 40),
+           (5, 1, TRUE, 'Month', 160),
+           (6, 1, TRUE, 'Year', 2080);
 
 -- project_tasks
 ALTER TABLE project_tasks

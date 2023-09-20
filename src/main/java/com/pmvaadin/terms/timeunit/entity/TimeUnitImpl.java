@@ -1,11 +1,11 @@
 package com.pmvaadin.terms.timeunit.entity;
 
-import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Objects;
 
 @Entity
@@ -68,7 +68,9 @@ public class TimeUnitImpl implements TimeUnit {
     @Override
     public BigDecimal getDurationRepresentation(long duration) {
 
-        return new BigDecimal(duration).divide(numberOfHours).divide(numberOfSecondsInHour);
+        return new BigDecimal(duration).divide(numberOfHours, 2, RoundingMode.CEILING)
+                .divide(numberOfSecondsInHour, 2, RoundingMode.CEILING)
+                .setScale(2, RoundingMode.CEILING);
 
     }
 
