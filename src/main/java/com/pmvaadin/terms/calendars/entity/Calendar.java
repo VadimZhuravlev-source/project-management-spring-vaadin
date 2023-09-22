@@ -1,5 +1,6 @@
 package com.pmvaadin.terms.calendars.entity;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
@@ -51,5 +52,11 @@ public interface Calendar {
     LocalDateTime getDateByDurationWithoutInitiateCache(LocalDateTime date, long duration);
 
     void initiateCacheData();
+
+    LocalDateTime getClosestWorkingDay(LocalDateTime date);
+
+    LocalDateTime getClosestWorkingDayWithoutInitiateCache(LocalDateTime date);
+
+    LocalDateTime getEndOfWorkingDay(LocalDate day);
 
 }

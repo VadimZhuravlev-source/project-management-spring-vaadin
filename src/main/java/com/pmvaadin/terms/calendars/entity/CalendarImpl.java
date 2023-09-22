@@ -142,7 +142,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
         int startTimeCalendar = calendarData.startTime();
         ComputingDataOfWorkingDay computingDataOfWorkingDay =
-                new ComputingDataOfWorkingDay(startDay, start.getDayOfWeek().getValue(), startTimeCalendar);
+                new ComputingDataOfWorkingDay(startDay, startTimeCalendar);
 
         int finishTimeCalendar = computingDataOfWorkingDay.getFinishTimeSeconds();
 
@@ -239,6 +239,47 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
         }
 
         calendarData = new CalendarData(secondFromBeggingOfDay, settingList, mapExceptions);
+
+    }
+
+    @Override
+    public LocalDateTime getClosestWorkingDay(LocalDateTime date) {
+        initiateCacheData();
+        return getClosestWorkingDayWithoutInitiateCache(date);
+    }
+
+    @Override
+    public LocalDateTime getClosestWorkingDayWithoutInitiateCache(LocalDateTime date) {
+
+        if (calendarData == null) initiateCacheData();
+        LocalDate day = date.toLocalDate();
+        LocalTime time = date.toLocalTime();
+        ComputingDataOfWorkingDay computingData = new ComputingDataOfWorkingDay(day);
+        if (time.toSecondOfDay() >= computingData.getFinishTimeSeconds()) computingData.increaseDay();
+        int numberOfSeconds = computingData.getNumberOfSecondsInWorkingTime();
+
+        // introduce the counter to prevent a limitless loop
+        int counter = 0;
+        int limit = 100000;
+        while (numberOfSeconds == 0) {
+            computingData.increaseDay();
+            numberOfSeconds = computingData.getNumberOfSecondsInWorkingTime();
+            if (counter++ > limit) break;
+        }
+
+        if (!day.equals(computingData.getDay())) time = startTime;
+
+        return LocalDateTime.of(computingData.getDay(), time);
+
+    }
+
+    // return day + start time if the passed day is not working
+    @Override
+    public LocalDateTime getEndOfWorkingDay(LocalDate day) {
+
+        ComputingDataOfWorkingDay computingDataOfWorkingDay = new ComputingDataOfWorkingDay(day);
+        int numberOfSeconds = computingDataOfWorkingDay.getFinishTimeSeconds();
+        return LocalDateTime.of(day, LocalTime.ofSecondOfDay(numberOfSeconds));
 
     }
 
@@ -365,12 +406,12 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
         private void initiate() {
 
-            day = LocalDate.ofEpochDay(date.toLocalDate().toEpochDay());
-            time = LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay());
+            day = date.toLocalDate();
+            time = date.toLocalTime();
 
             startTime = calendarData.startTime();
             computingDataOfWorkingDay =
-                    new ComputingDataOfWorkingDay(day, date.getDayOfWeek().getValue(), startTime);
+                    new ComputingDataOfWorkingDay(day, startTime);
 
             finishTime = computingDataOfWorkingDay.getFinishTimeSeconds();
 
@@ -388,10 +429,15 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
         private LocalDate day;
         private int numberOfSecondsInDay;
 
-        ComputingDataOfWorkingDay(LocalDate day, int dayOfWeek, int startTimeSeconds) {
+        ComputingDataOfWorkingDay(LocalDate day) {
+            this(day, calendarData.startTime());
+        }
+
+        ComputingDataOfWorkingDay(LocalDate day, int startTimeSeconds) {
 
             this.day = day;
             this.startTimeSeconds = startTimeSeconds;
+            int dayOfWeek = day.getDayOfWeek().getValue();
 
             List<DefaultDaySetting> durationOfDaysOfWeek = calendarData.amountOfHourInDay();
             int index = 0;

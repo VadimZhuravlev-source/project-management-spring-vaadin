@@ -199,7 +199,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         if (!treeItem.getChildren().isEmpty() &&
                 minStartDate != LocalDateTime.MAX && maxFinishDate != LocalDateTime.MIN
                 && (!minStartDate.equals(currentTask.getStartDate()) || !maxFinishDate.equals(currentTask.getFinishDate()))) {
-            if (currentTask.getParentId() == null) {
+            if (currentTask.getParentId() == null || currentTask.isProject()) {
                 projectsForRecalculation.add(currentTask);
             }
             currentTask.setStartDate(minStartDate);
@@ -212,6 +212,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         if (!isSumTask) {
             minStartDate = calculateStartDateFromLinks(treeItem.links, currentTask, savedTasks, projectsForRecalculation);
             if (!minStartDate.equals(LocalDateTime.MIN) && !minStartDate.equals(currentTask.getStartDate())) {
+                minStartDate = calendar.getClosestWorkingDayWithoutInitiateCache(minStartDate);
                 maxFinishDate = calendar.getDateByDurationWithoutInitiateCache(minStartDate, currentTask.getDuration());
                 currentTask.setStartDate(minStartDate);
                 currentTask.setFinishDate(maxFinishDate);

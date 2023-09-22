@@ -195,7 +195,7 @@ public class ProjectTaskForm extends Dialog {
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         startDate.addValueChangeListener(this::startDateChangeListener);
         finishDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
-        startDate.addValueChangeListener(this::finishDateChangeListener);
+        finishDate.addValueChangeListener(this::finishDateChangeListener);
         durationRepresentation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         durationRepresentation.setStepButtonsVisible(true);
         durationRepresentation.setStep(1);
@@ -211,6 +211,20 @@ public class ProjectTaskForm extends Dialog {
 
     private void startDateChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> component) {
 
+        LocalDate selectedDate = component.getValue();
+        if (selectedDate == null) {
+            startDate.setValue(projectTaskData.getProjectTask().getStartDate().toLocalDate());
+            return;
+        }
+        Calendar calendar = calendarField.getValue();
+        LocalDateTime newStartDate;
+        if (projectTaskData.getProjectStartDate().toLocalDate().equals(selectedDate))
+            newStartDate = projectTaskData.getProjectStartDate();
+        else
+            newStartDate = calendar.getClosestWorkingDay(LocalDateTime.of(selectedDate, calendar.getStartTime()));
+        if (!newStartDate.toLocalDate().equals(selectedDate)) startDate.setValue(newStartDate.toLocalDate());
+
+        projectTaskData.getProjectTask().setStartDate(newStartDate);
 
         recalculateFinishDateByDuration();
 
@@ -218,10 +232,40 @@ public class ProjectTaskForm extends Dialog {
 
     private void finishDateChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> component) {
 
+        LocalDate selectedDate = component.getValue();
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        if (selectedDate == null) {
+            finishDate.setValue(projectTask.getFinishDate().toLocalDate());
+            return;
+        }
+
+        Calendar calendar = calendarField.getValue();
+        LocalDateTime newFinishDate = calendar.getEndOfWorkingDay(selectedDate);
+        if (newFinishDate.toLocalTime().equals(calendar.getStartTime())) {
+            newFinishDate = calendar.getClosestWorkingDay(newFinishDate);
+            newFinishDate = calendar.getEndOfWorkingDay(newFinishDate.toLocalDate());
+        }
+
+        if (newFinishDate.compareTo(projectTask.getStartDate()) <= 0) {
+            String message = "The selected date can not be less than the start date of the task";
+            NotificationDialogs.notifyValidationErrors(message);
+            finishDate.setValue(component.getOldValue());
+        }
+
+        projectTask.setFinishDate(newFinishDate);
+        long duration = calendar.getDuration(projectTask.getStartDate(), newFinishDate);
+        projectTask.setDuration(duration);
+        BigDecimal bigDecimal = projectTaskData.getTimeUnit().getDurationRepresentation(duration);
+        changeDuration = false;
+        durationRepresentation.setValue(bigDecimal.doubleValue());
+
+        if (!newFinishDate.toLocalDate().equals(selectedDate)) finishDate.setValue(newFinishDate.toLocalDate());
 
     }
 
     private void calendarSelectionListener(Calendar selectedItem) {
+
+        if (selectedItem == null) return;
         calendarField.setValue(selectedItem);
         calendarField.refreshTextValue();
         calendarField.setReadOnly(true);
@@ -231,13 +275,15 @@ public class ProjectTaskForm extends Dialog {
     private void scheduleModeAddListener(AbstractField.ComponentValueChangeEvent<ComboBox<ScheduleMode>, ScheduleMode> component) {
 
         ScheduleMode currentScheduleMode = component.getValue();
+        ProjectTask projectTask = projectTaskData.getProjectTask();
         if (currentScheduleMode == ScheduleMode.MANUALLY) {
             startDate.setReadOnly(false);
             return;
         }
+        // TODO a check of projectTask.getParentId() == null
         startDate.setReadOnly(true);
         startDate.setValue(projectTaskData.getProjectStartDate().toLocalDate());
-        ProjectTask projectTask = projectTaskData.getProjectTask();
+
         projectTask.setStartDate(projectTaskData.getProjectStartDate());
         recalculateFinishDateByDuration();
 
