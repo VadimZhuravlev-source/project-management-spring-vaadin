@@ -150,6 +150,7 @@ public class DependenciesServiceImpl implements DependenciesService {
 
         String pairsOfValues = String.join(";", ids.stream().map(Object::toString).toList());
 
+        pairsOfValues = "'" + pairsOfValues + "'";
         String convertedQueryText = queryText.replace(":pairsOfValues", pairsOfValues);
 
         List<Object[]> rows;
@@ -170,7 +171,7 @@ public class DependenciesServiceImpl implements DependenciesService {
         var isCycleIndex = 0;
         var projectTaskIdIndex = 1;
         var linkIdIndex = 2;
-        var childrenCountIndex = 2;
+        var childrenCountIndex = 3;
         var isCycle = false;
         Map<Object, Integer> childrenCountMap = new HashMap<>(rows.size());
 
@@ -271,77 +272,84 @@ public class DependenciesServiceImpl implements DependenciesService {
         return
 
         """
-        with dependencies as(
-        SELECT
-            dep.checked_id,
-            dep.id,
-            dep.path,
-            dep.is_cycle,
-            dep.link_id
-        FROM get_all_dependencies(:pairsOfValues) dep
-        ),
-        
-        proceeding_execution AS (
-        SELECT
-            bool_or(dependencies.is_cycle) is_cycle
-        FROM dependencies
-        ),
-        
-        unique_ids AS (
-        SELECT DISTINCT
-            dependencies.id
-        FROM dependencies, proceeding_execution
-        WHERE
-            NOT proceeding_execution.is_cycle
-        
-        ),
-        
-        searched_ids AS (
-        SELECT DISTINCT
-            unique_ids.id,
-            NULL::INT link_id
-        FROM unique_ids
-        
-        UNION
-        
-        SELECT
-            project_tasks.id,
-            NULL::INT
-        FROM unique_ids
-        JOIN project_tasks
-            ON unique_ids.id = project_tasks.parent_id
-        
-        UNION
-        
-        SELECT
-            links.linked_project_task,
-            links.id
-        FROM unique_ids
-        JOIN links
-            ON unique_ids.id = links.project_task
-        ),
-        
-        searched_ids_with_children_count AS (
-        SELECT
-            searched_ids.id,
-            searched_ids.link_id,
-            count(p.id) children_count
-        FROM searched_ids
-        LEFT JOIN project_tasks p
-            ON searched_ids.id = p.parent_id
-        GROUP BY
-            searched_ids.id,
-            searched_ids.link_id)
-        
-        SELECT
-            proceeding_execution.is_cycle,
-            searched_ids.id,
-            searched_ids.link_id,
-            searched_ids.children_count
-        FROM proceeding_execution
-        LEFT JOIN searched_ids_with_children_count searched_ids
-            ON TRUE
-        """;
+                with dependencies as(
+                SELECT
+                    dep.checked_id,
+                    dep.id,
+                    dep.path,
+                    dep.is_cycle,
+                    dep.link_id
+                FROM get_all_dependencies(:pairsOfValues) dep
+                ),
+                        
+                proceeding_execution AS (
+                SELECT
+                    bool_or(dependencies.is_cycle) is_cycle
+                FROM dependencies
+                ),
+                        
+                unique_ids AS (
+                SELECT DISTINCT
+                    dependencies.id
+                FROM dependencies, proceeding_execution
+                WHERE
+                    NOT proceeding_execution.is_cycle
+                        
+                ),
+                        
+                searched_ids AS (
+                SELECT DISTINCT
+                    unique_ids.id,
+                    -- I don not know why the hibernate query plan cache returns query text of this query without one of ":" and
+                    -- throws exception, that's why 0 is used as NULL in the row of the query below.
+                    --NULL::INT link_id
+                    0 link_id
+                FROM unique_ids
+                        
+                UNION
+                        
+                SELECT
+                    project_tasks.id,
+                    --NULL::INT
+                    0
+                FROM unique_ids
+                JOIN project_tasks
+                    ON unique_ids.id = project_tasks.parent_id
+                        
+                UNION
+                        
+                SELECT
+                    links.linked_project_task,
+                    links.id
+                FROM unique_ids
+                JOIN links
+                    ON unique_ids.id = links.project_task
+                ),
+                        
+                searched_ids_with_children_count AS (
+                SELECT
+                    searched_ids.id,
+                    CASE WHEN searched_ids.link_id = 0
+                        THEN NULL
+                        ELSE searched_ids.link_id
+                    END link_id,
+                    count(p.id) children_count
+                FROM searched_ids
+                LEFT JOIN project_tasks p
+                    ON searched_ids.id = p.parent_id
+                GROUP BY
+                    searched_ids.id,
+                    searched_ids.link_id)
+                        
+                SELECT
+                    proceeding_execution.is_cycle,
+                    searched_ids.id,
+                    searched_ids.link_id,
+                    CAST(searched_ids.children_count AS INT) children_count
+                FROM proceeding_execution
+                LEFT JOIN searched_ids_with_children_count searched_ids
+                    ON TRUE
+                """;
 
     }
 

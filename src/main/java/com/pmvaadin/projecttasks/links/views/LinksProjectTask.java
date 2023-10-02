@@ -3,6 +3,7 @@ package com.pmvaadin.projecttasks.links.views;
 import com.pmvaadin.commonobjects.ObjectGrid;
 import com.pmvaadin.commonobjects.SelectableTextField;
 import com.pmvaadin.projectstructure.NotificationDialogs;
+import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.links.LinkValidation;
 import com.pmvaadin.projecttasks.links.LinkValidationImpl;
 import com.pmvaadin.projecttasks.links.LinkValidationMessage;
@@ -16,6 +17,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 import java.util.List;
@@ -25,144 +27,112 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     private final LinkService linkService;
     private final ProjectSelectionForm projectSelectionForm;
-    private ProjectTask projectTask;
+    private ProjectTaskData projectTaskDate;
 
     private final Link example = new LinkImpl();
+    private final Binder<Link> binder = new Binder<>();
+    private final Editor<Link> editor;
 
     LinksProjectTask(LinkService linkService, ProjectSelectionForm projectSelectionForm) {
         super();
         this.linkService = linkService;
         this.projectSelectionForm = projectSelectionForm;
         customizeLinks();
-    }
-
-    @Override
-    public void setItems(List<Link> links) {
-        clear();
-        super.setItems(links);
+        editor = grid.getEditor();
+        editor.setBinder(binder);
     }
 
     public LinksProjectTask newInstance() {
         return new LinksProjectTask(linkService, projectSelectionForm.newInstance());
     }
 
-    public void setProjectTask(ProjectTask projectTask) {
-        this.projectTask = projectTask;
-        //List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
-        //setItems(links);
+    public void setProjectTask(ProjectTaskData projectTaskDate) {
+        this.projectTaskDate = projectTaskDate;
+        setItems(projectTaskDate.getLinks());
+    }
+
+    public List<Link> getLinks() {
+        return grid.getListDataView().getItems().toList();
     }
 
     public boolean validate() {
 
         LinkValidation linkValidation = new LinkValidationImpl();
-        LinkValidationMessage linkValidationMessage = linkValidation.validate(getGrid().getListDataView().getItems().toList());
-
-//        Map<Integer, Boolean> mapIdentity = new HashMap<>();
-//        boolean isOk = true;
-//        String message = "";
-//        Link tableRow = null;
-//
-//        for (Link link: getGrid().getListDataView().getItems().toList()) {
-//            if (link.getLinkedProjectTaskId() == null) {
-//                isOk = false;
-//                tableRow = link;
-//                message = getTextErrorNotFilledProjectTask();
-//                break;
-//            }
-//            if (link.getLinkType() == null) {
-//                isOk = false;
-//                tableRow = link;
-//                message = getTextErrorNotFilledLinkType();
-//                break;
-//            }
-//            if (mapIdentity.getOrDefault(link.getLinkedProjectTaskId(), false)) {
-//                isOk = false;
-//                tableRow = link;
-//                message = getTextErrorDuplicatedTasks();
-//                break;
-//            }
-//            mapIdentity.put(link.getLinkedProjectTaskId(), true);
-//        }
+        LinkValidationMessage linkValidationMessage = linkValidation.validate(grid.getListDataView().getItems().toList());
 
         if (!linkValidationMessage.isOk()) {
             NotificationDialogs.notifyValidationErrors(linkValidationMessage.getMessage());
-            getGrid().deselectAll();
-            getGrid().select(linkValidationMessage.getTableRow());
+            grid.deselectAll();
+            grid.select(linkValidationMessage.getTableRow());
         }
 
         return linkValidationMessage.isOk();
 
     }
 
-    private String getTextErrorNotFilledProjectTask() {
-        return "In the predecessors, the project task is not filled";
-    }
-
-    private String getTextErrorNotFilledLinkType() {
-        return "In the predecessors, the link type is not filled";
-    }
-
     private void customizeLinks() {
-
-        Grid.Column<Link> linkedProjectTaskIdColumn = addColumn(Link::getRepresentation).
-                setHeader("Project task");
-        Grid.Column<Link> linkTypeColumn = addColumn(Link::getLinkType).setHeader("Link type");
 
         setDeletable(true);
         setInstantiatable(example::getInstance);
         setCopyable(example::copy);
 
-        setInlineEditor((linkBinder, editor) -> {
+        customizeBinder();
 
-            SelectableTextField<Link> ptField = new SelectableTextField<>();
-            ptField.setMapValueToText(Link::getRepresentation);
-            ptField.setReadOnly(true);
-            ptField.setSelectable(true);
-            ptField.addSelectionListener(event -> {
-                projectSelectionForm.addSelectionListener(
-                        selectedProjectTask -> {
+    }
 
-                            if (!isAddable(selectedProjectTask)) return;
+    private void customizeBinder() {
 
-                            ptField.getValue().setLinkedProjectTask(selectedProjectTask);
-                            ptField.getValue().setLinkedProjectTaskId(selectedProjectTask.getId());
-                            ptField.getValue().setRepresentation(selectedProjectTask.getRepresentation());
-                            ptField.refreshTextValue();
-                        });
-                projectSelectionForm.open();
-            });
-            ptField.setWidthFull();
-            addCloseHandler(ptField, editor);
-            linkBinder.forField(ptField)
-                    .asRequired(getTextErrorEmptyProjectTask())
-                    .bind(link -> {
-                        ptField.setValue(link);
-                        return link;
-                            },
-                            (link, pt) -> {});
-            linkedProjectTaskIdColumn.setEditorComponent(ptField);
+        Grid.Column<Link> linkedProjectTaskIdColumn = addColumn(Link::getRepresentation).
+                setHeader("Project task");
+        Grid.Column<Link> linkTypeColumn = addColumn(Link::getLinkType).setHeader("Link type");
 
-            Select<LinkType> linkTypeField = new Select<>();
-            linkTypeField.setItems(LinkType.values());
-            linkTypeField.setWidthFull();
-            addCloseHandler(linkTypeField, editor);
-            linkBinder.forField(linkTypeField)
-                    .asRequired("The link type has not to be empty")
-                    .bind(Link::getLinkType, Link::setLinkType);
-            linkTypeColumn.setEditorComponent(linkTypeField);
+        SelectableTextField<Link> ptField = new SelectableTextField<>();
+        ptField.setMapValueToText(Link::getRepresentation);
+        ptField.setReadOnly(true);
+        ptField.setSelectable(true);
+        ptField.addSelectionListener(event -> {
+            projectSelectionForm.addSelectionListener(
+                    selectedProjectTask -> {
 
+                        if (!isAddable(selectedProjectTask)) return;
+
+                        ptField.getValue().setLinkedProjectTask(selectedProjectTask);
+                        ptField.getValue().setLinkedProjectTaskId(selectedProjectTask.getId());
+                        ptField.getValue().setRepresentation(selectedProjectTask.getRepresentation());
+                        ptField.refreshTextValue();
+                    });
+            projectSelectionForm.open();
         });
+        ptField.setWidthFull();
+        addCloseHandler(ptField, editor);
+        binder.forField(ptField)
+                .asRequired(getTextErrorEmptyProjectTask())
+                .bind(link -> {
+                            ptField.setValue(link);
+                            return link;
+                        },
+                        (link, pt) -> {});
+        linkedProjectTaskIdColumn.setEditorComponent(ptField);
+
+        Select<LinkType> linkTypeField = new Select<>();
+        linkTypeField.setItems(LinkType.values());
+        linkTypeField.setWidthFull();
+        addCloseHandler(linkTypeField, editor);
+        binder.forField(linkTypeField)
+                .asRequired("The link type has not to be empty")
+                .bind(Link::getLinkType, Link::setLinkType);
+        linkTypeColumn.setEditorComponent(linkTypeField);
 
     }
 
     private boolean isAddable(ProjectTask projectTask) {
 
-        if (this.projectTask.equals(projectTask)) {
+        if (this.projectTaskDate.getProjectTask().equals(projectTask)) {
             NotificationDialogs.notifyValidationErrors(getTextErrorEqualsThis());
             return false;
         }
 
-        boolean isContainedAlready = getGrid().getListDataView().getItems().anyMatch(link ->
+        boolean isContainedAlready = grid.getListDataView().getItems().anyMatch(link ->
         {
             if (link.getLinkedProjectTask() != null) {
                 return link.getLinkedProjectTask().equals(projectTask);
@@ -178,6 +148,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         // TODO check circle dependency
 
         return true;
+
     }
 
     private static void addCloseHandler(Component textField,

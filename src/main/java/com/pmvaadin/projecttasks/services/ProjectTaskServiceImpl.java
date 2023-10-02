@@ -269,13 +269,13 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             if (movedTasks != null) {
                 for (ProjectTask movedTask: movedTasks) {
 
-                    taskIdsForRecalculateTerm.add(movedTask.getParentId());
+                    if (movedTask.getParentId() != null) taskIdsForRecalculateTerm.add(movedTask.getParentId());
                     movedTask.setParentId(task.getParentId());
                     movedTask.setLevelOrder(currentLevelOrder + ++changeMagnitude);
                     savedTasks.add(movedTask);
 
                 }
-                taskIdsForRecalculateTerm.add(task.getParentId());
+                if (task.getParentId() != null) taskIdsForRecalculateTerm.add(task.getParentId());
             }
 
         }
@@ -404,7 +404,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         for (ProjectTask projectTask: projectTaskList) {
             if (parentsOfParentMap.get(projectTask) != null)
                 throw new StandardError("The project structure has been changed. You should update the project and try again.");
-            parentIds.add(projectTask.getParentId());
+            if (projectTask.getParentId() != null) {
+                parentIds.add(projectTask.getParentId());
+            }
             projectTask.setParentId(newParentId);
             projectTask.setLevelOrder(levelOrder++);
         }

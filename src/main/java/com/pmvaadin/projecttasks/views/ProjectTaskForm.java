@@ -182,9 +182,7 @@ public class ProjectTaskForm extends Dialog {
         updateDate.setEnabled(false);
         name.setAutofocus(true);
         calendarField.setSelectable(true);
-        calendarField.addSelectionListener(event -> {
-            calendarSelectionForm.open();
-        });
+        calendarField.addSelectionListener(event -> calendarSelectionForm.open());
         calendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
         dateOfCreation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         updateDate.addThemeVariants(TextFieldVariant.LUMO_SMALL);
@@ -276,11 +274,10 @@ public class ProjectTaskForm extends Dialog {
 
         ScheduleMode currentScheduleMode = component.getValue();
         ProjectTask projectTask = projectTaskData.getProjectTask();
-        if (currentScheduleMode == ScheduleMode.MANUALLY) {
+        if (currentScheduleMode == ScheduleMode.MANUALLY || projectTask.getParentId() == null) {
             startDate.setReadOnly(false);
             return;
         }
-        // TODO a check of projectTask.getParentId() == null
         startDate.setReadOnly(true);
         startDate.setValue(projectTaskData.getProjectStartDate().toLocalDate());
 
@@ -324,7 +321,10 @@ public class ProjectTaskForm extends Dialog {
 
         TimeUnit timeUnit = component.getValue();
         if (timeUnit == null) timeUnit = component.getOldValue();
-        if (timeUnit == null) timeUnitComboBox.setValue(projectTaskData.getTimeUnit());
+        if (timeUnit == null) {
+            timeUnit = projectTaskData.getTimeUnit();
+            timeUnitComboBox.setValue(timeUnit);
+        }
         projectTaskData.getProjectTask().setTimeUnitId(timeUnit.getId());
         projectTaskData.setTimeUnit(timeUnit);
         long duration = projectTaskData.getProjectTask().getDuration();
@@ -378,8 +378,8 @@ public class ProjectTaskForm extends Dialog {
                 return false;
             }
 
-            projectTaskData.setLinksChangedTableData(linksGrid.getChanges());
-            projectTaskData.setLinks(new ArrayList<>());
+            //projectTaskData.setLinksChangedTableData(linksGrid.getChanges());
+            projectTaskData.setLinks(linksGrid.getLinks());
             ProjectTaskData savedData = projectTaskDataService.save(projectTaskData);
             readData(savedData);
         } catch (Throwable e) {
@@ -407,8 +407,7 @@ public class ProjectTaskForm extends Dialog {
 
     private void readData(ProjectTaskData projectTaskData) {
 
-        linksGrid.setProjectTask(projectTaskData.getProjectTask());
-        linksGrid.setItems(projectTaskData.getLinks());
+        linksGrid.setProjectTask(projectTaskData);
         refreshHeader();
         calendarField.setValue(projectTaskData.getCalendar());
         calendarField.refreshTextValue();
@@ -471,7 +470,7 @@ public class ProjectTaskForm extends Dialog {
 
         @Override
         public Result<BigDecimal> convertToModel(Double aDouble, ValueContext valueContext) {
-            double value = 0;
+            double value;
             if (aDouble == null) value = 0;
             else value = aDouble;
             BigDecimal bigDecimal = BigDecimal.valueOf(value);
