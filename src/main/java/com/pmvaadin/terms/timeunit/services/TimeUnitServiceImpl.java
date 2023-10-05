@@ -2,7 +2,9 @@ package com.pmvaadin.terms.timeunit.services;
 
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.repositories.TimeUnitRepositoryPaging;
+import com.vaadin.flow.data.provider.Query;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -30,13 +32,17 @@ public class TimeUnitServiceImpl implements TimeUnitService{
     }
 
     @Override
-    public List<TimeUnit> getPageByName(String name, Pageable pageable) {
-        return timeUnitRepositoryPaging.findByNameLikeIgnoreCase("%" + name + "%", pageable);
+    public List<TimeUnit> getPageByName(Query<TimeUnit, String> query) {
+
+        return timeUnitRepositoryPaging.findByNameLikeIgnoreCase(
+                "%" + query.getFilter().orElse("") + "%",
+                PageRequest.of(query.getPage(), query.getPageSize()));
+
     }
 
     @Override
-    public int getCountPageItemsByName(String name) {
-        return timeUnitRepositoryPaging.countByNameLikeIgnoreCase("%" + name + "%");
+    public int getCountPageItemsByName(Query<TimeUnit, String> query) {
+        return timeUnitRepositoryPaging.countByNameLikeIgnoreCase("%" + query.getFilter().orElse("") + "%");
     }
 
     @Override

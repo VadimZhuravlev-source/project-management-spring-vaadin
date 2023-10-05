@@ -49,7 +49,10 @@ public class TimeUnitImpl implements TimeUnit {
             return false;
         }
 
-        return getId().equals(that.getId());
+        if (getId() == null && that.getId() == null) return false;
+
+        return Objects.equals(getId(), that.getId());
+
     }
 
     @Override

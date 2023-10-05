@@ -38,4 +38,7 @@ public interface Link {
     TimeUnit getTimeUnit();
     void setTimeUnit(TimeUnit timeUnit);
 
+//    Integer getTimeUnitId();
+//    void setTimeUnitId(Integer timeUnitId);
+
 }

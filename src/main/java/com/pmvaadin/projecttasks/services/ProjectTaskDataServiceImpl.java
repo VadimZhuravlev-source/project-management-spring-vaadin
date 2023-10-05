@@ -12,6 +12,7 @@ import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,6 +32,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     private CalendarService calendarService;
     private TimeUnitService timeUnitService;
     private ProjectTaskRepository projectTaskRepository;
+    private ApplicationContext applicationContext;
 
     @Autowired
     void setProjectTaskService(ProjectTaskService projectTaskService) {
@@ -54,6 +57,11 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     @Autowired
     public void setTimeUnitService(TimeUnitService timeUnitService) {
         this.timeUnitService = timeUnitService;
+    }
+
+    @Autowired
+    void setApplicationContext(ApplicationContext applicationContext) {
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -88,10 +96,13 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         AdditionalData additionalData = getAdditionalData(syncedProjectTask);
 
-        ProjectTaskData projectTaskData = new ProjectTaskDataImpl(syncedProjectTask, null, links,
+        Link sampleLink = applicationContext.getBean(Link.class);
+
+        ProjectTaskData projectTaskData = new ProjectTaskDataImpl(syncedProjectTask, links,
                 additionalData.defaultStartDate,
                 additionalData.calendar,
-                additionalData.timeUnit);
+                additionalData.timeUnit,
+                sampleLink);
 
         fillAdditionalData(projectTaskData);
 
@@ -192,40 +203,85 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         boolean isNew = projectTask.isNew();
         if (isNew) {
             projectTask = projectTaskService.save(projectTask, false, false);
+            projectTaskData.setProjectTask(projectTask);
         }
 
         fillMainFields(projectTaskData);
 
-        //linkService.fillSort(newLinks, projectTask);
-        ChangedTableData<? extends Link> changedTableData = projectTaskData.getLinksChangedTableData();
-        List<? extends Link> newLinks = changedTableData.getNewItems();
-        List<? extends Link> deletedLinks = changedTableData.getDeletedItems();
-        boolean increaseCheckSum = newLinks.size() > 0 || deletedLinks.size() > 0;
-        linkService.delete(deletedLinks);
+        saveChanges(projectTaskData, isNew);
 
-        increaseCheckSum = increaseCheckSum || isChangedFields(projectTaskData);
-
-        saveChanges(changedTableData);
-
-        if (!isNew) {
-            if (increaseCheckSum) {
-                int checkSum = projectTask.getLinksCheckSum();
-                projectTask.setLinksCheckSum(++checkSum);
-            }
-            projectTask = projectTaskService.save(projectTask, false, false);
-        }
+        projectTask = projectTaskData.getProjectTask();
 
         List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
         projectTaskService.fillParent(projectTask);
 
+        Link sampleLink = applicationContext.getBean(Link.class);
         AdditionalData additionalData = getAdditionalData(projectTask);
-        ProjectTaskData projectTaskData1 = new ProjectTaskDataImpl(projectTask, null, links,
+        ProjectTaskData projectTaskData1 = new ProjectTaskDataImpl(projectTask, links,
                 additionalData.defaultStartDate,
                 additionalData.calendar,
-                additionalData.timeUnit);
+                additionalData.timeUnit,
+                sampleLink);
 
         fillAdditionalData(projectTaskData1);
         return projectTaskData1;
+
+    }
+
+    private void saveChanges(ProjectTaskData projectTaskData, boolean isNew) {
+
+        ChangedTableData<? extends Link> changedTableData = projectTaskData.getLinksChangedTableData();
+        if (changedTableData != null) {
+            List<? extends Link> newLinks = changedTableData.getNewItems();
+            List<? extends Link> deletedLinks = changedTableData.getDeletedItems();
+            boolean increaseCheckSum = newLinks.size() > 0 || deletedLinks.size() > 0;
+            linkService.delete(deletedLinks);
+
+            increaseCheckSum = increaseCheckSum || isChangedFields(projectTaskData);
+
+            saveChanges(changedTableData);
+
+            if (!isNew && increaseCheckSum) {
+                renewLinksCheckSum(projectTaskData);
+            }
+
+            return;
+
+        }
+
+        List<Link> linksInDatabase = linkService.getLinks(projectTaskData.getProjectTask());
+        List<Link> currentLinks = projectTaskData.getLinks();
+
+        Set<Object> idsCurrentLinks = currentLinks.stream()
+                .map(Link::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+        Set<Object> idsLinksInDataBase = linksInDatabase.stream().map(Link::getId).collect(Collectors.toSet());
+
+        boolean isChanges = false;
+        if (idsLinksInDataBase.removeAll(idsCurrentLinks) && !idsLinksInDataBase.isEmpty()) {
+            List<Link> deletedLinks = linksInDatabase.stream()
+                    .filter(l -> idsLinksInDataBase.contains(l.getId())).toList();
+            linkService.delete(deletedLinks);
+            linksInDatabase.removeAll(deletedLinks);
+            isChanges = true;
+        }
+
+        if (!isNew) {
+            isChanges = isChanges || currentLinks.stream().map(Link::getId).anyMatch(Objects::isNull);
+            isChanges = isChanges || identifyChanges(linksInDatabase, currentLinks);
+            if (isChanges) renewLinksCheckSum(projectTaskData);
+        }
+
+        linkService.save(currentLinks);
+
+    }
+
+    private void renewLinksCheckSum(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        int checkSum = projectTask.getLinksCheckSum();
+        projectTask.setLinksCheckSum(++checkSum);
+        projectTask = projectTaskService.save(projectTask, false, false);
+        projectTaskData.setProjectTask(projectTask);
 
     }
 
@@ -269,37 +325,25 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
     private boolean identifyChanges(List<? extends Link> changedLinks, List<? extends Link> links) {
 
-        var oldValuesLinkedPTMap = changedLinks.stream().collect(Collectors.toMap(Link::getId, Link::getLinkedProjectTaskId));
-        var oldValuesLinkTypeMap = changedLinks.stream().collect(Collectors.toMap(Link::getId, Link::getLinkType));
+        var changedLinksMap = changedLinks.stream().collect(Collectors.toMap(Link::getId, l -> l));
 
-        List<Link> deletedLinks = new ArrayList<>();
+        return links.stream().anyMatch(link -> {
 
-        boolean anyMatch = links.stream().anyMatch(link -> {
-
-            var linkedPTId = oldValuesLinkedPTMap.getOrDefault(link.getId(), null);
-            boolean isEqual = Objects.equals(linkedPTId, link.getLinkedProjectTaskId());
-
-            if (!isEqual) {
-                return true;
-            }
-
-            var linkType = oldValuesLinkTypeMap.getOrDefault(link.getId(), null);
-
-            isEqual = Objects.equals(linkType, link.getLinkType());
-
-            if (!isEqual) {
-                return true;
-            }
-
-            deletedLinks.add(link);
-
-            return false;
+            var changedLink = changedLinksMap.getOrDefault(link.getId(), null);
+            if (changedLink == null) return true;
+            return isChanges(link, changedLink);
 
         });
 
-        if (deletedLinks.size() == 0) changedLinks.removeAll(deletedLinks);
+    }
 
-        return anyMatch;
+    private boolean isChanges(Link link, Link equaledLink) {
+
+        return !(Objects.equals(link.getLinkedProjectTaskId(), equaledLink.getLinkedProjectTaskId())
+                && Objects.equals(link.getLinkType(), equaledLink.getLinkType())
+                && Objects.equals(link.getLag(), equaledLink.getLag())
+                && Objects.equals(link.getTimeUnit(), equaledLink.getTimeUnit())
+                && Objects.equals(link.getSort(), equaledLink.getSort()));
 
     }
 

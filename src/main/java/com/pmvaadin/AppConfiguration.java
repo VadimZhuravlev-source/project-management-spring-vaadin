@@ -2,6 +2,8 @@ package com.pmvaadin;
 
 import com.pmvaadin.projectstructure.TreeProjectTasks;
 import com.pmvaadin.projectstructure.TreeProjectTasksImpl;
+import com.pmvaadin.projecttasks.links.entities.Link;
+import com.pmvaadin.projecttasks.links.entities.LinkImpl;
 import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.terms.calculation.TermsCalculationImpl;
 import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversion;
@@ -25,6 +27,11 @@ public class AppConfiguration {
     @Bean
     public TermsCalculation termsCalculation() {
         return new TermsCalculationImpl();
+    }
+
+    @Bean
+    public Link getLink() {
+        return new LinkImpl();
     }
 
 }

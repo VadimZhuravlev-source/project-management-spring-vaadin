@@ -30,8 +30,8 @@ public class LazyLoadObjectGrid<T> extends ObjectGrid<T> {
     private int previousPage;
     private int lastIndex = -1;
 
-    private Binder<T> binder;
-    private Editor<T> editor;
+//    private Binder<T> binder;
+//    private Editor<T> editor;
 
     public LazyLoadObjectGrid() {
         super();
@@ -244,10 +244,6 @@ public class LazyLoadObjectGrid<T> extends ObjectGrid<T> {
 
         });
 
-    }
-
-    public interface InlineEditor<T> {
-        void customize(Binder<T> binder, Editor<T> editor);
     }
 
 }

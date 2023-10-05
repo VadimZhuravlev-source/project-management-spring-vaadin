@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-@AllArgsConstructor
+//@AllArgsConstructor
 public class ProjectTaskDataImpl implements ProjectTaskData {
 
     private ProjectTask projectTask;
@@ -26,5 +26,17 @@ public class ProjectTaskDataImpl implements ProjectTaskData {
     private Calendar calendar;
 
     private TimeUnit timeUnit;
+
+    private Link linkSample;
+
+    public ProjectTaskDataImpl(ProjectTask projectTask, List<Link> links, LocalDateTime projectStartDate,
+                               Calendar calendar, TimeUnit timeUnit, Link linkSample) {
+        this.projectTask = projectTask;
+        this.links = links;
+        this.projectStartDate = projectStartDate;
+        this.calendar = calendar;
+        this.timeUnit = timeUnit;
+        this.linkSample = linkSample;
+    }
 
 }

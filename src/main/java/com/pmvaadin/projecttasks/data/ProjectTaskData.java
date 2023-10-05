@@ -12,6 +12,7 @@ import java.util.List;
 public interface ProjectTaskData {
 
     ProjectTask getProjectTask();
+    void setProjectTask(ProjectTask projectTask);
     ChangedTableData<? extends Link> getLinksChangedTableData();
     void setLinksChangedTableData(ChangedTableData<? extends Link> linksChanges);
     List<Link> getLinks();
@@ -25,5 +26,7 @@ public interface ProjectTaskData {
     TimeUnit getTimeUnit();
     void setTimeUnit(TimeUnit timeUnit);
 
+    Link getLinkSample();
+    void setLinkSample(Link link);
 
 }

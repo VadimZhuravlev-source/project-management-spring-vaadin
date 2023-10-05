@@ -62,6 +62,9 @@ public class LinkImpl implements Link {
     @ManyToOne
     @JoinColumn(name = "time_unit_id", nullable = false)
     private TimeUnitImpl timeUnit;
+//    @Setter
+//    @Column(name = "time_unit_id")
+//    private Integer timeUnitId;
 
     public LinkImpl() {
         linkType = LinkType.FINISHSTART;
@@ -70,6 +73,9 @@ public class LinkImpl implements Link {
     public LinkImpl(Link link) {
         this.projectTaskId = link.getProjectTaskId();
         this.linkType = link.getLinkType();
+        this.lag = link.getLag();
+        this.lagRepresentation = link.getLagRepresentation();
+        this.timeUnit = (TimeUnitImpl) link.getTimeUnit();
     }
 
     @Override

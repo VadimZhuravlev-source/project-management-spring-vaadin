@@ -1,9 +1,13 @@
 package com.pmvaadin.commonobjects;
 
+import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.function.ValueProvider;
 
@@ -17,6 +21,9 @@ public class ObjectGrid<T> extends VerticalLayout {
     protected final HorizontalLayout toolBar = new HorizontalLayout();
     protected final Grid<T> grid;
 
+    protected Binder<T> binder;
+    protected Editor<T> editor;
+
     protected Supplier<T> createNewItem;
     protected UnaryOperator<T> copy;
 
@@ -26,21 +33,25 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     public ObjectGrid() {
         grid = new Grid<>();
+        binder = new Binder<>();
         initialSettings();
     }
 
     public ObjectGrid(int pageSize) {
         grid = new Grid<>(pageSize);
+        binder = new Binder<>();
         initialSettings();
     }
 
     public ObjectGrid(Class<T> beanType, boolean autoCreateColumns) {
         grid = new Grid<>(beanType, autoCreateColumns);
+        binder = new Binder<>(beanType);
         initialSettings();
     }
 
     public ObjectGrid(Class<T> beanType) {
         grid = new Grid<>(beanType);
+        binder = new Binder<>(beanType);
         initialSettings();
     }
 
@@ -58,6 +69,10 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     public Grid.Column<T> addColumn(Renderer<T> renderer) {
         return grid.addColumn(renderer);
+    }
+
+    public void setInlineEditor(LazyLoadObjectGrid.InlineEditor<T> editor) {
+        editor.customize(this.binder, this.editor);
     }
 
     public void setItems(List<T> items) {
@@ -82,6 +97,21 @@ public class ObjectGrid<T> extends VerticalLayout {
     private void initialSettings() {
         add(toolBar, grid);
         initializeObjectGrid();
+        customizeGrid();
+    }
+
+    private void customizeGrid() {
+
+        editor = grid.getEditor();
+        editor.setBinder(binder);
+        grid.addItemDoubleClickListener(e -> {
+            editor.editItem(e.getItem());
+            Component editorComponent = e.getColumn().getEditorComponent();
+            if (editorComponent instanceof Focusable) {
+                ((Focusable<?>) editorComponent).focus();
+            }
+        });
+
     }
 
     private void initializeObjectGrid() {
@@ -119,6 +149,12 @@ public class ObjectGrid<T> extends VerticalLayout {
     private void addNewItem(T item) {
 
         grid.getListDataView().addItem(item);
+        editor.editItem(item);
+        Component editorComponent = grid.getColumns().get(0).getEditorComponent();
+        grid.getSelectionModel().select(item);
+        if (editorComponent instanceof Focusable) {
+            ((Focusable<?>) editorComponent).focus();
+        }
 
     }
 
@@ -141,6 +177,10 @@ public class ObjectGrid<T> extends VerticalLayout {
 
         });
 
+    }
+
+    public interface InlineEditor<T> {
+        void customize(Binder<T> binder, Editor<T> editor);
     }
 
 }

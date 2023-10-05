@@ -1,5 +1,6 @@
 package com.pmvaadin.projecttasks.views;
 
+import com.pmvaadin.projecttasks.commonobjects.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.entity.ScheduleMode;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.NotificationDialogs;
@@ -33,19 +34,15 @@ import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.binder.*;
-import com.vaadin.flow.data.converter.Converter;
 import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -334,14 +331,11 @@ public class ProjectTaskForm extends Dialog {
     }
 
     private Stream<TimeUnit> getPageTimeUnit(Query<TimeUnit, String> query) {
-        return timeUnitService.getPageByName(
-                query.getFilter().orElse(""),
-                PageRequest.of(query.getPage(), query.getPageSize())).stream();
+        return timeUnitService.getPageByName(query).stream();
     }
 
     private int getCountItemsInPageByName(Query<TimeUnit, String> query) {
-        return timeUnitService.getCountPageItemsByName(
-                query.getFilter().orElse(""));
+        return timeUnitService.getCountPageItemsByName(query);
     }
 
     private void customizeHeader() {
@@ -380,6 +374,7 @@ public class ProjectTaskForm extends Dialog {
 
             //projectTaskData.setLinksChangedTableData(linksGrid.getChanges());
             projectTaskData.setLinks(linksGrid.getLinks());
+            projectTaskData.setLinksChangedTableData(null);
             ProjectTaskData savedData = projectTaskDataService.save(projectTaskData);
             readData(savedData);
         } catch (Throwable e) {
@@ -459,34 +454,10 @@ public class ProjectTaskForm extends Dialog {
                 .bind(this::getStartDate, this::setStartDate);
         binder.forField(finishDate).withConverter(new LocalDateToDateConverter())
                 .bind(this::getFinishDate, this::setFinishDate);
-        binder.forField(durationRepresentation).withConverter(new BigDecimalToDoubleConverter())
+        binder.forField(durationRepresentation).withConverter(new BigDecimalToDoubleConverter(durationRepresentation))
                 .bind(ProjectTask::getDurationRepresentation, ProjectTask::setDurationRepresentation);
 
         binder.bindInstanceFields(this);
-
-    }
-
-    private class BigDecimalToDoubleConverter implements Converter<Double, BigDecimal> {
-
-        @Override
-        public Result<BigDecimal> convertToModel(Double aDouble, ValueContext valueContext) {
-            double value;
-            if (aDouble == null) value = 0;
-            else value = aDouble;
-            BigDecimal bigDecimal = BigDecimal.valueOf(value);
-            BigDecimal scaledBigDecimal = bigDecimal.setScale(2, RoundingMode.CEILING);
-            if (!scaledBigDecimal.equals(bigDecimal)) {
-                Double newDouble = scaledBigDecimal.doubleValue();
-                durationRepresentation.setValue(newDouble);
-            }
-            return Result.ok(bigDecimal);
-        }
-
-        @Override
-        public Double convertToPresentation(BigDecimal bigDecimal, ValueContext valueContext) {
-            if (bigDecimal == null) return 0d;
-            return bigDecimal.doubleValue();
-        }
 
     }
 
