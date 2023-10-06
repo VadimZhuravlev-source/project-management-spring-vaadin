@@ -74,6 +74,14 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     }
 
+    public boolean isEditing() {
+        return editor.isOpen();
+    }
+
+    public void endEditing() {
+        editor.closeEditor();
+    }
+
     private void customizeLinks() {
 
         setDeletable(true);
@@ -124,6 +132,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
             projectSelectionForm.open();
         });
         ptField.setWidthFull();
+        //ptField.setAutofocus(false);
         addCloseHandler(ptField, editor);
         binder.forField(ptField)
                 .asRequired(getTextErrorEmptyProjectTask())
@@ -137,6 +146,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         Select<LinkType> linkTypeField = new Select<>();
         linkTypeField.setItems(LinkType.values());
         linkTypeField.setWidthFull();
+        //linkTypeField.setAutofocus(false);
         addCloseHandler(linkTypeField, editor);
         binder.forField(linkTypeField)
                 .asRequired("The link type has not to be empty")
@@ -145,6 +155,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
         NumberField lagRepresentation = new NumberField();
         lagRepresentation.setWidthFull();
+        //lagRepresentation.setAutofocus(false);
         lagRepresentation.setStepButtonsVisible(true);
         lagRepresentation.setStep(1);
         addCloseHandler(lagRepresentation, editor);
@@ -155,6 +166,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         ComboBox<TimeUnit> timeUnitComboBox = new ComboBox<>();
         timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
         timeUnitComboBox.setWidthFull();
+        //timeUnitComboBox.setAutofocus(false);
         addCloseHandler(timeUnitComboBox, editor);
         binder.forField(timeUnitComboBox)
                 .bind(Link::getTimeUnit, this::setTimeUnit);
@@ -167,7 +179,8 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         if (timeUnit == null) currentTimeUnit = projectTaskDate.getTimeUnit();
         BigDecimal lagRepresentation = currentTimeUnit.getDurationRepresentation(link.getLag());
         link.setLagRepresentation(lagRepresentation);
-        binder.refreshFields();
+        link.setTimeUnit(timeUnit);
+        //binder.refreshFields();
     }
 
     private Stream<TimeUnit> getPageTimeUnit(Query<TimeUnit, String> query) {
@@ -185,7 +198,8 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
         long lag = timeUnit.getDuration(value);
         link.setLag(lag);
-        binder.refreshFields();
+        link.setLagRepresentation(value);
+        //binder.refreshFields();
 
     }
 

@@ -4,14 +4,16 @@ import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.shared.HasThemeVariant;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.shared.Registration;
 
 import java.util.Objects;
 import java.util.function.Function;
 
 @Tag("select-text-field")
-public class SelectableTextField<T> extends HorizontalLayout implements HasValue<HasValue.ValueChangeEvent<T>, T> {
+public class SelectableTextField<T> extends HorizontalLayout implements HasValue<HasValue.ValueChangeEvent<T>, T>, HasThemeVariant<TextFieldVariant> {
 
     private final TextFieldWithButtons textField;
     private T value;
@@ -111,6 +113,10 @@ public class SelectableTextField<T> extends HorizontalLayout implements HasValue
 
     public Registration addOpeningListener(ComponentEventListener<ClickEvent<Button>> listener) {
         return openAction.addClickListener(listener);
+    }
+
+    public void setAutofocus(boolean autofocus) {
+        textField.setAutofocus(autofocus);
     }
 
     class TextFieldWithButtons extends TextField {

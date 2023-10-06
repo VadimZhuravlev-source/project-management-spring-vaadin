@@ -12,10 +12,7 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.ProjectTaskDataService;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.services.TimeUnitService;
-import com.vaadin.flow.component.AbstractField;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -84,10 +81,6 @@ public class ProjectTaskForm extends Dialog {
     // this need to stretch a grid in a tab
     private final VerticalLayout linksGridContainer = new VerticalLayout();
 
-    private final Button save = new Button("Save");
-    private final Button close = new Button("Cancel");
-    private final Button sync = new Button("Refresh", new Icon("lumo", "reload"));
-
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
                            CalendarSelectionForm calendarSelectionForm, TimeUnitService timeUnitService) {
 
@@ -135,6 +128,8 @@ public class ProjectTaskForm extends Dialog {
         addClassName("project-task-form");
         addThemeVariants(DialogVariant.LUMO_NO_PADDING);
         setModal(false);
+        setCloseOnEsc(false);
+        //this.addListener(Class<ProjectTaskForm>, )
 
     }
 
@@ -180,6 +175,7 @@ public class ProjectTaskForm extends Dialog {
         name.setAutofocus(true);
         calendarField.setSelectable(true);
         calendarField.addSelectionListener(event -> calendarSelectionForm.open());
+        calendarField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         calendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
         dateOfCreation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         updateDate.addThemeVariants(TextFieldVariant.LUMO_SMALL);
@@ -341,9 +337,24 @@ public class ProjectTaskForm extends Dialog {
     private void customizeHeader() {
 
         Button closeButton = new Button(new Icon("lumo", "cross"),
-                (e) -> close());
+                e -> fireEvent(new CloseEvent(this))
+                );
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        Shortcuts.addShortcutListener(this, this::onShortcutEvent, Key.ESCAPE);
+
         getHeader().add(closeButton);
+
+    }
+
+    private void onShortcutEvent(ShortcutEvent event) {
+
+        if (event.matches(Key.ESCAPE)) {
+            if (tabSheet.getSelectedTab() == linksTab && linksGrid.isEditing()) {
+                linksGrid.endEditing();
+                return;
+            }
+            fireEvent(new CloseEvent(this));
+        }
 
     }
 
@@ -387,6 +398,7 @@ public class ProjectTaskForm extends Dialog {
     }
 
     private void syncData() {
+
         try {
 
             ProjectTask projectTask = projectTaskData.getProjectTask();
@@ -416,23 +428,30 @@ public class ProjectTaskForm extends Dialog {
 
     private void createButtons() {
 
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-
-        save.addClickListener(event -> {
+        Button saveAndClose = new Button("Save and close");
+        saveAndClose.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        saveAndClose.addClickListener(event -> {
 
             boolean validationDone = validateAndSave();
             if (!validationDone) return;
             fireEvent(new SaveEvent(this, projectTaskData.getProjectTask()));
 
         });
-//        save.getStyle().set("margin-right", "auto");
+        binder.addStatusChangeListener(e -> saveAndClose.setEnabled(binder.isValid()));
+
+        Button sync = new Button("Refresh", new Icon("lumo", "reload"));
         sync.addClickListener(event -> syncData());
         sync.getStyle().set("margin-right", "auto");
+
+        Button close = new Button("Close");
+        close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         close.addClickListener(event -> fireEvent(new CloseEvent(this)));
 
+        Button save = new Button("Save");
+        save.addClickListener(event -> validateAndSave());
         binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
-        getFooter().add(save, sync, close);
+
+        getFooter().add(saveAndClose, save, sync, close);
 
     }
 
@@ -477,7 +496,6 @@ public class ProjectTaskForm extends Dialog {
         LocalDate chosenDate = Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
         if (localDate == null) localDate = projectTaskData.getProjectStartDate();
         LocalTime time = localDate.toLocalTime();
-        // TODO check is from working day of the task calendar
         return LocalDateTime.of(chosenDate, time);
     }
 

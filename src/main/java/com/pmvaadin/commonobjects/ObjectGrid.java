@@ -1,7 +1,6 @@
 package com.pmvaadin.commonobjects;
 
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Focusable;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.editor.Editor;
@@ -128,15 +127,18 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     private void customizeAddButton() {
         addButton.setVisible(false);
-        addButton.addClickListener(buttonClickEvent -> {
-            if (createNewItem == null) return;
-            T currentEditedItem = createNewItem.get();
-            addNewItem(currentEditedItem);
-        });
+        addButton.addClickListener(this::addButtonClickListener);
+    }
+
+    private void addButtonClickListener(ClickEvent<Button> event) {
+        if (createNewItem == null) return;
+        T currentEditedItem = createNewItem.get();
+        addNewItem(currentEditedItem);
     }
 
     private void customizeCopyButton() {
         copyButton.setVisible(false);
+        //copyButton.setAutofocus(false);
         copyButton.addClickListener(buttonClickEvent -> {
             if (copy == null) return;
             T selectedItem = grid.getSelectionModel().getSelectedItems().stream().findFirst().orElse(null);
@@ -161,6 +163,7 @@ public class ObjectGrid<T> extends VerticalLayout {
     private void customizeDeleteButton() {
 
         deleteButton.setVisible(false);
+        //deleteButton.setAutofocus(false);
         deleteButton.addClickListener(event -> {
             Set<T> selectedItems = grid.getSelectedItems();
 
