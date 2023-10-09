@@ -1,6 +1,5 @@
 package com.pmvaadin.projecttasks.entity;
 
-import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

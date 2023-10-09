@@ -146,6 +146,15 @@ public class ProjectTaskForm extends Dialog {
         linksGridContainer.add(linksGrid);
         linksGridContainer.setSizeFull();
         tabSheet.add(linksTab, linksGridContainer);
+        tabSheet.addSelectedChangeListener(this::selectedTabChangeListener);
+
+    }
+
+    private void selectedTabChangeListener(TabSheet.SelectedChangeEvent event) {
+
+        if (event.getSelectedTab() != linksTab && linksGrid.isEditing()) {
+            linksGrid.endEditing();
+        }
 
     }
 

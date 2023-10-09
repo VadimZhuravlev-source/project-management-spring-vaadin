@@ -5,6 +5,7 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface ProjectTaskService extends ProjectTreeService {
 
@@ -14,5 +15,6 @@ public interface ProjectTaskService extends ProjectTreeService {
     boolean validate(ProjectTask projectTask);
     Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(Collection<?> ids);
     <I> void fillParent(ProjectTask projectTask);
+    List<ProjectTask> recalculateTerms(Set<?> taskIds);
 
 }

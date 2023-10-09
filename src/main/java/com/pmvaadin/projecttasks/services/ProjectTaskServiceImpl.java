@@ -36,6 +36,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private TreeProjectTasks treeProjectTasks;
     private DependenciesService dependenciesService;
     private CalendarService calendarService;
+    private ApplicationContext applicationContext;
 
     @Autowired
     public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository){
@@ -60,6 +61,11 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Autowired
     public void setCalendarService(CalendarService calendarService){
         this.calendarService = calendarService;
+    }
+
+    @Autowired
+    public void setApplicationContext(ApplicationContext applicationContext){
+        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -132,11 +138,11 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Override
     public void recalculateProject() {
 
-        List<ProjectTask> projectTasks = projectTaskRepository.findAllByOrderByLevelOrderAsc();
-        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
-        treeProjectTasks.populateTreeByList(projectTasks);
-        List<ProjectTask> savedElements = treeProjectTasks.recalculateThePropertiesOfTheWholeProject();
-        projectTaskRepository.saveAll(savedElements);
+//        List<ProjectTask> projectTasks = projectTaskRepository.findAllByOrderByLevelOrderAsc();
+//        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+//        treeProjectTasks.populateTreeByList(projectTasks);
+//        List<ProjectTask> savedElements = treeProjectTasks.recalculateThePropertiesOfTheWholeProject();
+//        projectTaskRepository.saveAll(savedElements);
 
     }
 
@@ -206,6 +212,25 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         }
         ProjectTask parent = projectTaskRepository.findById(projectTask.getParentId()).orElse(null);
         projectTask.setParent(parent);
+
+    }
+
+    @Override
+    public List<ProjectTask> recalculateTerms(Set<?> taskIds) {
+
+        TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(taskIds);
+
+        calendarService.fillCalendars(termCalculationData);
+
+        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
+        TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
+        TermCalculationRespond respond = termsCalculation.calculate(termCalculationData);
+
+        List<ProjectTask> savedTasks = projectTaskRepository.saveAll(respond.getChangedTasks());
+
+        //TODO async recalculating of changed projects respond.getRecalculatedProjects()
+
+        return savedTasks;
 
     }
 
@@ -648,23 +673,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         savedTasks.trimToSize();
 
         return savedTasks;
-
-    }
-
-    private void recalculateTerms(Set<?> taskIds) {
-        //return new HashSet(0);
-
-        TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(taskIds);
-
-        calendarService.fillCalendars(termCalculationData);
-
-        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
-        TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
-        TermCalculationRespond respond = termsCalculation.calculate(termCalculationData);
-
-        projectTaskRepository.saveAll(respond.getChangedTasks());
-
-
 
     }
 

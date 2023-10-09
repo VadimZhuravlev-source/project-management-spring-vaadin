@@ -18,10 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -92,21 +89,9 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
             links = linkService.getLinksWithProjectTaskRepresentation(syncedProjectTask);
         }
 
-        if (syncedProjectTask.isNew()) syncedProjectTask.setDuration(Calendar.dayDurationSeconds);
+        if (syncedProjectTask.isNew()) syncedProjectTask.setDuration(Calendar.DAY_DURATION_SECONDS);
 
-        AdditionalData additionalData = getAdditionalData(syncedProjectTask);
-
-        Link sampleLink = applicationContext.getBean(Link.class);
-
-        ProjectTaskData projectTaskData = new ProjectTaskDataImpl(syncedProjectTask, links,
-                additionalData.defaultStartDate,
-                additionalData.calendar,
-                additionalData.timeUnit,
-                sampleLink);
-
-        fillAdditionalData(projectTaskData);
-
-        return projectTaskData;
+        return getProjectTaskData(syncedProjectTask, links);
 
     }
 
@@ -116,7 +101,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         fillTimeUnitId(projectTaskData);
         fillDurationRepresentation(projectTaskData);
 
-    };
+    }
 
     private void fillTimeUnitId(ProjectTaskData projectTaskData) {
 
@@ -210,21 +195,35 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         saveChanges(projectTaskData, isNew);
 
-        projectTask = projectTaskData.getProjectTask();
+        calculateTerms(projectTaskData);
 
+        return getProjectTaskDateRespond(projectTaskData);
+
+    }
+
+    private ProjectTaskData getProjectTaskDateRespond(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
         List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
-        projectTaskService.fillParent(projectTask);
+        //projectTaskService.fillParent(projectTask);
+
+        return getProjectTaskData(projectTask, links);
+
+    }
+
+    private ProjectTaskData getProjectTaskData(ProjectTask projectTask, List<Link> links) {
 
         Link sampleLink = applicationContext.getBean(Link.class);
         AdditionalData additionalData = getAdditionalData(projectTask);
-        ProjectTaskData projectTaskData1 = new ProjectTaskDataImpl(projectTask, links,
+        ProjectTaskData projectTaskData = new ProjectTaskDataImpl(projectTask, links,
                 additionalData.defaultStartDate,
                 additionalData.calendar,
                 additionalData.timeUnit,
                 sampleLink);
 
-        fillAdditionalData(projectTaskData1);
-        return projectTaskData1;
+        fillAdditionalData(projectTaskData);
+
+        return projectTaskData;
 
     }
 
@@ -275,6 +274,33 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
     }
 
+    private void saveChanges(ChangedTableData<? extends Link> changedTableData) {
+
+        List<? extends Link> newLinks = changedTableData.getNewItems();
+        List<? extends Link> changedLinks = changedTableData.getChangedItems();
+        List<Link> savedLinks = new ArrayList<>(newLinks.size() + changedLinks.size());
+        savedLinks.addAll(newLinks);
+        // TODO to check an existence of the changed links
+        savedLinks.addAll(changedLinks);
+        linkService.save(savedLinks);
+
+    }
+
+    private void calculateTerms(ProjectTaskData projectTaskData) {
+
+        Set<Object> ids = new HashSet<>(1);
+        ids.add(projectTaskData.getProjectTask().getId());
+        List<ProjectTask> changedTasks = projectTaskService.recalculateTerms(ids);
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        for (ProjectTask changedTask: changedTasks) {
+            if (changedTask.equals(projectTask)) {
+                projectTaskData.setProjectTask(changedTask);
+                break;
+            }
+        }
+
+    }
+
     private void renewLinksCheckSum(ProjectTaskData projectTaskData) {
 
         ProjectTask projectTask = projectTaskData.getProjectTask();
@@ -298,18 +324,6 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
             if (link.getProjectTaskId() == null) link.setProjectTaskId(projectTask.getId());
             if (Objects.isNull(link.getSort())) link.setSort(++maxSort);
         }
-
-    }
-
-    private void saveChanges(ChangedTableData<? extends Link> changedTableData) {
-
-        List<? extends Link> newLinks = changedTableData.getNewItems();
-        List<? extends Link> changedLinks = changedTableData.getChangedItems();
-        List<Link> savedLinks = new ArrayList<>(newLinks.size() + changedLinks.size());
-        savedLinks.addAll(newLinks);
-        // TODO to check an existence of the changed links
-        savedLinks.addAll(changedLinks);
-        linkService.save(savedLinks);
 
     }
 
