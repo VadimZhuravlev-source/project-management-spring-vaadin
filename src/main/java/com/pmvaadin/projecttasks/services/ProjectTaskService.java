@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 
+import javax.persistence.EntityManager;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ public interface ProjectTaskService extends ProjectTreeService {
     boolean validate(ProjectTask projectTask);
     Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(Collection<?> ids);
     <I> void fillParent(ProjectTask projectTask);
-    List<ProjectTask> recalculateTerms(Set<?> taskIds);
+    //List<ProjectTask> recalculateTerms(Set<?> taskIds);
+    List<ProjectTask> recalculateTerms(EntityManager entityManager, Set<?> taskIds);
 
 }

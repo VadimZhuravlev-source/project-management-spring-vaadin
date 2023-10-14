@@ -22,6 +22,8 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -37,6 +39,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private DependenciesService dependenciesService;
     private CalendarService calendarService;
     private ApplicationContext applicationContext;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository){
@@ -216,9 +221,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
-    public List<ProjectTask> recalculateTerms(Set<?> taskIds) {
+    public List<ProjectTask> recalculateTerms(EntityManager entityManager, Set<?> taskIds) {
 
-        TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(taskIds);
+        entityManager.flush();
+        TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(entityManager, taskIds);
 
         calendarService.fillCalendars(termCalculationData);
 
@@ -231,6 +237,12 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         //TODO async recalculating of changed projects respond.getRecalculatedProjects()
 
         return savedTasks;
+
+    }
+
+    private List<ProjectTask> recalculateTerms(Set<?> taskIds) {
+
+        return recalculateTerms(this.entityManager, taskIds);
 
     }
 
@@ -465,6 +477,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         // if there are project task duplicates in projectTaskList, that something has gone wrong in dependenciesSet or
         // recalculateTerms or getTasksFollowingAfterTargetInBase. This situation has to additionally explore.
         projectTaskRepository.saveAll(projectTaskList);
+        //entityManager.flush();
 
         parentIds.add(newParentId);
 

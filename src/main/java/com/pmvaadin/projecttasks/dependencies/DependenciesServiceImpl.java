@@ -72,10 +72,10 @@ public class DependenciesServiceImpl implements DependenciesService {
     }
 
     @Override
-    public <I> TermCalculationData getAllDependenciesForTermCalc(Set<I> ids) {
+    public <I> TermCalculationData getAllDependenciesForTermCalc(EntityManager entityManager, Set<I> ids) {
 
         //return new DependenciesSetImpl(new ArrayList<>(), new ArrayList<>(), false);
-        return getAllDependenciesForTermCalc(ids, getQueryTextForDependenciesAtTermCalc());
+        return getAllDependenciesForTermCalc(entityManager, ids, getQueryTextForDependenciesAtTermCalc());
 
     }
 
@@ -142,7 +142,7 @@ public class DependenciesServiceImpl implements DependenciesService {
 
     }
 
-    private <I, L> TermCalculationData getAllDependenciesForTermCalc(Set<I> ids, String queryText) {
+    private <I, L> TermCalculationData getAllDependenciesForTermCalc(EntityManager entityManager, Set<I> ids, String queryText) {
 
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
 
@@ -154,7 +154,7 @@ public class DependenciesServiceImpl implements DependenciesService {
         String convertedQueryText = queryText.replace(":pairsOfValues", pairsOfValues);
 
         List<Object[]> rows;
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        //EntityManager entityManager = entityManagerFactory.createEntityManager();
         try {
 
             Query query = entityManager.createNativeQuery(convertedQueryText);
@@ -162,7 +162,7 @@ public class DependenciesServiceImpl implements DependenciesService {
             rows = query.getResultList();
 
         } finally {
-            entityManager.close();
+           // entityManager.close();
         }
 
         HashSet<I> projectTaskIds = new HashSet<>(rows.size());

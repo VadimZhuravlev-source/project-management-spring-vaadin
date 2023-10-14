@@ -16,6 +16,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -30,6 +32,9 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     private TimeUnitService timeUnitService;
     private ProjectTaskRepository projectTaskRepository;
     private ApplicationContext applicationContext;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     void setProjectTaskService(ProjectTaskService projectTaskService) {
@@ -195,6 +200,9 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         saveChanges(projectTaskData, isNew);
 
+        projectTask = projectTaskRepository.save(projectTask);
+        //projectTask = projectTaskService.save(projectTask, false, true);
+        projectTaskData.setProjectTask(projectTask);
         calculateTerms(projectTaskData);
 
         return getProjectTaskDateRespond(projectTaskData);
@@ -256,7 +264,8 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         Set<Object> idsLinksInDataBase = linksInDatabase.stream().map(Link::getId).collect(Collectors.toSet());
 
         boolean isChanges = false;
-        if (idsLinksInDataBase.removeAll(idsCurrentLinks) && !idsLinksInDataBase.isEmpty()) {
+        idsLinksInDataBase.removeAll(idsCurrentLinks);
+        if (!idsLinksInDataBase.isEmpty()) {
             List<Link> deletedLinks = linksInDatabase.stream()
                     .filter(l -> idsLinksInDataBase.contains(l.getId())).toList();
             linkService.delete(deletedLinks);
@@ -290,7 +299,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         Set<Object> ids = new HashSet<>(1);
         ids.add(projectTaskData.getProjectTask().getId());
-        List<ProjectTask> changedTasks = projectTaskService.recalculateTerms(ids);
+        List<ProjectTask> changedTasks = projectTaskService.recalculateTerms(this.entityManager, ids);
         ProjectTask projectTask = projectTaskData.getProjectTask();
         for (ProjectTask changedTask: changedTasks) {
             if (changedTask.equals(projectTask)) {

@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.dependencies;
 
 import com.pmvaadin.terms.calculation.TermCalculationData;
 
+import javax.persistence.EntityManager;
 import java.util.List;
 import java.util.Set;
 
@@ -13,6 +14,6 @@ public interface DependenciesService {
 
     String getCycleLinkMessage(DependenciesSet dependenciesSet);
 
-    <I> TermCalculationData getAllDependenciesForTermCalc(Set<I> ids);
+    <I> TermCalculationData getAllDependenciesForTermCalc(EntityManager entityManager, Set<I> ids);
 
 }

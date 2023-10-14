@@ -106,6 +106,7 @@ public class ProjectTreeView extends VerticalLayout {
         if (isEditingFormOpen) return;
         try {
 
+            treeGrid.getSelectionModel().deselectAll();
             treeGrid.getDataProvider().refreshAll();
 
         } catch (Throwable e) {
@@ -219,14 +220,13 @@ public class ProjectTreeView extends VerticalLayout {
 
         ProjectTask savedProjectTask = event.getProjectTask();
         if (savedProjectTask == null) return;
-        ProjectTask refreshedItem = savedProjectTask.getParent();
-        if (refreshedItem == null) refreshedItem = savedProjectTask;
+//        ProjectTask refreshedItem = savedProjectTask.getParent();
+//        if (refreshedItem == null) refreshedItem = savedProjectTask;
 //        treeGrid.asMultiSelect().deselectAll();
 //        treeGrid.asMultiSelect().select(savedProjectTask);
         //treeGrid.getDataProvider().refreshItem(refreshedItem, true);
-        updateTreeGrid();
-
         closeEditor();
+        updateTreeGrid();
 
     }
 
