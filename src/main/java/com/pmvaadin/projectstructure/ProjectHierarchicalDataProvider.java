@@ -5,19 +5,17 @@ import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.vaadin.flow.data.provider.hierarchy.AbstractBackEndHierarchicalDataProvider;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchicalDataProvider<ProjectTask, Void> {
 
     private final TreeHierarchyChangeService hierarchyService;
 
-    private int cacheChildrenCountUpperLevel;
-    private boolean receiveRootChildrenCount;
-
-    private boolean isRefresh;
-    private final List<ProjectTask> cacheChildren = new ArrayList<>(0);
+//    private int cacheChildrenCountUpperLevel;
+//    private boolean receiveRootChildrenCount;
+//
+//    private boolean isRefresh;
+//    private final List<ProjectTask> cacheChildren = new ArrayList<>(0);
 
     public ProjectHierarchicalDataProvider(TreeHierarchyChangeService hierarchyService) {
         this.hierarchyService = hierarchyService;

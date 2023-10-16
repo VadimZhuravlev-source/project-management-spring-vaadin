@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface LinkService {
 
-    List<? extends Link> getLinks(ProjectTask projectTask);
+    List<Link> getLinks(ProjectTask projectTask);
 
     boolean validate(ProjectTaskData projectTaskData);
 

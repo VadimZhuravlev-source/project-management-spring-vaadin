@@ -1,12 +1,13 @@
 package com.pmvaadin.projecttasks.links.entities;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitImpl;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.util.Objects;
 
 @Getter
@@ -43,6 +44,14 @@ public class LinkImpl implements Link {
     private LinkType linkType;
 
     @Setter
+    @Column(name = "lag")
+    private long lag = 0L;
+
+    @Setter
+    @Transient
+    private BigDecimal lagRepresentation;
+
+    @Setter
     @Transient
     private ProjectTask linkedProjectTask;
 
@@ -50,14 +59,29 @@ public class LinkImpl implements Link {
     @Transient
     private String representation;
 
+    @ManyToOne
+    @JoinColumn(name = "time_unit_id", nullable = false)
+    private TimeUnitImpl timeUnit;
+//    @Setter
+//    @Column(name = "time_unit_id")
+//    private Integer timeUnitId;
+
     public LinkImpl() {
-        linkType = LinkType.STARTFINISH;
+        linkType = LinkType.FINISHSTART;
     }
 
     public LinkImpl(Link link) {
         this.projectTaskId = link.getProjectTaskId();
         this.linkType = link.getLinkType();
+        this.lag = link.getLag();
+        this.lagRepresentation = link.getLagRepresentation();
+        this.timeUnit = (TimeUnitImpl) link.getTimeUnit();
     }
+
+    @Override
+    public void setTimeUnit(TimeUnit timeUnit) {
+        this.timeUnit = (TimeUnitImpl) timeUnit;
+    };
 
     @Override
     public Link getInstance() {

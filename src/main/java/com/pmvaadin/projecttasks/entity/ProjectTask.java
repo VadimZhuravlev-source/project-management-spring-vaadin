@@ -1,10 +1,12 @@
 package com.pmvaadin.projecttasks.entity;
 
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
-    Integer getVersion();
     Date getDateOfCreation();
     Date getUpdateDate();
     boolean isNew();
@@ -15,6 +17,10 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     static String getHeaderWbs() {
         return "wbs";
+    }
+
+    static String getHeaderId() {
+        return "Id";
     }
 
     static String getHeaderVersion() {
@@ -41,12 +47,35 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
         return "Calendar";
     }
 
+    static String getHeaderDurationRepresentation() {
+        return "Duration";
+    }
+
+    static String getHeaderTimeUnit() {
+        return "Time unit";
+    }
+
+    static String getHeaderScheduleMode() {
+        return "Schedule mode";
+    }
+
     String getName();
     void setName(String name);
-    Date getStartDate();
-    void setStartDate(Date startDate);
-    Date getFinishDate();
-    void setFinishDate(Date finishDate);
+    LocalDateTime getStartDate();
+    void setStartDate(LocalDateTime startDate);
+    LocalDateTime getFinishDate();
+    void setFinishDate(LocalDateTime finishDate);
+    boolean isProject();
+    void setProject(boolean isProject);
+    long getDuration();
+    void setDuration(long duration);
+    ScheduleMode getScheduleMode();
+    void setScheduleMode(ScheduleMode scheduleMode);
+    Integer getCalendarId();
+    void setCalendarId(Integer calendarId);
+
+    String getCalendarRepresentation();
+    void setCalendarRepresentation(String calendarRepresentation);
 
     int getLinksCheckSum();
     void setLinksCheckSum(int linksCheckSum);
@@ -61,5 +90,11 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     ProjectTask getParent();
     void setParent(ProjectTask parent);
+
+    Integer getTimeUnitId();
+    void setTimeUnitId(Integer timeUnitId);
+
+    BigDecimal getDurationRepresentation();
+    void setDurationRepresentation(BigDecimal durationRepresentation);
 
 }

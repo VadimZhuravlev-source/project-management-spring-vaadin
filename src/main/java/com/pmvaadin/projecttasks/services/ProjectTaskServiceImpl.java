@@ -1,9 +1,14 @@
 package com.pmvaadin.projecttasks.services;
 
+import com.pmvaadin.AppConfiguration;
+import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TestCase;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
+import com.pmvaadin.terms.calculation.TermCalculationData;
+import com.pmvaadin.terms.calculation.TermCalculationRespond;
+import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
@@ -12,9 +17,13 @@ import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,8 +36,11 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private ProjectTaskRepository projectTaskRepository;
     private HierarchyService hierarchyService;
     private TreeProjectTasks treeProjectTasks;
-
     private DependenciesService dependenciesService;
+    private CalendarService calendarService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository){
@@ -50,6 +62,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         this.dependenciesService = dependenciesService;
     }
 
+    @Autowired
+    public void setCalendarService(CalendarService calendarService){
+        this.calendarService = calendarService;
+    }
 
     @Override
     public List<ProjectTask> getTreeProjectTasks() {
@@ -68,6 +84,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Override
+    @Transactional
     public ProjectTask save(ProjectTask projectTask, boolean validate, boolean recalculateTerms) {
 
         if (validate && !validate(projectTask)) return projectTask;
@@ -120,38 +137,41 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Override
     public void recalculateProject() {
 
-        List<ProjectTask> projectTasks = projectTaskRepository.findAllByOrderByLevelOrderAsc();
-        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
-        treeProjectTasks.populateTreeByList(projectTasks);
-        List<ProjectTask> savedElements = treeProjectTasks.recalculateThePropertiesOfTheWholeProject();
-        projectTaskRepository.saveAll(savedElements);
+//        List<ProjectTask> projectTasks = projectTaskRepository.findAllByOrderByLevelOrderAsc();
+//        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+//        treeProjectTasks.populateTreeByList(projectTasks);
+//        List<ProjectTask> savedElements = treeProjectTasks.recalculateThePropertiesOfTheWholeProject();
+//        projectTaskRepository.saveAll(savedElements);
 
     }
 
     @Override
-    public Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+    @Transactional
+    public void changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
-        Set<ProjectTask> changedTasks = changeLocationTransactional(projectTasks, target, dropLocation);
+        Set<ProjectTask> changedTasks = changeLocationInner(projectTasks, target, dropLocation);
 
-        return getProjectTasksForSelection(projectTasks, changedTasks);
+        //return getProjectTasksForSelection(projectTasks, changedTasks);
 
     }
 
     @Override
-    public Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, Direction direction) {
+    @Transactional
+    public void changeLocation(Set<ProjectTask> projectTasks, Direction direction) {
 
         Set<ProjectTask> changedTasks = changeLocationInner(projectTasks, direction);
 
-        return getProjectTasksForSelection(projectTasks, changedTasks);
+        //return getProjectTasksForSelection(projectTasks, changedTasks);
 
     }
 
     @Override
-    public Set<ProjectTask> changeSortOrder(Set<ProjectTask> projectTasks, Direction direction) {
+    @Transactional
+    public void changeSortOrder(Set<ProjectTask> projectTasks, Direction direction) {
 
-        Set<ProjectTask> changedTasks = changedSortOrderTransactional(projectTasks, direction);
+        Set<ProjectTask> changedTasks = changedSortOrderInner(projectTasks, direction);
 
-        return getProjectTasksForSelection(projectTasks, changedTasks);
+        //return getProjectTasksForSelection(projectTasks, changedTasks);
 
     }
 
@@ -194,7 +214,36 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    @Transactional
+    @Override
+    public List<ProjectTask> recalculateTerms(EntityManager entityManager, Set<?> taskIds) {
+
+        var newTaskIds = taskIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+
+        if (newTaskIds.isEmpty()) return new ArrayList<>(0);
+
+        entityManager.flush();
+        TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(entityManager, newTaskIds);
+
+        calendarService.fillCalendars(termCalculationData);
+
+        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
+        TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
+        TermCalculationRespond respond = termsCalculation.calculate(termCalculationData);
+
+        List<ProjectTask> savedTasks = projectTaskRepository.saveAll(respond.getChangedTasks());
+
+        //TODO async recalculating of changed projects respond.getRecalculatedProjects()
+
+        return savedTasks;
+
+    }
+
+    private List<ProjectTask> recalculateTerms(Set<?> taskIds) {
+
+        return recalculateTerms(this.entityManager, taskIds);
+
+    }
+
     private Set<ProjectTask> changeLocationInner(Set<ProjectTask> projectTasks, Direction direction) {
 
         validateVersion(projectTasks);
@@ -203,6 +252,19 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             return changeLocationUp(projectTasks);
         else
             return changeLocationDown(projectTasks);
+
+    }
+
+    private Set<ProjectTask> changeLocationInner(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+
+        var taskIdsForRecalculate = changeHierarchy(projectTasks, target, dropLocation);
+
+        recalculateTerms(taskIdsForRecalculate);
+
+        List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(taskIdsForRecalculate);
+        projectTaskRepository.saveAll(savedElements);
+
+        return projectTasks;
 
     }
 
@@ -242,21 +304,20 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             if (movedTasks != null) {
                 for (ProjectTask movedTask: movedTasks) {
 
-                    taskIdsForRecalculateTerm.add(movedTask.getParentId());
+                    if (movedTask.getParentId() != null) taskIdsForRecalculateTerm.add(movedTask.getParentId());
                     movedTask.setParentId(task.getParentId());
                     movedTask.setLevelOrder(currentLevelOrder + ++changeMagnitude);
                     savedTasks.add(movedTask);
 
                 }
-                taskIdsForRecalculateTerm.add(task.getParentId());
+                if (task.getParentId() != null) taskIdsForRecalculateTerm.add(task.getParentId());
             }
 
         }
 
         projectTaskRepository.saveAll(savedTasks);
 
-        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculateTerm);
-        projectTaskRepository.saveAll(tasksWithChangedTerms);
+        recalculateTerms(taskIdsForRecalculateTerm);
 
         List<ProjectTask> recalculatedTasks = recalculateLevelOrderByParentIds(parentIds);
         projectTaskRepository.saveAll(recalculatedTasks);
@@ -335,26 +396,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             taskIdsForRecalculate.addAll(modifiedTaskIds);
         }
 
-        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculate);
-        projectTaskRepository.saveAll(tasksWithChangedTerms);
+        recalculateTerms(taskIdsForRecalculate);
 
         List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(taskIdsForRecalculate);
         projectTaskRepository.saveAll(savedElements);
-
-    }
-
-    @Transactional
-    private Set<ProjectTask> changeLocationTransactional(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
-
-        var taskIdsForRecalculate = changeHierarchy(projectTasks, target, dropLocation);
-
-        Set<ProjectTask> tasksWithChangedTerms = recalculateTerms(taskIdsForRecalculate);
-        projectTaskRepository.saveAll(tasksWithChangedTerms);
-
-        List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(taskIdsForRecalculate);
-        projectTaskRepository.saveAll(savedElements);
-
-        return projectTasks;
 
     }
 
@@ -371,6 +416,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         if (!targetIsInProjectTasks) projectTaskList.add(target);
 
         validateVersion(projectTaskList);
+
+        // TODO validation type links of the summary task "target"
 
         projectTaskList.remove(target);
 
@@ -392,7 +439,9 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         for (ProjectTask projectTask: projectTaskList) {
             if (parentsOfParentMap.get(projectTask) != null)
                 throw new StandardError("The project structure has been changed. You should update the project and try again.");
-            parentIds.add(projectTask.getParentId());
+            if (projectTask.getParentId() != null) {
+                parentIds.add(projectTask.getParentId());
+            }
             projectTask.setParentId(newParentId);
             projectTask.setLevelOrder(levelOrder++);
         }
@@ -426,6 +475,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         // if there are project task duplicates in projectTaskList, that something has gone wrong in dependenciesSet or
         // recalculateTerms or getTasksFollowingAfterTargetInBase. This situation has to additionally explore.
         projectTaskRepository.saveAll(projectTaskList);
+        //entityManager.flush();
 
         parentIds.add(newParentId);
 
@@ -433,8 +483,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    @Transactional
-    private Set<ProjectTask> changedSortOrderTransactional(Set<ProjectTask> tasks, Direction direction) {
+    private Set<ProjectTask> changedSortOrderInner(Set<ProjectTask> tasks, Direction direction) {
 
         validateVersion(tasks);
 
@@ -638,15 +687,10 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     }
 
-    private Set<ProjectTask> recalculateTerms(Set<?> taskIds) {
-        return new HashSet(0);
-        // TODO recalculate terms
-    }
-
-    private Set<ProjectTask> recalculateTerms(ProjectTask projectTask) {
-        HashSet<Object> parentIds = new HashSet<>(1);
-        parentIds.add(projectTask.getParentId());
-        return recalculateTerms(parentIds);
+    private void recalculateTerms(ProjectTask projectTask) {
+        HashSet<Object> ids = new HashSet<>(1);
+        ids.add(projectTask.getId());
+        recalculateTerms(ids);
     }
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {

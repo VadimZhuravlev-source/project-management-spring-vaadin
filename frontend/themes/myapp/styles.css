@@ -1,0 +1,7 @@
+@import url('./main-layout.css');
+
+/* there is a need for a check if next expression will be work for one element vaadin-dialog-overlay.project-task-form::part(header)*/
+vaadin-dialog-overlay::part(header) {
+  padding: 1px;
+  /*border: 1px solid black;*/
+}

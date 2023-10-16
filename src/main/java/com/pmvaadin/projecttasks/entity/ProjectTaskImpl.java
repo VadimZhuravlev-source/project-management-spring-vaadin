@@ -1,7 +1,7 @@
 package com.pmvaadin.projecttasks.entity;
 
-import com.pmvaadin.calendars.entity.Calendar;
-import com.pmvaadin.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +11,8 @@ import javax.persistence.*;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Objects;
 
@@ -58,35 +60,67 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Transient
     private String wbs;
 
-    // Terms
+    @Setter
+    @Column(name = "is_project")
+    private boolean isProject = false;
+
+    // Terms begin
     @Setter
     @Column(name = "start_date")
-    private Date startDate;
+    private LocalDateTime startDate;
+
     @Setter
     @Column(name = "finish_date")
-    private Date finishDate;
+    private LocalDateTime finishDate;
+
+    @Setter
+    @Column(name = "duration")
+    private long duration = 1L;
+
+    @Setter
+    @Column(name = "schedule_mode_id")
+    private ScheduleMode scheduleMode = ScheduleMode.AUTO;
+
+    //@ManyToOne
+    @Setter
+    //@JoinColumn(name = "calendar_id")
+    @Column(name = "calendar_id")
+    private Integer calendarId;
+    // Terms end
 
     @Setter
     @Column(name = "links_check_sum")
     private int linksCheckSum;
 
+    @Setter
+    @Column(name = "time_unit_id")
+    private Integer timeUnitId;
+
     // The field is not intended to store data
     @Setter
-    //@Column(name = "children_count")
-    //@OptimisticLock(excluded = true)
     @Transient
     private int childrenCount;
 
-    //    @Setter
-//    @Column(name = "duration")
-//    private new BigDecimal duration;
-    @ManyToOne
-    @JoinColumn(name = "calendar_id")
-    private CalendarImpl calendar;
+    @Setter
+    @Transient
+    private String calendarRepresentation;
 
     @Setter
     @Transient
     private ProjectTask parent;
+
+    @Setter
+    @Transient
+    private BigDecimal durationRepresentation;
+
+//    @ManyToOne
+//    @JoinColumn(name = "time_unit_id", nullable = false)
+//    private TimeUnitImpl timeUnit;
+
+//    @Override
+//    public void setTimeUnit(TimeUnit timeUnit) {
+//        this.timeUnit = (TimeUnitImpl) timeUnit;
+//    };
 
     @Override
     public boolean equals(Object o) {

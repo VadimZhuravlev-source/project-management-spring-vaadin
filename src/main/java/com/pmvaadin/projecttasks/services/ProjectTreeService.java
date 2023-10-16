@@ -11,9 +11,9 @@ public interface ProjectTreeService {
     List<ProjectTask> getTreeProjectTasks();
     ProjectTask sync(ProjectTask projectTask);
     void delete(List<? extends ProjectTask> projectTasks);
-    Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask parent, GridDropLocation dropLocation);
-    Set<ProjectTask> changeSortOrder(Set<ProjectTask> tasks, Direction direction);
-    Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, Direction direction);
+    void changeLocation(Set<ProjectTask> projectTasks, ProjectTask parent, GridDropLocation dropLocation);
+    void changeSortOrder(Set<ProjectTask> tasks, Direction direction);
+    void changeLocation(Set<ProjectTask> projectTasks, Direction direction);
 
     void createTestCase();
 
