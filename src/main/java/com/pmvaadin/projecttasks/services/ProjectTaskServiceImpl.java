@@ -38,7 +38,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private TreeProjectTasks treeProjectTasks;
     private DependenciesService dependenciesService;
     private CalendarService calendarService;
-    private ApplicationContext applicationContext;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -66,11 +65,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Autowired
     public void setCalendarService(CalendarService calendarService){
         this.calendarService = calendarService;
-    }
-
-    @Autowired
-    public void setApplicationContext(ApplicationContext applicationContext){
-        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -153,31 +147,31 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
     @Override
     @Transactional
-    public Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+    public void changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
         Set<ProjectTask> changedTasks = changeLocationInner(projectTasks, target, dropLocation);
 
-        return getProjectTasksForSelection(projectTasks, changedTasks);
+        //return getProjectTasksForSelection(projectTasks, changedTasks);
 
     }
 
     @Override
     @Transactional
-    public Set<ProjectTask> changeLocation(Set<ProjectTask> projectTasks, Direction direction) {
+    public void changeLocation(Set<ProjectTask> projectTasks, Direction direction) {
 
         Set<ProjectTask> changedTasks = changeLocationInner(projectTasks, direction);
 
-        return getProjectTasksForSelection(projectTasks, changedTasks);
+        //return getProjectTasksForSelection(projectTasks, changedTasks);
 
     }
 
     @Override
     @Transactional
-    public Set<ProjectTask> changeSortOrder(Set<ProjectTask> projectTasks, Direction direction) {
+    public void changeSortOrder(Set<ProjectTask> projectTasks, Direction direction) {
 
         Set<ProjectTask> changedTasks = changedSortOrderInner(projectTasks, direction);
 
-        return getProjectTasksForSelection(projectTasks, changedTasks);
+        //return getProjectTasksForSelection(projectTasks, changedTasks);
 
     }
 
@@ -223,8 +217,12 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Override
     public List<ProjectTask> recalculateTerms(EntityManager entityManager, Set<?> taskIds) {
 
+        var newTaskIds = taskIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
+
+        if (newTaskIds.isEmpty()) return new ArrayList<>(0);
+
         entityManager.flush();
-        TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(entityManager, taskIds);
+        TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(entityManager, newTaskIds);
 
         calendarService.fillCalendars(termCalculationData);
 
@@ -419,7 +417,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         validateVersion(projectTaskList);
 
-        // TODO validation type links with summary task "target"
+        // TODO validation type links of the summary task "target"
 
         projectTaskList.remove(target);
 

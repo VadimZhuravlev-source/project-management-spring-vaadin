@@ -68,6 +68,9 @@ public class ProjectTreeView extends VerticalLayout {
     private void configureTreeGrid() {
 
         treeGrid.setDataProvider(dataProvider);
+        var hierarchicalDataCommunicator = treeGrid.getDataCommunicator();
+        hierarchicalDataCommunicator.reset();
+
         treeGrid.addClassNames("project-tasks-grid");
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
@@ -104,11 +107,10 @@ public class ProjectTreeView extends VerticalLayout {
     private void updateTreeGrid() {
 
         if (isEditingFormOpen) return;
+
         try {
-
-            treeGrid.getSelectionModel().deselectAll();
+            treeGrid.asMultiSelect().clear();
             treeGrid.getDataProvider().refreshAll();
-
         } catch (Throwable e) {
             showProblem(e);
         }
@@ -185,9 +187,9 @@ public class ProjectTreeView extends VerticalLayout {
 
             Set<ProjectTask> selectedProjectTasks = treeGrid.asMultiSelect().getValue();
 
-            Set<ProjectTask> changedTasks = projectTreeService.changeLocation(selectedProjectTasks, direction);
+            projectTreeService.changeLocation(selectedProjectTasks, direction);
 
-            treeGrid.asMultiSelect().setValue(changedTasks);
+            //treeGrid.asMultiSelect().setValue(changedTasks);
 
             updateTreeGrid();
 
@@ -335,6 +337,8 @@ public class ProjectTreeView extends VerticalLayout {
 
         ProjectTask projectTask = event.getItem();
 
+        if (projectTask == null) return;
+
         Set<ProjectTask> newSelectedProjectTasks = new HashSet<>();
         if (event.isCtrlKey()) {
             newSelectedProjectTasks.addAll(treeGrid.asMultiSelect().getSelectedItems());
@@ -399,10 +403,10 @@ public class ProjectTreeView extends VerticalLayout {
 
             //if (!checkMovableDraggedItemsInDroppedItem(draggedItems, dropTargetItem)) return;
 
-            Set<ProjectTask> updatedTasks = projectTreeService.changeLocation(draggedItems, dropTargetItem, dropLocation);
+            projectTreeService.changeLocation(draggedItems, dropTargetItem, dropLocation);
 
-            treeGrid.asMultiSelect().clear();
-            treeGrid.asMultiSelect().setValue(updatedTasks);
+//            treeGrid.asMultiSelect().clear();
+//            treeGrid.asMultiSelect().setValue(updatedTasks);
 
             updateTreeGrid();
 
