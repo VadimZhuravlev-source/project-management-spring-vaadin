@@ -327,11 +327,13 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         if (links.size() == 0) return;
 
-        int maxSort = links.stream().map(Link::getSort).filter(Objects::nonNull).max(Integer::compare).orElse(0);
+        //int maxSort = links.stream().map(Link::getSort).filter(Objects::nonNull).max(Integer::compare).orElse(0);
 
+        int sort = 0;
         for (Link link:links) {
             if (link.getProjectTaskId() == null) link.setProjectTaskId(projectTask.getId());
-            if (Objects.isNull(link.getSort())) link.setSort(++maxSort);
+            //if (Objects.isNull(link.getSort())) link.setSort(++maxSort);
+            link.setSort(++sort);
         }
 
     }

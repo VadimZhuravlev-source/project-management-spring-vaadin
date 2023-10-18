@@ -11,8 +11,11 @@ import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.pmvaadin.projecttasks.views.ProjectTaskForm;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.ItemClickEvent;
@@ -21,6 +24,7 @@ import com.vaadin.flow.component.grid.dnd.GridDragStartEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
+import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
@@ -33,6 +37,7 @@ import javax.annotation.security.PermitAll;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
+import java.util.List;
 
 @Route(value="", layout = MainLayout.class)
 @PageTitle("Projects | PM")
@@ -47,6 +52,9 @@ public class ProjectTreeView extends VerticalLayout {
     private ProjectTaskForm editingForm;
     private final ProjectHierarchicalDataProvider dataProvider;
     private boolean isEditingFormOpen;
+    private Set<String> currentColumns = new HashSet<>();
+
+    private ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
 
     public ProjectTreeView(ProjectTreeService projectTreeService, TreeHierarchyChangeService treeHierarchyChangeService, ProjectTaskForm projectTaskForm) {
 
@@ -68,20 +76,21 @@ public class ProjectTreeView extends VerticalLayout {
     private void configureTreeGrid() {
 
         treeGrid.setDataProvider(dataProvider);
-        var hierarchicalDataCommunicator = treeGrid.getDataCommunicator();
-        hierarchicalDataCommunicator.reset();
+//        var hierarchicalDataCommunicator = treeGrid.getDataCommunicator();
+//        hierarchicalDataCommunicator.reset();
 
         treeGrid.addClassNames("project-tasks-grid");
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-        treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(ProjectTask.getHeaderName()).setFrozen(true)
+        treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(projectTaskPropertyNames.getHeaderName()).setFrozen(true)
                 .setResizable(true).setSortable(false).setWidth("25em");
         treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setWidth("5em");
         treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true).setAutoWidth(true);
         treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true).setAutoWidth(true);
         treeGrid.getColumns().forEach(col -> col.setAutoWidth(true));
+
         //treeGrid.setDataProvider(new TreeDataProvider<>(new TreeData<>()));
 
         // hide checkbox column
@@ -101,6 +110,12 @@ public class ProjectTreeView extends VerticalLayout {
 
         treeGrid.addItemClickListener(this::onMouseClick);
         treeGrid.addItemDoubleClickListener(this::onMouseDoubleClick);
+
+
+
+    }
+
+    private void customizeColumns() {
 
     }
 
@@ -162,9 +177,21 @@ public class ProjectTreeView extends VerticalLayout {
                 changeLevelUp,
                 changeLevelDown,
                 createTestCase,
-                moveUp, moveDown, expandAll, collapseAll);
-
+                moveUp, moveDown);
         toolbar.addClassName("toolbar");
+
+        MenuBar menuBar = new MenuBar();
+        MenuItem settingsItem = menuBar.addItem("Settings");
+        SubMenu subMenu = settingsItem.getSubMenu();
+        ColumnSelectionForm columnSelectionForm = new ColumnSelectionForm(currentColumns);
+        columnSelectionForm.setOnCloseEvent(e -> {
+            currentColumns.clear();
+            currentColumns.addAll(e);
+        });
+        ComponentEventListener<ClickEvent<MenuItem>> listener = e -> columnSelectionForm.open();
+        subMenu.addItem("Column settings", listener);
+        toolbar.add(menuBar);
+
         return toolbar;
 
     }

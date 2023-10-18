@@ -97,4 +97,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     BigDecimal getDurationRepresentation();
     void setDurationRepresentation(BigDecimal durationRepresentation);
 
+    String getTimeUnitRepresentation();
+    void setTimeUnitRepresentation(String timeUnitRepresentation);
+
 }

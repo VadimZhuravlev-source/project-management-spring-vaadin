@@ -5,11 +5,12 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @AllArgsConstructor
 @Getter
-public class LinkedProjectTaskDTO implements LinkedProjectTask {
+public class LinkedProjectTaskDTO {//implements LinkedProjectTask {
 
     @Setter
     private Integer id;
@@ -19,10 +20,13 @@ public class LinkedProjectTaskDTO implements LinkedProjectTask {
     private Integer version;
 
     @Setter
-    private Date startDate;
+    private String name;
 
-    @Setter
-    private Date finishDate;
+//    @Setter
+//    private LocalDateTime startDate;
+//
+//    @Setter
+//    private LocalDateTime finishDate;
 
     public Integer getNullId() {
         return 0;

@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.views;
 
 import com.pmvaadin.projecttasks.commonobjects.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.entity.ScheduleMode;
+import com.pmvaadin.projectview.ProjectTaskPropertyNames;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.view.CalendarSelectionForm;
@@ -41,6 +42,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.util.Date;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -54,10 +56,10 @@ public class ProjectTaskForm extends Dialog {
     private final CalendarSelectionForm calendarSelectionForm;
     private final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
-    private final TextField id = new TextField(ProjectTask.getHeaderId());
-    private final TextField version = new TextField(ProjectTask.getHeaderVersion());
-    private final TextField dateOfCreation = new TextField(ProjectTask.getHeaderDateOfCreation());
-    private final TextField updateDate = new TextField(ProjectTask.getHeaderUpdateDate());
+    private final TextField id = new TextField();
+    private final TextField version = new TextField();
+    private final TextField dateOfCreation = new TextField();
+    private final TextField updateDate = new TextField();
     private final TextField name = new TextField();
     private final TextField wbs = new TextField();
 
@@ -80,6 +82,8 @@ public class ProjectTaskForm extends Dialog {
 
     // this need to stretch a grid in a tab
     private final VerticalLayout linksGridContainer = new VerticalLayout();
+    private ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
+
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
                            CalendarSelectionForm calendarSelectionForm, TimeUnitService timeUnitService) {
@@ -161,15 +165,15 @@ public class ProjectTaskForm extends Dialog {
     private void customizeMainDataLayout() {
 
         FormLayout formLayout = new FormLayout();
-        formLayout.addFormItem(name, ProjectTask.getHeaderName());
-        formLayout.addFormItem(wbs, ProjectTask.getHeaderWbs());
+        formLayout.addFormItem(name, propertyNames.getHeaderName());
+        formLayout.addFormItem(wbs, propertyNames.getHeaderWbs());
         FormLayout termsLayout = new FormLayout();
-        termsLayout.addFormItem(startDate, ProjectTask.getHeaderStartDate());
-        termsLayout.addFormItem(finishDate, ProjectTask.getHeaderFinishDate());
-        termsLayout.addFormItem(scheduleMode, ProjectTask.getHeaderScheduleMode());
-        termsLayout.addFormItem(calendarField, ProjectTask.getHeaderCalendar());
-        termsLayout.addFormItem(durationRepresentation, ProjectTask.getHeaderDurationRepresentation());
-        termsLayout.addFormItem(timeUnitComboBox, ProjectTask.getHeaderTimeUnit());
+        termsLayout.addFormItem(startDate, propertyNames.getHeaderStartDate());
+        termsLayout.addFormItem(finishDate, propertyNames.getHeaderFinishDate());
+        termsLayout.addFormItem(scheduleMode, propertyNames.getHeaderScheduleMode());
+        termsLayout.addFormItem(calendarField, propertyNames.getHeaderCalendar());
+        termsLayout.addFormItem(durationRepresentation, propertyNames.getHeaderDurationRepresentation());
+        termsLayout.addFormItem(timeUnitComboBox, propertyNames.getHeaderTimeUnit());
 
         VerticalLayout verticalLayout = new VerticalLayout(formLayout, termsLayout);
         tabSheet.add(mainDataTab, verticalLayout);
@@ -178,20 +182,22 @@ public class ProjectTaskForm extends Dialog {
 
     private void customizeFields() {
 
+        Map<String, String> mapRepresentation = propertyNames.getProjectTaskPropertyNames();
+
+        id.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        version.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         wbs.setEnabled(false);
+        wbs.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         dateOfCreation.setEnabled(false);
+        dateOfCreation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         updateDate.setEnabled(false);
+        updateDate.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         name.setAutofocus(true);
+        name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         calendarField.setSelectable(true);
         calendarField.addSelectionListener(event -> calendarSelectionForm.open());
         calendarField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         calendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
-        dateOfCreation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        updateDate.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        version.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        id.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        wbs.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         startDate.addValueChangeListener(this::startDateChangeListener);
         finishDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
@@ -206,6 +212,11 @@ public class ProjectTaskForm extends Dialog {
         timeUnitComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
         timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
         timeUnitComboBox.addValueChangeListener(this::TimeUnitChangeListener);
+
+        id.setLabel(propertyNames.getHeaderId());
+        version.setLabel(propertyNames.getHeaderVersion());
+        dateOfCreation.setLabel(propertyNames.getHeaderDateOfCreation());
+        updateDate.setLabel(propertyNames.getHeaderUpdateDate());
 
     }
 

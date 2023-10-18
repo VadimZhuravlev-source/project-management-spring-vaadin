@@ -66,6 +66,10 @@ public class SelectableTextField<T> extends HorizontalLayout implements HasValue
         return false;//textField.isRequiredIndicatorVisible();
     }
 
+    public void setLabel(String label) {
+        textField.setLabel(label);
+    }
+
     public void refreshTextValue() {
 
 //        boolean turnOffReadOnly = isReadOnly();
