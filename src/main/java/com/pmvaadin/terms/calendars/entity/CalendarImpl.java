@@ -283,6 +283,11 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
 
     }
 
+    @Override
+    public String getRepresentation() {
+        return name;
+    }
+
     // Classes
 
     private record CalendarData(int startTime, List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, Integer> exceptionDays) {}

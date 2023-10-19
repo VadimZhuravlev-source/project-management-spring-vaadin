@@ -2,6 +2,7 @@ package com.pmvaadin.projectview;
 
 import com.pmvaadin.MainLayout;
 import com.pmvaadin.commonobjects.ConfirmDialog;
+import com.pmvaadin.projectstructure.MainTreeProvider;
 import com.pmvaadin.projectstructure.ProjectHierarchicalDataProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
@@ -9,10 +10,7 @@ import com.pmvaadin.projecttasks.services.ProjectTreeService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.pmvaadin.projecttasks.views.ProjectTaskForm;
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
@@ -24,6 +22,9 @@ import com.vaadin.flow.component.grid.dnd.GridDragStartEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -52,8 +53,7 @@ public class ProjectTreeView extends VerticalLayout {
     private ProjectTaskForm editingForm;
     private final ProjectHierarchicalDataProvider dataProvider;
     private boolean isEditingFormOpen;
-    private Set<String> currentColumns = new HashSet<>();
-
+    private List<String> chosenColumns = new ArrayList<>();
     private ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
 
     public ProjectTreeView(ProjectTreeService projectTreeService, TreeHierarchyChangeService treeHierarchyChangeService, ProjectTaskForm projectTaskForm) {
@@ -61,7 +61,7 @@ public class ProjectTreeView extends VerticalLayout {
         this.projectTreeService = projectTreeService;
         this.treeHierarchyChangeService = treeHierarchyChangeService;
         this.projectTaskForm = projectTaskForm;
-        dataProvider = new ProjectHierarchicalDataProvider(treeHierarchyChangeService);
+        dataProvider = new MainTreeProvider(treeHierarchyChangeService, chosenColumns);
         addClassName("project-tasks-view");
         setSizeFull();
         configureTreeGrid();
@@ -84,12 +84,6 @@ public class ProjectTreeView extends VerticalLayout {
         treeGrid.setColumnReorderingAllowed(true);
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-        treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(projectTaskPropertyNames.getHeaderName()).setFrozen(true)
-                .setResizable(true).setSortable(false).setWidth("25em");
-        treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setWidth("5em");
-        treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true).setAutoWidth(true);
-        treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true).setAutoWidth(true);
-        treeGrid.getColumns().forEach(col -> col.setAutoWidth(true));
 
         //treeGrid.setDataProvider(new TreeDataProvider<>(new TreeData<>()));
 
@@ -111,12 +105,44 @@ public class ProjectTreeView extends VerticalLayout {
         treeGrid.addItemClickListener(this::onMouseClick);
         treeGrid.addItemDoubleClickListener(this::onMouseDoubleClick);
 
-
+        customizeColumns();
 
     }
 
     private void customizeColumns() {
 
+        treeGrid.removeAllColumns();
+
+        treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(projectTaskPropertyNames.getHeaderName()).setFrozen(true)
+                .setResizable(true).setSortable(false).setWidth("25em");
+        var columnCustomizations = projectTaskPropertyNames.getAvailableColumnProps();
+        for (String name: chosenColumns) {
+            if (name.equals(projectTaskPropertyNames.getPropertyWbs())) {
+                treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setWidth("5em");
+                continue;
+            }
+            var colProp = columnCustomizations.get(name);
+            if (colProp == null) continue;
+            Grid.Column<ProjectTask> column;
+            if (name.equals(projectTaskPropertyNames.getPropertyIsProject())) {
+                column = addIsProjectColumn();
+            } else {
+                column = treeGrid.addColumn(colProp.valueProvider());
+            }
+            column.setHeader(colProp.representation()).setResizable(true).setAutoWidth(true);
+        }
+
+    }
+
+    private Grid.Column<ProjectTask> addIsProjectColumn() {
+        return treeGrid.addComponentColumn((item) -> {
+            Icon icon = null;
+            if(item.isProject()){
+                icon = VaadinIcon.CHECK.create();
+                icon.setColor("green");
+            }
+            return icon;
+        }).setHeader(projectTaskPropertyNames.getHeaderIsProject());
     }
 
     private void updateTreeGrid() {
@@ -183,12 +209,16 @@ public class ProjectTreeView extends VerticalLayout {
         MenuBar menuBar = new MenuBar();
         MenuItem settingsItem = menuBar.addItem("Settings");
         SubMenu subMenu = settingsItem.getSubMenu();
-        ColumnSelectionForm columnSelectionForm = new ColumnSelectionForm(currentColumns);
-        columnSelectionForm.setOnCloseEvent(e -> {
-            currentColumns.clear();
-            currentColumns.addAll(e);
-        });
-        ComponentEventListener<ClickEvent<MenuItem>> listener = e -> columnSelectionForm.open();
+
+        ComponentEventListener<ClickEvent<MenuItem>> listener = e -> {
+            ColumnSelectionForm columnSelectionForm = new ColumnSelectionForm(chosenColumns);
+            columnSelectionForm.setOnCloseEvent(chosenColumns -> {
+                this.chosenColumns.clear();
+                this.chosenColumns.addAll(chosenColumns);
+                customizeColumns();
+            });
+            columnSelectionForm.open();
+        };
         subMenu.addItem("Column settings", listener);
         toolbar.add(menuBar);
 

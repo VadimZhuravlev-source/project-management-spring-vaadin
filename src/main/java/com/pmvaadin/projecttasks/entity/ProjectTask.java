@@ -100,4 +100,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     String getTimeUnitRepresentation();
     void setTimeUnitRepresentation(String timeUnitRepresentation);
 
+    String getLinkRepresentation();
+    void setLinkRepresentation(String linkRepresentation);
+
 }

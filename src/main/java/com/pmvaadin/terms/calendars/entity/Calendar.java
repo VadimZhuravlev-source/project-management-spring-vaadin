@@ -59,4 +59,6 @@ public interface Calendar {
 
     LocalDateTime getEndOfWorkingDay(LocalDate day);
 
+    String getRepresentation();
+
 }

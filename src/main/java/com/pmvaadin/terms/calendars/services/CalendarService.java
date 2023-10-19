@@ -4,6 +4,7 @@ import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calculation.TermCalculationData;
 
 import java.util.List;
+import java.util.Map;
 
 public interface CalendarService {
 
@@ -18,5 +19,7 @@ public interface CalendarService {
     void deleteCalendar(Calendar calendar);
 
     void fillCalendars(TermCalculationData termCalculationData);
+
+    Map<?, String> getRepresentationById(Iterable<?> ids);
 
 }

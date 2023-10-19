@@ -68,6 +68,14 @@ public class ProjectTaskPropertyNames {
         return "scheduleMode";
     }
 
+    public String getPropertyIsProject() {
+        return "isProject";
+    }
+
+    public String getPropertyLinks() {
+        return "links";
+    }
+
     public String getHeaderName() {
         return "Name";
     }
@@ -116,6 +124,14 @@ public class ProjectTaskPropertyNames {
         return "Schedule mode";
     }
 
+    public String getHeaderLinks() {
+        return "Links";
+    }
+
+    public String getHeaderIsProject() {
+        return "Project";
+    }
+
     private Map<String, String> getPropertiesMap() {
 
         Map<String, String> map = new HashMap<>();
@@ -144,9 +160,11 @@ public class ProjectTaskPropertyNames {
         map.put(getPropertyCalendar(), new ColumnProperties(getHeaderCalendar(), ProjectTask::getCalendarRepresentation));
         map.put(getPropertyDurationRepresentation(), new ColumnProperties(getHeaderDurationRepresentation(), ProjectTask::getDurationRepresentation));
         map.put(getPropertyTimeUnit(), new ColumnProperties(getHeaderTimeUnit(), ProjectTask::getTimeUnitRepresentation));
+        map.put(getPropertyIsProject(), new ColumnProperties(getHeaderIsProject(), ProjectTask::isProject));
         map.put(getPropertyScheduleMode(), new ColumnProperties(getHeaderScheduleMode(), ProjectTask::getScheduleMode));
         map.put(getPropertyStart(), new ColumnProperties(getHeaderStartDate(), ProjectTask::getStartDate));
         map.put(getPropertyFinish(), new ColumnProperties(getHeaderFinishDate(), ProjectTask::getFinishDate));
+        map.put(getPropertyLinks(), new ColumnProperties(getHeaderLinks(), ProjectTask::getLinkRepresentation));
 
         return map;
 

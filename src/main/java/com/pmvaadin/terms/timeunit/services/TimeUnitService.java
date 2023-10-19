@@ -11,7 +11,7 @@ public interface TimeUnitService {
     TimeUnit getPredefinedTimeUnit();
     List<TimeUnit> getPageByName(Query<TimeUnit, String> query);
     int getCountPageItemsByName(Query<TimeUnit, String> query);
-
     TimeUnit getTimeUnitById(Integer id);
+    List<TimeUnit> getTimeUnitsByIds(Iterable<Integer> ids);
 
 }

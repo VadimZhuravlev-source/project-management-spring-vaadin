@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -48,6 +49,17 @@ public class TimeUnitServiceImpl implements TimeUnitService{
     @Override
     public TimeUnit getTimeUnitById(Integer id) {
         return timeUnitRepositoryPaging.findById(id).get();
+    }
+
+    @Override
+    public List<TimeUnit> getTimeUnitsByIds(Iterable<Integer> ids) {
+
+        var foundTimeUnits = timeUnitRepositoryPaging.findAllById(ids);
+        List<TimeUnit> timeUnitList = new ArrayList<>();
+        foundTimeUnits.forEach(timeUnit -> {
+            timeUnitList.add(timeUnit);
+        });
+        return timeUnitList;
     }
 
 }

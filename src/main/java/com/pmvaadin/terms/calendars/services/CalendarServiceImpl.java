@@ -2,6 +2,7 @@ package com.pmvaadin.terms.calendars.services;
 
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.calendars.entity.CalendarRepresentationDTO;
 import com.pmvaadin.terms.calendars.repositories.CalendarRepository;
 import com.pmvaadin.terms.calendars.repositories.CalendarRowTableRepository;
 import com.pmvaadin.terms.calendars.repositories.DayOfWeekSettingsRepository;
@@ -11,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class CalendarServiceImpl implements CalendarService {
@@ -49,7 +52,7 @@ public class CalendarServiceImpl implements CalendarService {
 
     @Override
     public Calendar getDefaultCalendar() {
-        return calendarRepository.findById(1).orElse(null);
+        return calendarRepository.findById(1).orElse(defaultCalendar);
     }
 
     @Override
@@ -74,6 +77,14 @@ public class CalendarServiceImpl implements CalendarService {
         termCalculationData.setDefaultCalendar(defaultCalendar);
         termCalculationData.setCalendars(calendars);
 
+    }
+
+    @Override
+    public Map<?, String> getRepresentationById(Iterable<?> ids) {
+        var calendarDTOs = calendarRepository.findAllByIdIn(ids, CalendarRepresentationDTO.class);
+        return calendarDTOs.stream().collect(
+                Collectors.toMap(CalendarRepresentationDTO::id, CalendarRepresentationDTO::name)
+        );
     }
 
     public Calendar saveCalendar(Calendar calendar) {

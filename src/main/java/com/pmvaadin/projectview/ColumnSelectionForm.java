@@ -5,6 +5,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.listbox.MultiSelectListBox;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -17,23 +18,37 @@ import java.util.stream.Collectors;
 
 public class ColumnSelectionForm extends Dialog {
 
-    private final Set<String> currentColumns;
+    private final List<String> chosenColumns;
     private final MultiSelectListBox<BoxItem> listBox = new MultiSelectListBox<>();
 
-    private Consumer<Set<String>> onCloseEvent;
+    private Consumer<List<String>> onCloseEvent;
     private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
 
-    public ColumnSelectionForm(Set<String> currentColumns) {
-        this.currentColumns = currentColumns;
+    public ColumnSelectionForm(List<String> chosenColumns) {
+        this.chosenColumns = chosenColumns;
         Button button = new Button("Select");
         button.addClickListener(l -> {
-            Set<String> set = listBox.getSelectedItems().stream().map(BoxItem::getName).collect(Collectors.toSet());
+            var props = propertyNames.getAvailableColumnProps();
+            var set = listBox.getSelectedItems().stream().map(BoxItem::getName).collect(Collectors.toSet());
+            List<String> names = new ArrayList<>(set.size());
+            props.forEach((k, v) -> {
+                if (!set.contains(k)) return;
+                names.add(k);
+            });
             if (onCloseEvent != null) {
-                onCloseEvent.accept(set);
+                onCloseEvent.accept(names);
             }
             close();
         });
-        HorizontalLayout toolBar = new HorizontalLayout(button);
+        new Icon("lumo", "menu");
+
+        Button selectAll = new Button(VaadinIcon.CHECK_SQUARE.create());
+        selectAll.setTooltipText("Select all");
+        selectAll.addClickListener(l -> listBox.select(listBox.getListDataView().getItems().toList()));
+        Button deSelectAll = new Button(VaadinIcon.CLOSE_SMALL.create());
+        deSelectAll.setTooltipText("Unselect all");
+        deSelectAll.addClickListener(l -> listBox.deselectAll());
+        HorizontalLayout toolBar = new HorizontalLayout(button, selectAll, deSelectAll);
         VerticalLayout verticalLayout = new VerticalLayout(toolBar, listBox);
         add(verticalLayout);
         fillListBox();
@@ -44,9 +59,10 @@ public class ColumnSelectionForm extends Dialog {
         setHeaderTitle("Column selection");
         setDraggable(true);
         setResizable(true);
+
     }
 
-    public void setOnCloseEvent(Consumer<Set<String>> onCloseEvent) {
+    public void setOnCloseEvent(Consumer<List<String>> onCloseEvent) {
         this.onCloseEvent = onCloseEvent;
     }
 
@@ -64,7 +80,7 @@ public class ColumnSelectionForm extends Dialog {
 
         BoxItem scheduleModeField = null;
         for (BoxItem boxItem: listBox.getListDataView().getItems().toList()) {
-            if (!currentColumns.contains(boxItem.name)) return;
+            if (!chosenColumns.contains(boxItem.name)) continue;
             listBox.select(boxItem);
             if (boxItem.name.equals(propertyNames.getPropertyScheduleMode())) scheduleModeField = boxItem;
         }

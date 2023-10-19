@@ -117,6 +117,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Transient
     private String timeUnitRepresentation;
 
+    @Setter
+    @Transient
+    private String linkRepresentation;
+
 //    @ManyToOne
 //    @JoinColumn(name = "time_unit_id", nullable = false)
 //    private TimeUnitImpl timeUnit;
