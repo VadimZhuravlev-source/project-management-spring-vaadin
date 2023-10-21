@@ -3,21 +3,24 @@ package com.pmvaadin.projectview;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.vaadin.flow.function.ValueProvider;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ProjectTaskPropertyNames {
 
     private final Map<String, String> propertiesMap = getPropertiesMap();
     private final Map<String, ColumnProperties> propertiesTree = getPropertiesTree();
+    private final List<String> defaultColumns = getDefaultColumns();
 
     public Map<String, String> getProjectTaskPropertyNames() {
-        return new HashMap<>(propertiesMap);
+        return propertiesMap;
     }
 
     public Map<String, ColumnProperties> getAvailableColumnProps() {
-        return new LinkedHashMap<>(propertiesTree);
+        return propertiesTree;
+    }
+
+    public List<String> getTreeDefaultColumns() {
+        return new ArrayList<>(defaultColumns);
     }
 
     public String getPropertyName() {
@@ -125,7 +128,7 @@ public class ProjectTaskPropertyNames {
     }
 
     public String getHeaderLinks() {
-        return "Links";
+        return "Predecessors";
     }
 
     public String getHeaderIsProject() {
@@ -148,7 +151,7 @@ public class ProjectTaskPropertyNames {
         map.put(getPropertyTimeUnit(), getHeaderTimeUnit());
         map.put(getPropertyScheduleMode(), getHeaderScheduleMode());
 
-        return map;
+        return Collections.unmodifiableMap(map);
 
     }
 
@@ -166,8 +169,16 @@ public class ProjectTaskPropertyNames {
         map.put(getPropertyFinish(), new ColumnProperties(getHeaderFinishDate(), ProjectTask::getFinishDate));
         map.put(getPropertyLinks(), new ColumnProperties(getHeaderLinks(), ProjectTask::getLinkRepresentation));
 
-        return map;
+        return Collections.unmodifiableMap(map);
 
+    }
+
+    private List<String> getDefaultColumns() {
+        List<String> list = new ArrayList<>(3);
+        list.add(getPropertyWbs());
+        list.add(getPropertyStart());
+        list.add(getPropertyFinish());
+        return Collections.unmodifiableList(list);
     }
 
     record ColumnProperties(String representation, ValueProvider<ProjectTask, ?> valueProvider) {}

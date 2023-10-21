@@ -576,7 +576,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         for(ProjectTask projectTask: projectTasks) {
             ProjectTask foundedPT = projectTaskMap.getOrDefault(projectTask.getId(), null);
             if (foundedPT == null) continue;
-            foundedPT.setChildrenCount(projectTask.getChildrenCount());
+            foundedPT.setAmountOfChildren(projectTask.getAmountOfChildren());
         }
 
         return new HashSet<>(projectTaskMap.values());

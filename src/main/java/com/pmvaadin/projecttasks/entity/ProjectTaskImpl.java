@@ -99,7 +99,7 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     // The field is not intended to store data
     @Setter
     @Transient
-    private int childrenCount;
+    private int amountOfChildren;
 
     @Setter
     @Transient

@@ -41,7 +41,7 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     @Override
     public boolean hasChildren(ProjectTask item) {
 
-        return item.getChildrenCount() != 0;
+        return item.getAmountOfChildren() != 0;
 
 //        if (isRefresh) return item.getChildrenCount() != 0;
 //

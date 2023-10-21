@@ -280,7 +280,7 @@ public class ProjectTaskForm extends Dialog {
         calendarField.setValue(selectedItem);
         calendarField.refreshTextValue();
         calendarField.setReadOnly(true);
-        //projectTaskData.getProjectTask().setCalendarId(selectedItem.getId());
+        projectTaskData.getProjectTask().setCalendarId(selectedItem.getId());
     }
 
     private void scheduleModeAddListener(AbstractField.ComponentValueChangeEvent<ComboBox<ScheduleMode>, ScheduleMode> component) {
@@ -434,6 +434,7 @@ public class ProjectTaskForm extends Dialog {
 
     private void readData(ProjectTaskData projectTaskData) {
 
+        this.projectTaskData = projectTaskData;
         linksGrid.setProjectTask(projectTaskData);
         refreshHeader();
         calendarField.setValue(projectTaskData.getCalendar());

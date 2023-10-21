@@ -174,7 +174,7 @@ class TermsCalculationImplTest {
         projectTask.setParentId(parentId);
         projectTask.setStartDate(start);
         projectTask.setFinishDate(finish);
-        projectTask.setChildrenCount(childrenCount);
+        projectTask.setAmountOfChildren(childrenCount);
         projectTask.setDuration(duration);
         projectTask.setScheduleMode(mode);
         projectTask.setCalendarId(calendarId);

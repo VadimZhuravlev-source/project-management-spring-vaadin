@@ -22,7 +22,6 @@ import com.vaadin.flow.component.grid.dnd.GridDragStartEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
@@ -53,15 +52,16 @@ public class ProjectTreeView extends VerticalLayout {
     private ProjectTaskForm editingForm;
     private final ProjectHierarchicalDataProvider dataProvider;
     private boolean isEditingFormOpen;
-    private List<String> chosenColumns = new ArrayList<>();
-    private ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
+    private final List<String> chosenColumns;
+    private final ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
 
     public ProjectTreeView(ProjectTreeService projectTreeService, TreeHierarchyChangeService treeHierarchyChangeService, ProjectTaskForm projectTaskForm) {
 
         this.projectTreeService = projectTreeService;
         this.treeHierarchyChangeService = treeHierarchyChangeService;
         this.projectTaskForm = projectTaskForm;
-        dataProvider = new MainTreeProvider(treeHierarchyChangeService, chosenColumns);
+        chosenColumns = projectTaskPropertyNames.getTreeDefaultColumns();
+        dataProvider = new MainTreeProvider(this.treeHierarchyChangeService, chosenColumns);
         addClassName("project-tasks-view");
         setSizeFull();
         configureTreeGrid();

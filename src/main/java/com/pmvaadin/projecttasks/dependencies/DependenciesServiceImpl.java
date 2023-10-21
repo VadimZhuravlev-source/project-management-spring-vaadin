@@ -196,7 +196,7 @@ public class DependenciesServiceImpl implements DependenciesService {
         var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
         projectTasks.forEach(projectTask -> {
             Integer childrenCount = childrenCountMap.getOrDefault(projectTask.getId(), 0);
-            projectTask.setChildrenCount(childrenCount);
+            projectTask.setAmountOfChildren(childrenCount);
         });
         var links = linkRepository.findAllById(linkIds);
 

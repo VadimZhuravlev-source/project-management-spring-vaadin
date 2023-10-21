@@ -324,6 +324,8 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         var links= projectTaskData.getLinks();
         var projectTask = projectTaskData.getProjectTask();
+        if (projectTask.getCalendarId() == null) projectTask.setCalendarId(projectTaskData.getCalendar().getId());
+        if (projectTask.getTimeUnitId() == null) projectTask.setTimeUnitId(projectTaskData.getTimeUnit().getId());
 
         if (links.size() == 0) return;
 
