@@ -127,11 +127,11 @@ WITH RECURSIVE found_ids AS (
 	
 	),
 	
-	found_wbs AS (
+	links_rep AS (
 	SELECT
 		project_task id,
 		--id,
-		STRING_AGG(wbs || '-' || link_type, '; ') wbs
+		STRING_AGG(wbs || '-' || link_type, '; ') rep
 	FROM found_links_wbs
 	WHERE 
 		found_links_wbs.parent_id IS NULL
@@ -147,7 +147,7 @@ WITH RECURSIVE found_ids AS (
 		,calendar_representation.representation calendar_rep
 		,time_unit_representation.representation time_rep
 		,durations.duration
-		,found_wbs.wbs
+		,links_rep.rep links_rep
 	FROM	
 		found_ids
 	LEFT JOIN amount_of_children
@@ -158,8 +158,8 @@ WITH RECURSIVE found_ids AS (
 		ON found_ids.time_unit_id = time_unit_representation.id
 	LEFT JOIN durations
 		ON found_ids.id = durations.id
-	LEFT JOIN found_wbs
-		ON found_ids.id = found_wbs.id
+	LEFT JOIN links_rep
+		ON found_ids.id = links_rep.id
 	)
 	
 	SELECT * FROM results

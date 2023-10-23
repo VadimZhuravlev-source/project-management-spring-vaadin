@@ -226,7 +226,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
     private void fillData(ProjectTask projectTask, List<ProjectTask> projectTasks, List<String> columns) {
 
-        DataFromDataBase data = new DataFromDataBase(projectTask, projectTasks, columns);
+        DataFromDataBase data = new DataFromDataBase(projectTask, columns);
 
         Map<?, Row> valueMap = data.executeQuery();
 
@@ -282,13 +282,11 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
     private class DataFromDataBase {
 
         private ProjectTask projectTask;
-        private List<ProjectTask> projectTasks;
         private List<String> columns;
         private String queryText;
 
-        DataFromDataBase(ProjectTask projectTask, List<ProjectTask> projectTasks, List<String> columns) {
+        DataFromDataBase(ProjectTask projectTask, List<String> columns) {
             this.projectTask = projectTask;
-            this.projectTasks = projectTasks;
             this.columns = columns;
             composeQueryText();
         }
@@ -335,179 +333,341 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
             var conditionName = "&condition";
             queryText = queryText.replace(conditionName, condition);
 
+            changeQuery();
+
         }
+
+        private void changeQuery() {
+            List<TablesInfo> list = new ArrayList<>(4);
+            var calendarQueryTexts = getCalendarRepTablesInfo();
+            list.add(calendarQueryTexts);
+            var timeUnitQueryTexts = getTimeUnitRepTablesInfo();
+            list.add(timeUnitQueryTexts);
+            var durationQueryTexts = getDurationRepTablesInfo();
+            list.add(durationQueryTexts);
+
+            var linksQueryTexts = getLinkRepTablesInfo();
+            list.add(linksQueryTexts);
+
+            list.forEach(tablesInfo -> {
+                queryText = queryText.replace("&pt_field", tablesInfo.ptField);
+                queryText = queryText.replace("&table", tablesInfo.table);
+                queryText = queryText.replace("&result_field", tablesInfo.resultField);
+                queryText = queryText.replace("&join", tablesInfo.join);
+            });
+
+            queryText = queryText.replace("&pt_field", "");
+            queryText = queryText.replace("&table", "");
+            queryText = queryText.replace("&result_field", "");
+            queryText = queryText.replace("&join", "");
+
+        }
+
+        private TablesInfo getDefaultTableInfo(String resultField) {
+            return new TablesInfo("&pt_field", "&table", resultField, "&join");
+        }
+
+        private TablesInfo getCalendarRepTablesInfo() {
+
+            if (!columns.contains(propertyNames.getPropertyCalendar())) {
+                var resField = """
+                        ,'' calendar_rep
+                        &result_field
+                        """;
+                return getDefaultTableInfo(resField);
+            }
+
+            var fieldPT =
+"""
+--calendar representation
+                        ,project_tasks.calendar_id
+                        &pt_field
+""";
+
+            var table = """
+--calendar representation
+                    calendar_representation AS (
+                    SELECT
+                        calendars.id,
+                        calendars.name representation
+                    FROM
+                        calendars
+                    WHERE
+                        calendars.id IN (
+                            SELECT DISTINCT\s
+                                calendar_id\s
+                            FROM found_pts
+                        )
+                    ),
+                    
+                    &table
+                    """;
+            var resultField = """
+,calendar_representation.representation calendar_rep
+                        &result_field
+                    """;
+
+            var resultJoin = """
+LEFT JOIN calendar_representation
+                		ON found_pts.calendar_id = calendar_representation.id
+                	&join
+                    """;
+
+            return new TablesInfo(fieldPT, table, resultField, resultJoin);
+
+        }
+
+        private TablesInfo getTimeUnitRepTablesInfo() {
+
+            if (!(columns.contains(propertyNames.getPropertyTimeUnit())
+                    || columns.contains(propertyNames.getPropertyDurationRepresentation()))) {
+                var resField = """
+                        ,'' time_rep
+                        &result_field
+                        """;
+                return getDefaultTableInfo(resField);
+            }
+
+            var fieldPT =
+                    """
+-- time unit representation
+                		,project_tasks.time_unit_id
+                        &pt_field
+                    """;
+
+            var table = """
+-- time unit representation
+                    time_unit_representation AS (
+                    SELECT
+                        time_unit.id,
+                        time_unit.name representation,
+                        time_unit.number_of_hours
+                    FROM
+                        time_unit
+                    WHERE
+                        time_unit.id IN (
+                            SELECT DISTINCT\s
+                                time_unit_id\s
+                            FROM found_pts
+                        )
+                    ),
+                    
+                    &table
+                    """;
+            var resultField = """
+,time_unit_representation.representation time_rep
+                        &result_field
+                    """;
+
+            var resultJoin = """
+LEFT JOIN time_unit_representation
+                		ON found_pts.time_unit_id = time_unit_representation.id
+                	&join
+                    """;
+
+            return new TablesInfo(fieldPT, table, resultField, resultJoin);
+
+        }
+
+        private TablesInfo getDurationRepTablesInfo() {
+
+            if (!columns.contains(propertyNames.getPropertyDurationRepresentation())) {
+                var resField = """
+                        ,'' dur_rep
+                        &result_field
+                        """;
+                return getDefaultTableInfo(resField);
+            }
+
+            var fieldPT =
+                    """
+-- duration representation
+                		,project_tasks.duration
+                        &pt_field
+                    """;
+
+            var table = """
+-- duration representation
+                    durations AS (
+                    SELECT
+                        found_pts.id,
+                        CASE\s
+                            WHEN (time_unit_representation.number_of_hours <> 0 AND NOT time_unit_representation.number_of_hours IS NULL)
+                            THEN found_pts.duration / (time_unit_representation.number_of_hours * 3600)\s
+                            ELSE 0
+                        END duration
+                    FROM
+                        found_pts
+                    JOIN time_unit_representation
+                        ON found_pts.time_unit_id = time_unit_representation.id
+                    ),
+                    
+                    &table
+                    """;
+            var resultField = """
+,durations.duration dur_rep
+                        &result_field
+                    """;
+
+            var resultJoin = """
+LEFT JOIN durations
+                		ON found_pts.id = durations.id
+                	&join
+                    """;
+
+            return new TablesInfo(fieldPT, table, resultField, resultJoin);
+
+        }
+
+        private TablesInfo getLinkRepTablesInfo() {
+
+            if (!columns.contains(propertyNames.getPropertyLinks())) {
+                var resField = """
+                        ,'' link_rep
+                        &result_field
+                        """;
+                return getDefaultTableInfo(resField);
+            }
+
+            var fieldPT =
+                    """
+&pt_field
+                    """;
+
+            var table = """
+-- links representation
+                    links_initial_recursive AS (
+                    SELECT
+                        links.project_task,
+                        links.link_type,
+                        links.linked_project_task id,
+                        project_tasks.parent_id,
+                        CAST(project_tasks.level_order AS TEXT) wbs
+                    FROM
+                        links
+                    JOIN project_tasks
+                        ON links.linked_project_task = project_tasks.id
+                    WHERE
+                        links.project_task IN (
+                            SELECT
+                                id
+                            FROM found_pts
+                        )
+                    ),
+                    
+                    found_links_wbs AS (
+                    
+                    SELECT
+                        links.project_task,
+                        links.link_type,
+                        links.id,
+                        links.parent_id,
+                        ARRAY[links.id] path,
+                        FALSE is_cycle,
+                        links.wbs
+                    FROM
+                        links_initial_recursive links
+                    
+                    UNION ALL
+                    
+                    SELECT
+                        found_links_wbs.project_task,
+                        found_links_wbs.link_type,
+                        found_links_wbs.id,
+                        project_tasks.parent_id,
+                        found_links_wbs.path || project_tasks.id path,
+                        project_tasks.id = ANY(found_links_wbs.path) is_cycle,
+                        project_tasks.level_order || '.' || found_links_wbs.wbs
+                    FROM
+                        found_links_wbs
+                    JOIN project_tasks
+                        ON found_links_wbs.parent_id = project_tasks.id
+                            AND NOT found_links_wbs.is_cycle
+                    
+                    ),
+                    
+                    links_rep AS (
+                    SELECT
+                        project_task id,
+                        --id,
+                        STRING_AGG(wbs || '-' || link_type, '; ') rep
+                    FROM found_links_wbs
+                    WHERE\s
+                        found_links_wbs.parent_id IS NULL
+                    GROUP BY
+                        project_task
+                    ),
+                    
+                    &table
+                    """;
+            var resultField = """
+,links_rep.rep links_rep
+                        &result_field
+                    """;
+
+            var resultJoin = """
+LEFT JOIN links_rep
+                		ON found_pts.id = links_rep.id
+                	&join
+                    """;
+
+            return new TablesInfo(fieldPT, table, resultField, resultJoin);
+
+        }
+
+        private record TablesInfo(String ptField, String table, String resultField, String join) {}
 
     }
 
     private record Row(int count, String cal, String time, String dur, String links) {}
 
     private String getQueryText() {
-        String text =
+
+        var text =
+
         """
-                WITH RECURSIVE found_ids AS (
+                WITH RECURSIVE found_pts AS (
                 	
                 	SELECT
                 		project_tasks.id id
-                		--calendar representation
-                		,project_tasks.calendar_id
-                		-- time unit representation
-                		,project_tasks.time_unit_id
-                		-- duration representation
-                		,project_tasks.duration
+                		&pt_field
                 	FROM\s
                 		project_tasks
                 	WHERE
                 		&condition
                 		--project_tasks.parent_id IS NULL
-                		--project_tasks.parent_id = ANY('{2}')
+                		--project_tasks.parent_id = 2
                 	),
                 	
                 	-- amount of children
                 	amount_of_children AS (
                 	SELECT
-                		found_ids.id id,
+                		found_pts.id id,
                 		COUNT(project_tasks.id) amount
                 	FROM\s
-                		found_ids
+                		found_pts
                 	LEFT JOIN project_tasks
-                		ON found_ids.id = project_tasks.parent_id
+                		ON found_pts.id = project_tasks.parent_id
                 	GROUP BY\s
-                		found_ids.id
+                		found_pts.id
                 	),
                 	
-                	--calendar representation
-                	calendar_representation AS (
-                	SELECT
-                		calendars.id,
-                		calendars.name representation
-                	FROM
-                		calendars
-                	WHERE
-                		calendars.id IN (
-                			SELECT DISTINCT\s
-                				calendar_id\s
-                			FROM found_ids
-                		)	
-                	),
-                	
-                	-- time unit representation
-                	time_unit_representation AS (
-                	SELECT
-                		time_unit.id,
-                		time_unit.name representation,
-                		time_unit.number_of_hours
-                	FROM
-                		time_unit
-                	WHERE
-                		time_unit.id IN (
-                			SELECT DISTINCT\s
-                				time_unit_id\s
-                			FROM found_ids
-                		)	
-                	),
-                	
-                	-- duration representation
-                	durations AS (
-                	SELECT
-                		found_ids.id,
-                		CASE\s
-                			WHEN (time_unit_representation.number_of_hours <> 0 AND NOT time_unit_representation.number_of_hours IS NULL)
-                			THEN found_ids.duration / (time_unit_representation.number_of_hours * 3600)\s
-                			ELSE 0
-                		END duration
-                	FROM
-                		found_ids
-                	JOIN time_unit_representation
-                		ON found_ids.time_unit_id = time_unit_representation.id
-                	),
-                	
-                	-- links representation
-                	links_initial_recursive AS (
-                	SELECT	
-                		links.project_task,
-                		links.link_type,
-                		links.linked_project_task id,
-                		project_tasks.parent_id,
-                		CAST(project_tasks.level_order AS TEXT) wbs
-                	FROM
-                		links
-                	JOIN project_tasks
-                		ON links.linked_project_task = project_tasks.id
-                	WHERE
-                		links.project_task IN (
-                			SELECT
-                				id
-                			FROM found_ids
-                		)
-                	),
-                	
-                	found_links_wbs AS (
-                	
-                	SELECT
-                		links.project_task,
-                		links.link_type,
-                		links.id,
-                		links.parent_id,
-                		ARRAY[links.id] path,
-                		FALSE is_cycle,
-                		links.wbs
-                	FROM
-                		links_initial_recursive links
-                	
-                	UNION ALL
-                	
-                	SELECT
-                		found_links_wbs.project_task,
-                		found_links_wbs.link_type,
-                		found_links_wbs.id,
-                		project_tasks.parent_id,
-                		found_links_wbs.path || project_tasks.id path,
-                		project_tasks.id = ANY(found_links_wbs.path) is_cycle,
-                		project_tasks.level_order || '.' || found_links_wbs.wbs
-                	FROM
-                		found_links_wbs
-                	JOIN project_tasks
-                		ON found_links_wbs.parent_id = project_tasks.id
-                			AND NOT found_links_wbs.is_cycle
-                	
-                	),
-                	
-                	found_wbs AS (
-                	SELECT
-                		project_task id,
-                		--id,
-                		STRING_AGG(wbs || '-' || link_type, '; ') wbs
-                	FROM found_links_wbs
-                	WHERE\s
-                		found_links_wbs.parent_id IS NULL
-                	GROUP BY
-                		project_task
-                	),
+                	&table
                 	
                 	-- result data
-                	results AS (
+                	result_query AS (
                 	SELECT
-                		found_ids.id,
+                		found_pts.id,
                 		amount_of_children.amount
-                		,calendar_representation.representation calendar_rep
-                		,time_unit_representation.representation time_rep
-                		,durations.duration
-                		,found_wbs.wbs
-                	FROM	
-                		found_ids
+                		&result_field
+                	FROM
+                		found_pts
                 	LEFT JOIN amount_of_children
-                		ON found_ids.id = amount_of_children.id
-                	LEFT JOIN calendar_representation
-                		ON found_ids.calendar_id = calendar_representation.id
-                	LEFT JOIN time_unit_representation
-                		ON found_ids.time_unit_id = time_unit_representation.id
-                	LEFT JOIN durations
-                		ON found_ids.id = durations.id
-                	LEFT JOIN found_wbs
-                		ON found_ids.id = found_wbs.id
+                		ON found_pts.id = amount_of_children.id
+                	&join
                 	)
                 	
-                	SELECT * FROM results
+                	SELECT * FROM result_query
                         
                         """;
 
