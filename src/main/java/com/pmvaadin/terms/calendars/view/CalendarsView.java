@@ -1,7 +1,11 @@
 package com.pmvaadin.terms.calendars.view;
 
+import com.pmvaadin.commonobjects.services.ListService;
+import com.pmvaadin.commonobjects.vaadin.ListItems;
+import com.pmvaadin.commonobjects.vaadin.SeachableItemList;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.MainLayout;
 import com.vaadin.flow.component.button.Button;
@@ -22,7 +26,6 @@ import java.util.List;
 @Route(value = "calendars", layout = MainLayout.class)
 @PageTitle("Calendars | PM")
 @PermitAll
-@Transactional
 public class CalendarsView extends VerticalLayout {
 
     private final CalendarService calendarService;
@@ -33,6 +36,16 @@ public class CalendarsView extends VerticalLayout {
 
     public CalendarsView(CalendarService calendarService) {
         this.calendarService = calendarService;
+        ListItems<CalendarRepresentation, Calendar> listItems = null;
+        if (calendarService instanceof ListService) listItems = new ListItems<>((ListService) calendarService);
+        if (listItems != null) {
+            listItems.getGrid().addColumn(CalendarRepresentation::getName).setHeader("Name");
+            listItems.getGrid().addColumn(CalendarRepresentation::getSettings).setHeader("Setting");
+            listItems.getGrid().addColumn(CalendarRepresentation::getStartTime).setHeader("Start time");
+            add(listItems);
+            return;
+        }
+
         calendarForm = new CalendarForm();
         calendarForm.addListener(CalendarForm.SaveEvent.class, this::saveCalendar);
         addClassName("calendar-list-view");

@@ -5,7 +5,6 @@ import com.pmvaadin.projecttasks.links.entities.LinkType;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
 import com.pmvaadin.terms.calendars.services.CalendarService;
-import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -17,7 +16,6 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeService {
@@ -25,10 +23,6 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
     private ProjectTaskRepository projectTaskRepository;
 
     private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
-
-    private CalendarService calendarService;
-
-    private TimeUnitService timeUnitService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -41,16 +35,6 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
     @Autowired
     public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository) {
         this.projectTaskRepository = projectTaskRepository;
-    }
-
-    @Autowired
-    public void setCalendarService(CalendarService calendarService) {
-        this.calendarService = calendarService;
-    }
-
-    @Autowired
-    public void setTimeUnitService(TimeUnitService timeUnitService) {
-        this.timeUnitService = timeUnitService;
     }
 
     @Override
@@ -80,56 +64,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
         fillData(projectTask, projectTasks, chosenColumns);
 
-//        fillChildrenCount(projectTasks);
-        fillWbs(projectTasks, projectTask, chosenColumns);
-//        fillCalendar(projectTasks, chosenColumns);
-//        fillDurationOrTimeUnit(projectTasks, chosenColumns);
-//        fillLinks(projectTasks, chosenColumns);
-
         return projectTasks;
-
-    }
-
-    private void fillCalendar(List<ProjectTask> projectTasks, List<String> chosenColumns) {
-
-        if (!chosenColumns.contains(propertyNames.getPropertyCalendar())) return;
-
-        var calendarIds = projectTasks.stream().map(ProjectTask::getCalendarId).filter(Objects::nonNull).toList();
-        var representations = calendarService.getRepresentationById(calendarIds);
-        var defaultCalendar = calendarService.getDefaultCalendar();
-
-        projectTasks.forEach(p -> {
-            var rep = representations.getOrDefault(p.getId(), defaultCalendar.getRepresentation());
-            p.setCalendarRepresentation(rep);
-        });
-
-    }
-
-    private void fillDurationOrTimeUnit(List<ProjectTask> projectTasks, List<String> chosenColumns) {
-
-        var fillDuration = chosenColumns.contains(propertyNames.getPropertyDurationRepresentation());
-        var fillTimeUnit = chosenColumns.contains(propertyNames.getPropertyTimeUnit());
-        if (!fillDuration && !fillTimeUnit) return;
-
-        var ids = projectTasks.stream().map(ProjectTask::getTimeUnitId).filter(Objects::nonNull).toList();
-
-        var timeUnitMap = timeUnitService.getTimeUnitsByIds(ids).stream()
-                .collect(Collectors.toMap(TimeUnit::getId, t -> t));
-        var defaultTimeUnit = timeUnitService.getPredefinedTimeUnit();
-
-        projectTasks.forEach(p -> {
-            var id = p.getTimeUnitId();
-            var timeUnit = timeUnitMap.getOrDefault(id, defaultTimeUnit);
-            if (timeUnit == null) return;
-            if (fillTimeUnit) p.setTimeUnitRepresentation(timeUnit.toString());
-            if (fillDuration) p.setDurationRepresentation(timeUnit.getDurationRepresentation(p.getDuration()));
-        });
-
-    }
-
-    private void fillLinks(List<ProjectTask> projectTasks, List<String> chosenColumns) {
-
-        if (!chosenColumns.contains(propertyNames.getPropertyLinks())) return;
 
     }
 
@@ -200,14 +135,9 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
         queryText = queryText.replace(":pids", parameterValue);
 
         List<Object[]> rows;
-//        EntityManager entityManager = entityManagerFactory.createEntityManager();
-//        try {
+
         Query query = entityManager.createNativeQuery(queryText);
         rows = (List<Object[]>) query.getResultList();
-
-//        }finally {
-//            entityManager.close();
-//        }
 
         Map<I, Integer> map = new HashMap<>(rows.size());
 
@@ -236,6 +166,8 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
             fillAccordingValues(projectTask1, row, columns);
 
         });
+
+        fillWbs(projectTasks, projectTask, columns);
 
     }
 
@@ -281,8 +213,8 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
     private class DataFromDataBase {
 
-        private ProjectTask projectTask;
-        private List<String> columns;
+        private final ProjectTask projectTask;
+        private final List<String> columns;
         private String queryText;
 
         DataFromDataBase(ProjectTask projectTask, List<String> columns) {

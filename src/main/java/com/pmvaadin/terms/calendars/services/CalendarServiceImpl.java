@@ -1,53 +1,42 @@
 package com.pmvaadin.terms.calendars.services;
 
+import com.pmvaadin.commonobjects.services.ListService;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentationDTO;
 import com.pmvaadin.terms.calendars.repositories.CalendarRepository;
-import com.pmvaadin.terms.calendars.repositories.CalendarRowTableRepository;
-import com.pmvaadin.terms.calendars.repositories.DayOfWeekSettingsRepository;
 import com.pmvaadin.terms.calculation.TermCalculationData;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
-public class CalendarServiceImpl implements CalendarService {
+public class CalendarServiceImpl implements CalendarService, ListService<CalendarRepresentation, Calendar> {
 
-    private Calendar defaultCalendar = new CalendarImpl().getDefaultCalendar();
+    private final Calendar defaultCalendar = new CalendarImpl().getDefaultCalendar();
 
     private CalendarRepository calendarRepository;
-    private CalendarRowTableRepository calendarRowTableRepository;
-    private DayOfWeekSettingsRepository dayOfWeekSettingsRepository;
-    private List<Calendar> calendarTableList;
 
     @Autowired
     public void setCalendarRepository(CalendarRepository calendarRepository) {
         this.calendarRepository = calendarRepository;
     }
 
-    @Autowired
-    public void setCalendarRowTableRepository(CalendarRowTableRepository calendarRowTableRepository) {
-        this.calendarRowTableRepository = calendarRowTableRepository;
-    }
-
-    @Autowired
-    public void setDayOfWeekSettingsRepository(DayOfWeekSettingsRepository dayOfWeekSettingsRepository) {
-        this.dayOfWeekSettingsRepository = dayOfWeekSettingsRepository;
-    }
-
     @Override
     public List<Calendar> getCalendars() {
-        return calendarRowTableRepository.findAll();
+        return calendarRepository.findAll();
     }
 
     @Override
     public <I> Calendar getCalendarById(I id) {
+
         return calendarRepository.findById(id).orElse(null);
+
     }
 
     @Override
@@ -58,7 +47,6 @@ public class CalendarServiceImpl implements CalendarService {
     @Override
     public void saveCalendars(Calendar calendar) {
         calendarRepository.save(calendar);
-        calendarTableList.add(calendarRowTableRepository.findById(calendar.getId()));
     }
 
     @Override
@@ -79,20 +67,40 @@ public class CalendarServiceImpl implements CalendarService {
 
     }
 
+    // ListService
     @Override
-    public Map<?, String> getRepresentationById(Iterable<?> ids) {
-        var calendarDTOs = calendarRepository.findAllByIdIn(ids, CalendarRepresentationDTO.class);
-        return calendarDTOs.stream().collect(
-                Collectors.toMap(CalendarRepresentationDTO::id, CalendarRepresentationDTO::name)
-        );
+    public List<CalendarRepresentation> getItems(String filter, Pageable pageable) {
+
+        var list = calendarRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable, CalendarRepresentationDTO.class);
+
+        return list.stream().map(c -> (CalendarRepresentation) c).toList();
+
     }
 
-    public Calendar saveCalendar(Calendar calendar) {
-        return calendarRepository.save(calendar);
+    @Override
+    public int sizeInBackEnd(String filter, Pageable pageable) {
+        return calendarRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable, CalendarRepresentationDTO.class).size();
     }
 
-    public void deleteCalendars(List<Integer> ids) {
+    @Override
+    public Calendar add() {
+
+        return defaultCalendar.getDefaultCalendar();
+
+    }
+
+    @Override
+    public boolean delete(Collection<CalendarRepresentation> calReps) {
+
+        var ids = calReps.stream().map(CalendarRepresentation::getId).toList();
         calendarRepository.deleteAllById(ids);
+        return true;
+
+    }
+
+    @Override
+    public Calendar copy(CalendarRepresentation calRep) {
+        return calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
     }
 
 }
