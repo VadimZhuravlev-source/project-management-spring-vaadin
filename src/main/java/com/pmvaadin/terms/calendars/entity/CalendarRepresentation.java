@@ -8,5 +8,6 @@ public interface CalendarRepresentation {
     String getName();
     CalendarSettings getSettings();
     LocalTime getStartTime();
+    boolean isPredefined();
 
 }

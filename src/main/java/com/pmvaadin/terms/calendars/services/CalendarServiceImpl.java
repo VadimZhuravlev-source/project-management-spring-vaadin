@@ -1,6 +1,7 @@
 package com.pmvaadin.terms.calendars.services;
 
 import com.pmvaadin.commonobjects.services.ListService;
+import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
@@ -12,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -51,7 +53,12 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
     @Override
     public void deleteCalendar(Calendar calendar) {
-        calendarRepository.deleteById(calendar.getId());
+
+        var ids = new ArrayList<>(1);
+        ids.add(calendar.getId());
+        var deletingIds = checkPredefinedElementInListOfIds(ids);
+        calendarRepository.deleteAllById(deletingIds);
+
     }
 
     @Override
@@ -93,7 +100,10 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     public boolean delete(Collection<CalendarRepresentation> calReps) {
 
         var ids = calReps.stream().map(CalendarRepresentation::getId).toList();
-        calendarRepository.deleteAllById(ids);
+        var deletingIds = checkPredefinedElementInListOfIds(ids);
+
+        calendarRepository.deleteAllById(deletingIds);
+
         return true;
 
     }
@@ -101,6 +111,17 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     @Override
     public Calendar copy(CalendarRepresentation calRep) {
         return calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
+    }
+
+    private List<?> checkPredefinedElementInListOfIds(List<?> ids) {
+
+        var foundCalendars = calendarRepository.findAllById(ids);
+        var checkPredefined = foundCalendars.stream().anyMatch(Calendar::isPredefined);
+
+        if (checkPredefined) throw new StandardError("Cannot remove a predefined element");
+
+        return foundCalendars.stream().map(Calendar::getId).toList();
+
     }
 
 }

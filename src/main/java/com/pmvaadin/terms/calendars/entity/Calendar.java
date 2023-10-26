@@ -61,4 +61,6 @@ public interface Calendar {
 
     String getRepresentation();
 
+    boolean isPredefined();
+
 }

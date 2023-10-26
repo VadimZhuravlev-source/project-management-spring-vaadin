@@ -11,6 +11,8 @@ import com.pmvaadin.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -42,6 +44,14 @@ public class CalendarsView extends VerticalLayout {
             listItems.getGrid().addColumn(CalendarRepresentation::getName).setHeader("Name");
             listItems.getGrid().addColumn(CalendarRepresentation::getSettings).setHeader("Setting");
             listItems.getGrid().addColumn(CalendarRepresentation::getStartTime).setHeader("Start time");
+            listItems.getGrid().addComponentColumn((item) -> {
+                Icon icon = null;
+                if(item.isPredefined()){
+                    icon = VaadinIcon.CHECK.create();
+                    icon.setColor("green");
+                }
+                return icon;
+            }).setHeader("Predefined");
             add(listItems);
             return;
         }

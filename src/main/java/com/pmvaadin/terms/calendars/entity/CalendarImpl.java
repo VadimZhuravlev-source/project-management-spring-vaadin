@@ -54,6 +54,9 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @Column(name = "start_time")
     private LocalTime startTime = LocalTime.of(9, 0);
 
+    @Column(name = "predefined")
+    private boolean isPredefined;
+
     @Setter
     @Transient
     private String settingString;

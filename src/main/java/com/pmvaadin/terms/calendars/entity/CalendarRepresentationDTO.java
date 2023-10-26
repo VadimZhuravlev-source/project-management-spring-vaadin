@@ -2,7 +2,7 @@ package com.pmvaadin.terms.calendars.entity;
 
 import java.time.LocalTime;
 
-public record CalendarRepresentationDTO(Integer id, String name, CalendarSettings setting, LocalTime startTime) implements CalendarRepresentation {
+public record CalendarRepresentationDTO(Integer id, String name, CalendarSettings setting, LocalTime startTime, boolean isPredefined) implements CalendarRepresentation {
 
     @Override
     public Integer getId() {
@@ -22,6 +22,11 @@ public record CalendarRepresentationDTO(Integer id, String name, CalendarSetting
     @Override
     public LocalTime getStartTime() {
         return startTime;
+    }
+
+    @Override
+    public boolean isPredefined() {
+        return isPredefined;
     }
 
 }
