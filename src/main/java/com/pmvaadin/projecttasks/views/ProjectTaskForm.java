@@ -549,6 +549,12 @@ public class ProjectTaskForm extends Dialog {
     }
 
     // Events
+
+    public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType,
+                                                                  ComponentEventListener<T> listener) {
+        return getEventBus().addListener(eventType, listener);
+    }
+
     public static abstract class ProjectTaskFormEvent extends ComponentEvent<ProjectTaskForm> {
         private ProjectTask projectTask;
 
@@ -572,11 +578,6 @@ public class ProjectTaskForm extends Dialog {
         CloseEvent(ProjectTaskForm source) {
             super(source, null);
         }
-    }
-
-    public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType,
-                                                                  ComponentEventListener<T> listener) {
-        return getEventBus().addListener(eventType, listener);
     }
 
 }

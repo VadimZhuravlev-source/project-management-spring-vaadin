@@ -1,8 +1,9 @@
 package com.pmvaadin.terms.calendars.view;
 
 import com.pmvaadin.commonobjects.services.ListService;
-import com.pmvaadin.commonobjects.vaadin.ListItems;
-import com.pmvaadin.commonobjects.vaadin.SeachableItemList;
+import com.pmvaadin.commonobjects.vaadin.ItemList;
+import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.projecttasks.views.ProjectTaskForm;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
@@ -11,6 +12,7 @@ import com.pmvaadin.MainLayout;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -20,7 +22,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.security.PermitAll;
 import java.util.List;
@@ -33,26 +34,22 @@ public class CalendarsView extends VerticalLayout {
     private final CalendarService calendarService;
     private CalendarForm calendarForm;
     private Grid<Calendar> grid = new Grid<>(Calendar.class, false);
+    private final ItemList<CalendarRepresentation, Calendar> list;
+    private CalendarFormNew calendarFormNew;
     private final TextField filterText = new TextField();
     private Dialog dialog;
+    private CalendarFormNew editingForm;
 
-    public CalendarsView(CalendarService calendarService) {
+    public CalendarsView(CalendarService calendarService, CalendarFormNew calendarFormNew) {
+
         this.calendarService = calendarService;
-        ListItems<CalendarRepresentation, Calendar> listItems = null;
-        if (calendarService instanceof ListService) listItems = new ListItems<>((ListService) calendarService);
-        if (listItems != null) {
-            listItems.getGrid().addColumn(CalendarRepresentation::getName).setHeader("Name");
-            listItems.getGrid().addColumn(CalendarRepresentation::getSettings).setHeader("Setting");
-            listItems.getGrid().addColumn(CalendarRepresentation::getStartTime).setHeader("Start time");
-            listItems.getGrid().addComponentColumn((item) -> {
-                Icon icon = null;
-                if(item.isPredefined()){
-                    icon = VaadinIcon.CHECK.create();
-                    icon.setColor("green");
-                }
-                return icon;
-            }).setHeader("Predefined");
-            add(listItems);
+        this.calendarFormNew = calendarFormNew;
+        //ListItems<CalendarRepresentation, Calendar> listItems = null;
+        if (calendarService instanceof ListService) list = new ItemList<>((ListService) calendarService);
+        else list = null;
+        if (list != null) {
+            configureGrid();
+            add(list);
             return;
         }
 
@@ -65,14 +62,58 @@ public class CalendarsView extends VerticalLayout {
         populateDate();
 
         add(getToolbar(), grid);
+
     }
 
     private void configureGrid() {
-        grid.addClassNames("calendar-grid");
-        grid.setSizeFull();
-        grid.addColumn(Calendar::getName).setHeader("Name");
-        grid.addColumn(Calendar::getSetting).setHeader("Setting");
-        grid.getColumns().forEach(col -> col.setAutoWidth(true));
+
+//        grid.addClassNames("calendar-grid");
+//        grid.setSizeFull();
+//        grid.addColumn(Calendar::getName).setHeader("Name");
+//        grid.addColumn(Calendar::getSetting).setHeader("Setting");
+//        grid.getColumns().forEach(col -> col.setAutoWidth(true));
+
+        var grid = list.getGrid();
+        grid.addColumn(CalendarRepresentation::getName).setHeader("Name");
+        grid.addColumn(CalendarRepresentation::getSettings).setHeader("Setting");
+        grid.addColumn(CalendarRepresentation::getStartTime).setHeader("Start time");
+        grid.addComponentColumn((item) -> {
+            Icon icon = null;
+            if(item.isPredefined()){
+                icon = VaadinIcon.CHECK.create();
+                icon.setColor("green");
+            }
+            return icon;
+        }).setHeader("Predefined");
+
+        grid.addItemDoubleClickListener(this::onMouseDoubleClick);
+
+    }
+
+    private void onMouseDoubleClick(ItemDoubleClickEvent<CalendarRepresentation> event) {
+
+        if (event == null) return;
+
+        var calendarRepresentation = event.getItem();
+        if (calendarRepresentation == null) return;
+
+        editingForm = calendarFormNew.newInstance();
+        editingForm.read(calendarRepresentation);
+        editingForm.addListener(CalendarFormNew.SaveEvent.class, this::saveEvent);
+        editingForm.addListener(CalendarFormNew.CloseEvent.class, closeEvent -> closeEditor());
+        editingForm.open();
+        list.setDeletionAvailable(false);
+
+    }
+
+    private void saveEvent(CalendarFormNew.SaveEvent event) {
+        list.getGrid().getDataProvider().refreshAll();
+    }
+
+    private void closeEditor() {
+        editingForm.close();
+        list.setDeletionAvailable(true);
+        list.getGrid().getDataProvider().refreshAll();
     }
 
     private HorizontalLayout getToolbar() {
@@ -97,6 +138,7 @@ public class CalendarsView extends VerticalLayout {
                 editContactButton, deleteContactButton);
         toolbar.addClassName("toolbar");
         return toolbar;
+
     }
 
 

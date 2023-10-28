@@ -76,16 +76,11 @@ public class ProjectTreeView extends VerticalLayout {
     private void configureTreeGrid() {
 
         treeGrid.setDataProvider(dataProvider);
-//        var hierarchicalDataCommunicator = treeGrid.getDataCommunicator();
-//        hierarchicalDataCommunicator.reset();
-
         treeGrid.addClassNames("project-tasks-grid");
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-
-        //treeGrid.setDataProvider(new TreeDataProvider<>(new TreeData<>()));
 
         // hide checkbox column
         treeGrid.getElement().getNode().runWhenAttached(ui ->

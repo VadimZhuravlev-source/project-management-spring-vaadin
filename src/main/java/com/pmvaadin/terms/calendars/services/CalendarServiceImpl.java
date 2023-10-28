@@ -113,6 +113,15 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         return calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
     }
 
+    @Override
+    public Calendar getCalendar(CalendarRepresentation calendarRep) {
+
+        var id = calendarRep.getId();
+        var calendar = calendarRepository.findById(id);
+        if (calendar.isEmpty()) throw new StandardError("The calendar has been deleted by another user.");
+        return calendar.get();
+    }
+
     private List<?> checkPredefinedElementInListOfIds(List<?> ids) {
 
         var foundCalendars = calendarRepository.findAllById(ids);

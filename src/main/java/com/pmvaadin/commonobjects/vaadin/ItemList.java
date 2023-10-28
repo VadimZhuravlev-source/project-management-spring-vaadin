@@ -3,13 +3,16 @@ package com.pmvaadin.commonobjects.vaadin;
 import com.pmvaadin.commonobjects.services.ListService;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
 import java.util.function.Consumer;
 
-public class ListItems<T, I> extends SeachableItemList<T> {
+public class ItemList<T, I> extends SearchableGrid<T> {
+
+    private boolean isDeletionAvailable = true;
 
     protected Button add = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
     protected Button delete = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));
@@ -18,7 +21,7 @@ public class ListItems<T, I> extends SeachableItemList<T> {
     protected Consumer<I> beforeAddition;
     protected Consumer<I> onCoping;
 
-    public ListItems(ListService<T, I> listService) {
+    public ItemList(ListService<T, I> listService) {
 
         super(listService);
 
@@ -40,6 +43,10 @@ public class ListItems<T, I> extends SeachableItemList<T> {
         this.onCoping = onCoping;
     }
 
+    public void setDeletionAvailable(boolean deletionAvailable) {
+        this.isDeletionAvailable = deletionAvailable;
+    }
+
     public Grid<T> getGrid() {
         return grid;
     }
@@ -53,11 +60,19 @@ public class ListItems<T, I> extends SeachableItemList<T> {
 
     private void deletionListener(ClickEvent<Button> event) {
 
+        if (!isDeletionAvailable) return;
+
         var selectedItems = grid.getSelectedItems();
         if (selectedItems.isEmpty()) return;
-        ((ListService<T, I>) itemService).delete(selectedItems);
-        grid.getSelectedItems();
-        grid.getDataProvider().refreshAll();
+        try {
+            ((ListService<T, I>) itemService).delete(selectedItems);
+            grid.deselectAll();
+            grid.getDataProvider().refreshAll();
+        } catch (Throwable e) {
+            var dialog = new ConfirmDialog();
+            dialog.add(e.getMessage());
+            //NotificationDialogs.notifyValidationErrors(e.getMessage());
+        }
 
     }
 
