@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -46,17 +47,30 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         return calendarRepository.findById(1).orElse(defaultCalendar);
     }
 
+    @Transactional
     @Override
     public void saveCalendars(Calendar calendar) {
+
+        calendar.getDaysOfWeekSettings().forEach(dayOfWeekSettings -> {
+            dayOfWeekSettings.setCalendar((CalendarImpl) calendar);
+                });
+
+        calendar.getCalendarException().forEach(exceptionDays -> {
+            exceptionDays.setCalendar((CalendarImpl) calendar);
+        });
+
         calendarRepository.save(calendar);
+
+
     }
 
+    @Transactional
     @Override
     public void deleteCalendar(Calendar calendar) {
 
         var ids = new ArrayList<>(1);
         ids.add(calendar.getId());
-        var deletingIds = checkPredefinedElementInListOfIds(ids);
+        var deletingIds = checkIfItemsCanBeDeleted(ids);
         calendarRepository.deleteAllById(deletingIds);
 
     }
@@ -96,11 +110,12 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
     }
 
+    @Transactional
     @Override
     public boolean delete(Collection<CalendarRepresentation> calReps) {
 
         var ids = calReps.stream().map(CalendarRepresentation::getId).toList();
-        var deletingIds = checkPredefinedElementInListOfIds(ids);
+        var deletingIds = checkIfItemsCanBeDeleted(ids);
 
         calendarRepository.deleteAllById(deletingIds);
 
@@ -110,7 +125,11 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
     @Override
     public Calendar copy(CalendarRepresentation calRep) {
-        return calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
+
+        Calendar calendar = calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
+        calendar.setId(null);
+        return calendar;
+
     }
 
     @Override
@@ -120,14 +139,22 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         var calendar = calendarRepository.findById(id);
         if (calendar.isEmpty()) throw new StandardError("The calendar has been deleted by another user.");
         return calendar.get();
+
     }
 
-    private List<?> checkPredefinedElementInListOfIds(List<?> ids) {
+    private List<?> checkIfItemsCanBeDeleted(List<?> ids) {
 
-        var foundCalendars = calendarRepository.findAllById(ids);
-        var checkPredefined = foundCalendars.stream().anyMatch(Calendar::isPredefined);
+        var calendarReps = calendarRepository.findCalendarsThatCannotBeDeleted(ids, CalendarRepresentationDTO.class);
+
+        var checkPredefined = calendarReps.stream().anyMatch(CalendarRepresentationDTO::isPredefined);
 
         if (checkPredefined) throw new StandardError("Cannot remove a predefined element");
+        if (!calendarReps.isEmpty()) {
+            var calendarsString = calendarReps.stream().map(c -> c.getName() + " with id " + c.getId()).toList().toString();
+            throw new StandardError("Cannot remove the calendars: " + calendarsString + ", because they is used in project tasks");
+        }
+
+        var foundCalendars = calendarRepository.findAllById(ids);
 
         return foundCalendars.stream().map(Calendar::getId).toList();
 

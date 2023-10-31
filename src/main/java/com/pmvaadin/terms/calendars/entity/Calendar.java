@@ -12,6 +12,8 @@ public interface Calendar {
 
     static long DAY_DURATION_SECONDS = 8 * 3600;
 
+    static int NUMBER_OF_SECONDS_IN_AN_HOUR = 3600;
+
     static String getHeaderName() {
         return "Name";
     }

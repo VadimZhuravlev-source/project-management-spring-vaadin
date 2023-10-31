@@ -33,6 +33,13 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         copy.addClickListener(this::copingListener);
         toolBar.add(add, copy, delete);
 
+        searchField.addFocusListener(focusEvent -> {
+            isDeletionAvailable = false;
+        });
+        grid.addFocusListener(focusEvent -> {
+            isDeletionAvailable = true;
+        });
+
     }
 
     public void beforeAddition(Consumer<I> beforeAddition) {

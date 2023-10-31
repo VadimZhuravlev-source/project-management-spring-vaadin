@@ -88,6 +88,12 @@ public class CalendarsView extends VerticalLayout {
 
         grid.addItemDoubleClickListener(this::onMouseDoubleClick);
 
+        list.beforeAddition(this::openNewCalendar);
+
+    }
+
+    private void openNewCalendar(Calendar calendar) {
+        openEditingForm(calendar);
     }
 
     private void onMouseDoubleClick(ItemDoubleClickEvent<CalendarRepresentation> event) {
@@ -97,16 +103,30 @@ public class CalendarsView extends VerticalLayout {
         var calendarRepresentation = event.getItem();
         if (calendarRepresentation == null) return;
 
+        openEditingForm(calendarRepresentation);
+
+    }
+
+    private void openEditingForm(CalendarRepresentation calendarRepresentation) {
         editingForm = calendarFormNew.newInstance();
         editingForm.read(calendarRepresentation);
         editingForm.addListener(CalendarFormNew.SaveEvent.class, this::saveEvent);
         editingForm.addListener(CalendarFormNew.CloseEvent.class, closeEvent -> closeEditor());
         editingForm.open();
         list.setDeletionAvailable(false);
+    }
 
+    private void openEditingForm(Calendar calendar) {
+        editingForm = calendarFormNew.newInstance();
+        editingForm.read(calendar);
+        editingForm.addListener(CalendarFormNew.SaveEvent.class, this::saveEvent);
+        editingForm.addListener(CalendarFormNew.CloseEvent.class, closeEvent -> closeEditor());
+        editingForm.open();
+        list.setDeletionAvailable(false);
     }
 
     private void saveEvent(CalendarFormNew.SaveEvent event) {
+        editingForm.close();
         list.getGrid().getDataProvider().refreshAll();
     }
 

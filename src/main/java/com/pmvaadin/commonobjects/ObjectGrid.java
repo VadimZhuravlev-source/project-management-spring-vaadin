@@ -4,6 +4,8 @@ import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.editor.Editor;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.binder.Binder;
@@ -26,9 +28,13 @@ public class ObjectGrid<T> extends VerticalLayout {
     protected Supplier<T> createNewItem;
     protected UnaryOperator<T> copy;
 
-    protected final Button addButton = new Button("Add");
-    protected final Button copyButton = new Button("Copy");
-    protected final Button deleteButton = new Button("Delete");
+    protected Button addButton = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
+    protected Button deleteButton = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));
+    protected Button copyButton = new Button(new Icon(VaadinIcon.COPY));
+
+//    protected final Button addButton = new Button("Add");
+//    protected final Button copyButton = new Button("Copy");
+//    protected final Button deleteButton = new Button("Delete");
 
     public ObjectGrid() {
         grid = new Grid<>();
@@ -120,6 +126,11 @@ public class ObjectGrid<T> extends VerticalLayout {
     }
 
     private void customizeButtons() {
+
+        addButton.setTooltipText("Add");
+        deleteButton.setTooltipText("Delete");
+        copyButton.setTooltipText("Copy");
+
         customizeAddButton();
         customizeCopyButton();
         customizeDeleteButton();

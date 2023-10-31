@@ -29,7 +29,9 @@ public class SearchableGrid<T> extends VerticalLayout {
     protected final Grid<T> grid = new Grid<>();
     protected final HorizontalLayout toolBar;
 
-    private ConfigurableFilterDataProvider<T, Void, ItemFilter> filterDataProvider;
+    protected final TextField searchField = new TextField();
+
+    private final ConfigurableFilterDataProvider<T, Void, ItemFilter> filterDataProvider;
 
     public SearchableGrid(ItemService<T> itemService) {
 
@@ -67,7 +69,10 @@ public class SearchableGrid<T> extends VerticalLayout {
 
         var item = event.getItem();
 
-        if (item == null) return;
+        if (item == null) {
+            grid.deselectAll();
+            return;
+        }
 
         Set<T> newSelectedItems = new HashSet<>();
         if (event.isCtrlKey()) {
@@ -87,7 +92,6 @@ public class SearchableGrid<T> extends VerticalLayout {
 
         var toolBar = new HorizontalLayout();
 
-        var searchField = new TextField();
         searchField.setWidth("50%");
         searchField.setPlaceholder("Search");
         searchField.setPrefixComponent(new Icon(VaadinIcon.SEARCH));
