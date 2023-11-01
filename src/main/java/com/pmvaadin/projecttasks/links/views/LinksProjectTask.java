@@ -229,16 +229,6 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     }
 
-    private static void addCloseHandler(Component textField,
-                                        Editor<? extends Link> editor) {
-        textField.getElement().addEventListener("keydown", e -> editor.cancel())
-                .setFilter("event.code === 'Escape'");
-        textField.getElement().addEventListener("keydown", e -> {
-            editor.save();
-            editor.closeEditor();
-        }).setFilter("event.code === 'Enter'");
-    }
-
     private String getTextErrorDuplicatedTasks() {
         return """
                 An error occurred while establishing a connection between tasks.

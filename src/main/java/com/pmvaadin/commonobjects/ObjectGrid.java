@@ -1,5 +1,6 @@
 package com.pmvaadin.commonobjects;
 
+import com.pmvaadin.projecttasks.links.entities.Link;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -98,6 +99,16 @@ public class ObjectGrid<T> extends VerticalLayout {
         deleteButton.setVisible(deletable);
     }
 
+    protected void addCloseHandler(Component component, Editor<T> editor) {
+
+        component.getElement().addEventListener("keydown", e -> editor.cancel())
+                .setFilter("event.code === 'Escape'");
+        component.getElement().addEventListener("keydown", e -> {
+            editor.save();
+            editor.closeEditor();
+        }).setFilter("event.code === 'Enter'");
+
+    }
 
     private void initialSettings() {
         add(toolBar, grid);

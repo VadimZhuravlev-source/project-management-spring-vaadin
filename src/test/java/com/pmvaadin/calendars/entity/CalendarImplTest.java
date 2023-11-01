@@ -2,7 +2,7 @@ package com.pmvaadin.calendars.entity;
 
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
+import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -34,23 +34,23 @@ class CalendarImplTest {
         //calendar24 = new CalendarImpl();
         calendar24.setSetting(CalendarSettings.HOURSHIFT24);
 
-        List<ExceptionDays> exceptions = calendarWithExceptions.getCalendarException();
+        List<ExceptionDay> exceptions = calendarWithExceptions.getCalendarException();
         exceptions.addAll(getExceptions());
 
     }
 
-    private List<ExceptionDays> getExceptions() {
+    private List<ExceptionDay> getExceptions() {
 
-        List<ExceptionDays> exceptions = new ArrayList<>(7);
+        List<ExceptionDay> exceptions = new ArrayList<>(7);
 
         // Big new year holidays
-        exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 10), 0));
-        exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 7), 0));
-        exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 6), 0));
-        exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 5), 0));
-        exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 4), 0));
-        exceptions.add(new ExceptionDays(LocalDate.of(2022, 1, 3), 0));
-        exceptions.add(new ExceptionDays(shortWorkingDay, 7 * secondInHour));
+        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 10), 0));
+        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 7), 0));
+        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 6), 0));
+        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 5), 0));
+        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 4), 0));
+        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 3), 0));
+        exceptions.add(new ExceptionDay(shortWorkingDay, 7 * secondInHour));
 
         return exceptions;
 

@@ -4,7 +4,7 @@ import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
+import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -33,19 +33,19 @@ import java.util.List;
 @Transactional
 public class CalendarForm extends FormLayout {
     private Calendar calendar;
-    private List<ExceptionDays> exceptionDaysList;
+    private List<ExceptionDay> exceptionDayList;
     private List<DayOfWeekSettings> workDaysList;
 
-    private DatePicker dateOfException = new DatePicker(ExceptionDays.getExceptionDaysName());
+    private DatePicker dateOfException = new DatePicker(ExceptionDay.getExceptionDaysName());
     private IntegerField dayOfWeek = new IntegerField(DayOfWeekSettings.getWorkDaysName());
     private BigDecimalField hourOfWork = new BigDecimalField(DayOfWeekSettings.getHourOfWorkName());
     private TextField calendarName = new TextField(CalendarImpl.getHeaderName());
     private ComboBox<CalendarSettings> calendarSetting = new ComboBox<CalendarSettings>(CalendarImpl.getSettingName());
-    private Grid<ExceptionDays> exceptionDaysGrid = new Grid<>(ExceptionDays.class, false);
+    private Grid<ExceptionDay> exceptionDaysGrid = new Grid<>(ExceptionDay.class, false);
     private Grid<DayOfWeekSettings> workDaysGrid = new Grid<>(DayOfWeekSettings.class, false);
 
     private Binder<Calendar> binder = new BeanValidationBinder<>(Calendar.class);
-    private Binder<ExceptionDays> binderExceptionDays = new BeanValidationBinder<>(ExceptionDays.class);
+    private Binder<ExceptionDay> binderExceptionDays = new BeanValidationBinder<>(ExceptionDay.class);
     private Binder<DayOfWeekSettings> binderWorkDays = new BeanValidationBinder<>(DayOfWeekSettings.class);
 
 
@@ -59,8 +59,8 @@ public class CalendarForm extends FormLayout {
 
     public CalendarForm() {
         if (calendar == null) calendar = new CalendarImpl();
-        exceptionDaysList = calendar.getCalendarException();
-        if (null == exceptionDaysList) exceptionDaysList = new ArrayList<>();
+        exceptionDayList = calendar.getCalendarException();
+        if (null == exceptionDayList) exceptionDayList = new ArrayList<>();
         workDaysList = calendar.getDaysOfWeekSettings();
         if (null == workDaysList) workDaysList = new ArrayList<>();
         calendarSetting.setItems(CalendarSettings.values());
@@ -76,12 +76,12 @@ public class CalendarForm extends FormLayout {
         calendarName.setAutofocus(true);
     }
 
-    private Grid<ExceptionDays> createExceptionsTable() {
-        Editor<ExceptionDays> editor = exceptionDaysGrid.getEditor();
-        Grid.Column<ExceptionDays> dateColumn = exceptionDaysGrid
-                .addColumn(ExceptionDays::getDate).setHeader("Date")
+    private Grid<ExceptionDay> createExceptionsTable() {
+        Editor<ExceptionDay> editor = exceptionDaysGrid.getEditor();
+        Grid.Column<ExceptionDay> dateColumn = exceptionDaysGrid
+                .addColumn(ExceptionDay::getDate).setHeader("Date")
                 .setWidth("120px").setFlexGrow(0);
-        Grid.Column<ExceptionDays> editColumn = exceptionDaysGrid.addComponentColumn(day -> {
+        Grid.Column<ExceptionDay> editColumn = exceptionDaysGrid.addComponentColumn(day -> {
             Button editButton = new Button("Edit");
             editButton.addClickListener(e -> {
                 if (editor.isOpen())
@@ -93,7 +93,7 @@ public class CalendarForm extends FormLayout {
         editor.setBinder(binderExceptionDays);
         editor.setBuffered(true);
 
-        binderExceptionDays.forField(dateOfException).bind(ExceptionDays::getDate, ExceptionDays::setDate);
+        binderExceptionDays.forField(dateOfException).bind(ExceptionDay::getDate, ExceptionDay::setDate);
         dateColumn.setEditorComponent(dateOfException);
         Button saveButton = new Button("Save", e -> editor.save());
         Button cancelButton = new Button(VaadinIcon.CLOSE.create(),
@@ -104,7 +104,7 @@ public class CalendarForm extends FormLayout {
                 cancelButton);
         actions.setPadding(false);
         editColumn.setEditorComponent(actions);
-        exceptionDaysGrid.setItems(exceptionDaysList);
+        exceptionDaysGrid.setItems(exceptionDayList);
 
 
         return exceptionDaysGrid;
@@ -187,17 +187,17 @@ public class CalendarForm extends FormLayout {
     }
 
     private void addExceptionDate() {
-        ExceptionDays exceptionDay = new ExceptionDays();
+        ExceptionDay exceptionDay = new ExceptionDay();
         exceptionDay.setCalendar((CalendarImpl) calendar);
-        exceptionDaysList.add(exceptionDay);
-        exceptionDaysGrid.setItems(exceptionDaysList);
+        exceptionDayList.add(exceptionDay);
+        exceptionDaysGrid.setItems(exceptionDayList);
     }
 
     private void deleteExceptionDate() {
-        ExceptionDays exceptionDay = (ExceptionDays) exceptionDaysGrid.getSelectionModel().getSelectedItems()
+        ExceptionDay exceptionDay = (ExceptionDay) exceptionDaysGrid.getSelectionModel().getSelectedItems()
                 .stream().findFirst().orElseThrow();
-        exceptionDaysList.remove(exceptionDay);
-        exceptionDaysGrid.setItems(exceptionDaysList);
+        exceptionDayList.remove(exceptionDay);
+        exceptionDaysGrid.setItems(exceptionDayList);
     }
 
     private void addDayOfWeek() {
@@ -226,7 +226,7 @@ public class CalendarForm extends FormLayout {
         try {
             calendar.setName(calendarName.getValue());
             calendar.setSetting(calendarSetting.getValue());
-            calendar.setCalendarException(exceptionDaysList);
+            calendar.setCalendarException(exceptionDayList);
             calendar.setDaysOfWeekSettings(workDaysList);
             binder.writeBean(calendar);
             fireEvent(new CalendarForm.SaveEvent(this, calendar));

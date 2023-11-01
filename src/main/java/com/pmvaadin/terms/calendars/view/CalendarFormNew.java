@@ -1,11 +1,14 @@
 package com.pmvaadin.terms.calendars.view;
 
+import com.pmvaadin.commonobjects.ConfirmDialog;
+import com.pmvaadin.commonobjects.ObjectGrid;
 import com.pmvaadin.projectstructure.NotificationDialogs;
+import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
+import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -13,17 +16,19 @@ import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
-import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationStatusChangeEvent;
+import com.vaadin.flow.data.binder.ValidationStatusChangeListener;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
@@ -37,19 +42,21 @@ public class CalendarFormNew extends Dialog {
     private Calendar calendar;
     private final CalendarService calendarService;
 
-    private final TextField name = new TextField("Name");
-    private final ComboBox<CalendarSettings> setting = new ComboBox<>("Setting");
-    private final TimePicker startTime = new TimePicker("Start time");
+    private final TextField name = new TextField();
+    private final ComboBox<CalendarSettings> setting = new ComboBox<>();
+    private final TimePicker startTime = new TimePicker();
 
-    private final NumberField monday = new NumberField("Monday");
-    private final NumberField tuesday = new NumberField("Tuesday");
-    private final NumberField wednesday = new NumberField("Wednesday");
-    private final NumberField thursday = new NumberField("Thursday");
-    private final NumberField friday = new NumberField("Friday");
-    private final NumberField saturday = new NumberField("Saturday");
-    private final NumberField sunday = new NumberField("Sunday");
+    private final NumberField monday = new NumberField();
+    private final NumberField tuesday = new NumberField();
+    private final NumberField wednesday = new NumberField();
+    private final NumberField thursday = new NumberField();
+    private final NumberField friday = new NumberField();
+    private final NumberField saturday = new NumberField();
+    private final NumberField sunday = new NumberField();
 
-    private final Grid<ExceptionDays> exceptions = new Grid<>();
+    private final FormLayout workingDaysLayout = new FormLayout();
+
+    private final ExceptionDays exceptionDays = new ExceptionDays();
 
     private final Binder<Calendar> binder = new BeanValidationBinder<>(Calendar.class);
 
@@ -62,16 +69,9 @@ public class CalendarFormNew extends Dialog {
         this.setting.setItems(CalendarSettings.values());
         customizeForm();
         customizeDataLayout();
-        customizeExceptions();
         createButtons();
-        binder.bindInstanceFields(this);
-        binder.forField(monday).bind(c -> getHoursInTheDay(DayOfWeek.MONDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.MONDAY, aDouble));
-        binder.forField(tuesday).bind(c -> getHoursInTheDay(DayOfWeek.TUESDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.TUESDAY, aDouble));
-        binder.forField(wednesday).bind(c -> getHoursInTheDay(DayOfWeek.WEDNESDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.WEDNESDAY, aDouble));
-        binder.forField(thursday).bind(c -> getHoursInTheDay(DayOfWeek.THURSDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.THURSDAY, aDouble));
-        binder.forField(friday).bind(c -> getHoursInTheDay(DayOfWeek.FRIDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.FRIDAY, aDouble));
-        binder.forField(saturday).bind(c -> getHoursInTheDay(DayOfWeek.SATURDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.SATURDAY, aDouble));
-        binder.forField(sunday).bind(c -> getHoursInTheDay(DayOfWeek.SUNDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.SUNDAY, aDouble));
+        customizeBinder();
+        customizeElements();
 
     }
 
@@ -95,12 +95,34 @@ public class CalendarFormNew extends Dialog {
 
     }
 
+    private void customizeElements() {
+
+        setting.addValueChangeListener(l -> {
+            var value = l.getValue();
+            workingDaysLayout.setEnabled(value == CalendarSettings.DAYSOFWEEKSETTINGS);
+        });
+
+    }
+
+    private void customizeBinder() {
+
+        binder.bindInstanceFields(this);
+        binder.forField(monday).bind(c -> getHoursInTheDay(DayOfWeek.MONDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.MONDAY, aDouble));
+        binder.forField(tuesday).bind(c -> getHoursInTheDay(DayOfWeek.TUESDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.TUESDAY, aDouble));
+        binder.forField(wednesday).bind(c -> getHoursInTheDay(DayOfWeek.WEDNESDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.WEDNESDAY, aDouble));
+        binder.forField(thursday).bind(c -> getHoursInTheDay(DayOfWeek.THURSDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.THURSDAY, aDouble));
+        binder.forField(friday).bind(c -> getHoursInTheDay(DayOfWeek.FRIDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.FRIDAY, aDouble));
+        binder.forField(saturday).bind(c -> getHoursInTheDay(DayOfWeek.SATURDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.SATURDAY, aDouble));
+        binder.forField(sunday).bind(c -> getHoursInTheDay(DayOfWeek.SUNDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.SUNDAY, aDouble));
+
+    }
+
     private Double getHoursInTheDay(DayOfWeek dayOfWeek) {
         var dayIndex = dayOfWeek.getValue();
         var daysOfWeek = this.calendar.getDaysOfWeekSettings();
         if (daysOfWeek == null || daysOfWeek.isEmpty()) return 0D;
         return daysOfWeek.stream().filter(d -> d.getDayOfWeek() == dayIndex)
-                .map(DayOfWeekSettings::getCountHours).map(v -> ((double) v) / Calendar.NUMBER_OF_SECONDS_IN_AN_HOUR)
+                .map(DayOfWeekSettings::getCountHours).map(Calendar::getCountOfHoursDouble)
                 .findFirst().orElse(0D);
     }
 
@@ -114,10 +136,9 @@ public class CalendarFormNew extends Dialog {
         }
 
         var dayOfWeekOptional = daysOfWeek.stream().filter(d -> d.getDayOfWeek() == dayIndex).findFirst();
-        var countOfHours = (int) (aDouble * Calendar.DAY_DURATION_SECONDS);
+        var countOfHours = Calendar.getCountOfHoursInteger(aDouble);
 
-        DayOfWeekSettings currentDayOfWeek = null;
-
+        DayOfWeekSettings currentDayOfWeek;
         if (dayOfWeekOptional.isEmpty()) {
             currentDayOfWeek = new DayOfWeekSettings(dayIndex, countOfHours);
             daysOfWeek.add(currentDayOfWeek);
@@ -138,15 +159,10 @@ public class CalendarFormNew extends Dialog {
 
     private void fillExceptions() {
 
-        this.exceptions.setItems(new ArrayList<>());
+        this.exceptionDays.setItems(new ArrayList<>());
         var exceptions = this.calendar.getCalendarException();
-        if (exceptions != null && !exceptions.isEmpty()) this.exceptions.setItems(exceptions);
+        if (exceptions != null && !exceptions.isEmpty()) this.exceptionDays.setItems(exceptions);
 
-    }
-
-    private void customizeExceptions() {
-        exceptions.addColumn(ExceptionDays::getDate).setHeader("Day");
-        exceptions.addColumn(ExceptionDays::getDuration).setHeader("Hours");
     }
 
     private void customizeForm() {
@@ -163,29 +179,37 @@ public class CalendarFormNew extends Dialog {
 
     private void customizeDataLayout() {
 
-        var mainLayout = new VerticalLayout(name, setting, startTime);
+        //var mainLayout = new VerticalLayout(name, setting, startTime);
 
-//        FormLayout formLayout = new FormLayout();
-//        formLayout.addFormItem(name, "Name");
-//        formLayout.addFormItem(setting, "Setting");
-//        formLayout.addFormItem(startTime, "Start time");
-//        formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1),
+        var mainLayout = new FormLayout();
+        mainLayout.addFormItem(name, "Name");
+        mainLayout.addFormItem(setting, "Setting");
+        mainLayout.addFormItem(startTime, "Start time");
+//        mainLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1),
 //                new FormLayout.ResponsiveStep("300px", 3));
 
-        var workingDaysLayout = new VerticalLayout(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
+        //var workingDaysLayout = new VerticalLayout(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
 
-//        FormLayout workingDaysLayout = new FormLayout();
-//        workingDaysLayout.addFormItem(monday, "Monday");
-//        workingDaysLayout.addFormItem(tuesday, "Tuesday");
-//        workingDaysLayout.addFormItem(wednesday, "Wednesday");
-//        workingDaysLayout.addFormItem(thursday, "Thursday");
-//        workingDaysLayout.addFormItem(friday, "Friday");
-//        workingDaysLayout.addFormItem(saturday, "Saturday");
-//        workingDaysLayout.addFormItem(sunday, "Sunday");
+        workingDaysLayout.addFormItem(monday, "Monday");
+        workingDaysLayout.addFormItem(tuesday, "Tuesday");
+        workingDaysLayout.addFormItem(wednesday, "Wednesday");
+        workingDaysLayout.addFormItem(thursday, "Thursday");
+        workingDaysLayout.addFormItem(friday, "Friday");
+        workingDaysLayout.addFormItem(saturday, "Saturday");
+        workingDaysLayout.addFormItem(sunday, "Sunday");
+        workingDaysLayout.setResponsiveSteps(
+                new FormLayout.ResponsiveStep("0px", 1),
+                new FormLayout.ResponsiveStep("0px", 1),
+                new FormLayout.ResponsiveStep("0px", 1),
+                new FormLayout.ResponsiveStep("0px", 1),
+                new FormLayout.ResponsiveStep("0px", 1),
+                new FormLayout.ResponsiveStep("0px", 1),
+                new FormLayout.ResponsiveStep("0px", 1)
+                );
 
         var horizontalLayout = new HorizontalLayout(mainLayout, workingDaysLayout);
 
-        add(horizontalLayout, exceptions);
+        add(horizontalLayout, exceptionDays);
 
     }
 
@@ -277,6 +301,85 @@ public class CalendarFormNew extends Dialog {
         SaveEvent(CalendarFormNew source) {
             super(source);
         }
+    }
+
+    private class ExceptionDays extends ObjectGrid<ExceptionDay> {
+
+        ExceptionDays() {
+            customizeBinder();
+            setDeletable(true);
+            setInstantiatable(this::setInstantiatable);
+            setCopyable(this::setCopyable);
+        }
+
+        private ExceptionDay setInstantiatable() {
+            ExceptionDay exceptionDay = new ExceptionDay();
+            return new ExceptionDay();
+        }
+
+        private ExceptionDay setCopyable(ExceptionDay exceptionDay) {
+            ExceptionDay copy = new ExceptionDay();
+            copy.setDate(exceptionDay.getDate());
+            copy.setDuration(exceptionDay.getDuration());
+            return copy;
+        }
+
+        private void customizeBinder() {
+
+            var dayColumn = addColumn(ExceptionDay::getDate).setHeader("Day");
+            var hoursColumn = addColumn(this::getCountOfHours).setHeader("Hours");
+
+            var dayColumnField = new DatePicker();
+            dayColumnField.setWidthFull();
+            addCloseHandler(dayColumnField, editor);
+            binder.forField(dayColumnField)
+                    .bind(ExceptionDay::getDate, ExceptionDay::setDate);
+            dayColumn.setEditorComponent(dayColumnField);
+            dayColumnField.addValueChangeListener(event -> {
+                //var value = dayColumnField.getValue();
+                var value = event.getValue();
+                String errorMessage = null;
+                var ifExistedDate = this.grid.getListDataView().getItems().anyMatch(exceptionDay -> exceptionDay.getDate().equals(value));
+                if (ifExistedDate) {
+                    errorMessage = "The selected date is already contained in the table.";
+                }
+                dayColumnField.setErrorMessage(errorMessage);
+            });
+
+            var numberOfHoursField = new NumberField();
+            numberOfHoursField.setWidthFull();
+            numberOfHoursField.setStepButtonsVisible(true);
+            numberOfHoursField.setStep(1);
+            addCloseHandler(numberOfHoursField, editor);
+            binder.forField(numberOfHoursField)//.withConverter(new BigDecimalToDoubleConverter(lagRepresentation))
+                    .bind(this::getCountOfHours, this::setCountOfHours);
+            //countOfHoursField.addValidationStatusChangeListener(this::validationStatusChangeEvent);
+            hoursColumn.setEditorComponent(numberOfHoursField);
+
+        }
+
+        private void setCountOfHours(ExceptionDay exceptionDay, Double value) {
+
+            var startTime = calendar.getStartTime();
+            var seconds = startTime.getSecond();
+            var secondsInHour = 24 * 3600;
+            var secondsLeft = secondsInHour - seconds;
+            var duration = Calendar.getCountOfHoursInteger(value);
+            if (duration > secondsLeft) {
+                var dialog = new ConfirmDialog();
+                dialog.add("The number of hours selected is greater than the number available.");
+                dialog.open();
+                return;
+            }
+
+            exceptionDay.setDuration(duration);
+
+        }
+
+        private Double getCountOfHours(ExceptionDay exceptionDay) {
+            return Calendar.getCountOfHoursDouble(exceptionDay.getDuration());
+        }
+
     }
 
 }

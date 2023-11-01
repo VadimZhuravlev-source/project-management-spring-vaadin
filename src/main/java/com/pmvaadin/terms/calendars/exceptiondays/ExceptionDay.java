@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Table(name = "calendar_exception")
 @Transactional
-public class ExceptionDays {
+public class ExceptionDay {
 
     @Id
     @GeneratedValue(strategy= GenerationType.IDENTITY)
@@ -33,7 +33,7 @@ public class ExceptionDays {
     @Transient
     private BigDecimal durationRepresentation;
 
-    public ExceptionDays(LocalDate date, int duration) {
+    public ExceptionDay(LocalDate date, int duration) {
         this.date = date;
         this.duration = duration;
     }

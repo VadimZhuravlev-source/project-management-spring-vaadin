@@ -1,12 +1,14 @@
 package com.pmvaadin.terms.calendars.entity;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
 import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
+import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 
 public interface Calendar {
 
@@ -36,9 +38,9 @@ public interface Calendar {
 
     void setDaysOfWeekSettings(List<DayOfWeekSettings> daysOfWeekSettings);
 
-    List<ExceptionDays> getCalendarException();
+    List<ExceptionDay> getCalendarException();
 
-    void setCalendarException(List<ExceptionDays> exceptionDaysList);
+    void setCalendarException(List<ExceptionDay> exceptionDayList);
 
     LocalTime getStartTime();
     void setStartTime(LocalTime time);
@@ -64,5 +66,19 @@ public interface Calendar {
     String getRepresentation();
 
     boolean isPredefined();
+
+    static Double getCountOfHoursDouble(Integer seconds) {
+
+        var countOfHours = ((double) seconds) / NUMBER_OF_SECONDS_IN_AN_HOUR;
+        return new BigDecimal(countOfHours).setScale(2, RoundingMode.CEILING).doubleValue();
+
+    }
+
+    static Integer getCountOfHoursInteger(Double aDouble) {
+
+        var scaledValue = new BigDecimal(aDouble).setScale(2, RoundingMode.CEILING).doubleValue();
+        return (int) (scaledValue * Calendar.NUMBER_OF_SECONDS_IN_AN_HOUR);
+
+    }
 
 }

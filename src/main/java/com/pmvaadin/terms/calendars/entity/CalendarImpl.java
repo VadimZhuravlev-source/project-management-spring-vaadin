@@ -2,7 +2,7 @@ package com.pmvaadin.terms.calendars.entity;
 
 import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.dayofweeksettings.DefaultDaySetting;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
+import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.OperationListenerForCalendar;
 import com.pmvaadin.projectstructure.StandardError;
 import lombok.Getter;
@@ -41,7 +41,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @OneToMany(mappedBy = "calendar",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @LazyCollection(LazyCollectionOption.FALSE)
-    private List<ExceptionDays> calendarException = new ArrayList<>();
+    private List<ExceptionDay> calendarException = new ArrayList<>();
 
     @Setter
     private String name;
@@ -221,7 +221,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @Override
     public void initiateCacheData() {
 
-        List<ExceptionDays> exceptionDaysList = this.getCalendarException();
+        List<ExceptionDay> exceptionDayList = this.getCalendarException();
 
         List<DefaultDaySetting> settingList;
         if (this.getSetting() == CalendarSettings.DAYSOFWEEKSETTINGS) {
@@ -232,8 +232,8 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
         }
 
         Map<LocalDate, Integer> mapExceptions =
-                exceptionDaysList.stream().collect(
-                        Collectors.toMap(ExceptionDays::getDate, ExceptionDays::getDuration)
+                exceptionDayList.stream().collect(
+                        Collectors.toMap(ExceptionDay::getDate, ExceptionDay::getDuration)
                 );
 
         int secondFromBeggingOfDay = startTime.toSecondOfDay();
