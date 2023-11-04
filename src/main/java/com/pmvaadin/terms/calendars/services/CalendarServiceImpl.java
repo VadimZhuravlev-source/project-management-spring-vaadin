@@ -128,6 +128,15 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
         Calendar calendar = calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
         calendar.setId(null);
+        calendar.setVersion(null);
+        calendar.setPredefined(false);
+        calendar.getDaysOfWeekSettings().forEach(dayOfWeekSettings -> {
+            dayOfWeekSettings.setId(null);
+        });
+        calendar.getCalendarException().forEach(exceptionDay -> {
+            exceptionDay.setId(null);
+        });
+
         return calendar;
 
     }
@@ -154,9 +163,9 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
             throw new StandardError("Cannot remove the calendars: " + calendarsString + ", because they is used in project tasks");
         }
 
-        var foundCalendars = calendarRepository.findAllById(ids);
+        var foundCalendars = calendarRepository.findAllByIdIn(ids, CalendarRepresentationDTO.class);
 
-        return foundCalendars.stream().map(Calendar::getId).toList();
+        return foundCalendars.stream().map(CalendarRepresentationDTO::getId).toList();
 
     }
 

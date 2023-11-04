@@ -2,6 +2,7 @@ package com.pmvaadin.commonobjects.vaadin;
 
 import com.pmvaadin.commonobjects.services.ListService;
 import com.vaadin.flow.component.ClickEvent;
+import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
@@ -26,11 +27,13 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         super(listService);
 
         add.setTooltipText("Add");
-        delete.setTooltipText("Delete");
-        copy.setTooltipText("Copy");
         add.addClickListener(this::additionListener);
-        delete.addClickListener(this::deletionListener);
+        copy.setTooltipText("Copy");
         copy.addClickListener(this::copingListener);
+        delete.setTooltipText("Delete");
+        delete.addClickListener(this::deletionListener);
+        delete.addClickShortcut(Key.DELETE);
+
         toolBar.add(add, copy, delete);
 
         searchField.addFocusListener(focusEvent -> {
@@ -78,6 +81,7 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         } catch (Throwable e) {
             var dialog = new ConfirmDialog();
             dialog.add(e.getMessage());
+            dialog.open();
             //NotificationDialogs.notifyValidationErrors(e.getMessage());
         }
 
@@ -85,6 +89,7 @@ public class ItemList<T, I> extends SearchableGrid<T> {
 
     private void copingListener(ClickEvent<Button> event) {
 
+        if (onCoping == null) return;
         var selectedItems = grid.getSelectedItems();
         if (selectedItems.isEmpty()) return;
         var item = selectedItems.stream().findFirst().get();

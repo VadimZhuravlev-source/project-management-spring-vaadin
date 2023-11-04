@@ -1,6 +1,7 @@
 package com.pmvaadin.commonobjects.vaadin;
 
 import com.pmvaadin.commonobjects.services.ItemService;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.ItemClickEvent;
 import com.vaadin.flow.component.icon.Icon;
@@ -84,6 +85,7 @@ public class SearchableGrid<T> extends VerticalLayout {
         else
             newSelectedItems.add(item);
 
+        grid.deselectAll();
         grid.asMultiSelect().setValue(newSelectedItems);
 
     }
@@ -100,7 +102,10 @@ public class SearchableGrid<T> extends VerticalLayout {
             itemFilter.setSearchTerm(e.getValue());
             filterDataProvider.setFilter(itemFilter);
         });
-        toolBar.add(searchField);
+        var refreshButton = new Button("Refresh", new Icon("lumo", "reload"));
+        refreshButton.addClickListener(e -> grid.getDataProvider().refreshAll());
+
+        toolBar.add(searchField, refreshButton);
 
         return toolBar;
 

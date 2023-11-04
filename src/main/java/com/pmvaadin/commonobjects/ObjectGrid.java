@@ -1,6 +1,5 @@
 package com.pmvaadin.commonobjects;
 
-import com.pmvaadin.projecttasks.links.entities.Link;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
@@ -17,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 public class ObjectGrid<T> extends VerticalLayout {
 
@@ -97,6 +97,18 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     public void setDeletable(boolean deletable) {
         deleteButton.setVisible(deletable);
+    }
+
+    public boolean isEditing() {
+        return editor.isOpen();
+    }
+
+    public void endEditing() {
+        editor.closeEditor();
+    }
+
+    public List<T> getItems() {
+        return grid.getListDataView().getItems().collect(Collectors.toList());
     }
 
     protected void addCloseHandler(Component component, Editor<T> editor) {

@@ -20,11 +20,26 @@ public interface Calendar {
         return "Name";
     }
 
+    static Double getCountOfHoursDouble(Integer seconds) {
+
+        var countOfHours = ((double) seconds) / NUMBER_OF_SECONDS_IN_AN_HOUR;
+        return new BigDecimal(countOfHours).setScale(2, RoundingMode.CEILING).doubleValue();
+
+    }
+
+    static Integer getCountOfHoursInteger(Double aDouble) {
+
+        var scaledValue = new BigDecimal(aDouble).setScale(2, RoundingMode.CEILING).doubleValue();
+        return (int) (scaledValue * Calendar.NUMBER_OF_SECONDS_IN_AN_HOUR);
+
+    }
+
     Integer getId();
 
     void setId(Integer id);
 
     Integer getVersion();
+    void setVersion(Integer version);
 
     String getName();
 
@@ -66,19 +81,6 @@ public interface Calendar {
     String getRepresentation();
 
     boolean isPredefined();
-
-    static Double getCountOfHoursDouble(Integer seconds) {
-
-        var countOfHours = ((double) seconds) / NUMBER_OF_SECONDS_IN_AN_HOUR;
-        return new BigDecimal(countOfHours).setScale(2, RoundingMode.CEILING).doubleValue();
-
-    }
-
-    static Integer getCountOfHoursInteger(Double aDouble) {
-
-        var scaledValue = new BigDecimal(aDouble).setScale(2, RoundingMode.CEILING).doubleValue();
-        return (int) (scaledValue * Calendar.NUMBER_OF_SECONDS_IN_AN_HOUR);
-
-    }
+    void setPredefined(boolean isPredefined);
 
 }

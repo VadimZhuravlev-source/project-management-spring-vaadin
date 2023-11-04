@@ -2,17 +2,18 @@ package com.pmvaadin.terms.calendars.view;
 
 import com.pmvaadin.commonobjects.services.ListService;
 import com.pmvaadin.commonobjects.vaadin.ItemList;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.views.ProjectTaskForm;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.MainLayout;
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.ItemClickEvent;
 import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
@@ -24,7 +25,9 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 import javax.annotation.security.PermitAll;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Route(value = "calendars", layout = MainLayout.class)
 @PageTitle("Calendars | PM")
@@ -45,10 +48,10 @@ public class CalendarsView extends VerticalLayout {
         this.calendarService = calendarService;
         this.calendarFormNew = calendarFormNew;
         //ListItems<CalendarRepresentation, Calendar> listItems = null;
-        if (calendarService instanceof ListService) list = new ItemList<>((ListService) calendarService);
+        if (calendarService instanceof ListService) list = new Table((ListService) calendarService);
         else list = null;
         if (list != null) {
-            configureGrid();
+            //configureGrid();
             add(list);
             return;
         }
@@ -201,4 +204,79 @@ public class CalendarsView extends VerticalLayout {
         dialog.open();
         addClassName("editing");
     }
+
+    private class Table extends ItemList<CalendarRepresentation, Calendar> {
+
+        Table(ListService listService) {
+            super(listService);
+            configureGrid();
+        }
+
+        private void configureGrid() {
+
+            this.grid.addColumn(CalendarRepresentation::getName).setHeader("Name");
+            this.grid.addColumn(CalendarRepresentation::getSettings).setHeader("Setting");
+            this.grid.addColumn(CalendarRepresentation::getStartTime).setHeader("Start time");
+            this.grid.addComponentColumn((item) -> {
+                if(!item.isPredefined()){
+                    return new Div();
+                }
+                var icon = VaadinIcon.CHECK.create();
+                icon.setColor("green");
+                return icon;
+            }).setHeader("Predefined");
+
+            this.grid.addItemDoubleClickListener(this::onMouseDoubleClick);
+
+            beforeAddition(this::openNewCalendar);
+            onCoping(this::openNewCalendar);
+
+        }
+
+        private void openNewCalendar(Calendar calendar) {
+            openEditingForm(calendar);
+        }
+
+        private void onMouseDoubleClick(ItemDoubleClickEvent<CalendarRepresentation> event) {
+
+            if (event == null) return;
+
+            var calendarRepresentation = event.getItem();
+            if (calendarRepresentation == null) return;
+
+            openEditingForm(calendarRepresentation);
+
+        }
+
+        private void openEditingForm(CalendarRepresentation calendarRepresentation) {
+            editingForm = calendarFormNew.newInstance();
+            editingForm.read(calendarRepresentation);
+            editingForm.addListener(CalendarFormNew.SaveEvent.class, this::saveEvent);
+            editingForm.addListener(CalendarFormNew.CloseEvent.class, closeEvent -> closeEditor());
+            editingForm.open();
+            setDeletionAvailable(false);
+        }
+
+        private void openEditingForm(Calendar calendar) {
+            editingForm = calendarFormNew.newInstance();
+            editingForm.read(calendar);
+            editingForm.addListener(CalendarFormNew.SaveEvent.class, this::saveEvent);
+            editingForm.addListener(CalendarFormNew.CloseEvent.class, closeEvent -> closeEditor());
+            editingForm.open();
+            setDeletionAvailable(false);
+        }
+
+        private void saveEvent(CalendarFormNew.SaveEvent event) {
+            editingForm.close();
+            this.grid.getDataProvider().refreshAll();
+        }
+
+        private void closeEditor() {
+            editingForm.close();
+            setDeletionAvailable(true);
+            this.grid.getDataProvider().refreshAll();
+        }
+
+    }
+
 }

@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor
 @Table(name = "calendars")
-public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
+public class CalendarImpl implements Calendar, Serializable {
 
     @Id
     @Setter
@@ -35,6 +35,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     private Integer id;
 
     @Version
+    @Setter
     private Integer version;
 
     @Setter
@@ -54,6 +55,7 @@ public class CalendarImpl implements Calendar, Serializable, CalendarRowTable {
     @Column(name = "start_time")
     private LocalTime startTime = LocalTime.of(9, 0);
 
+    @Setter
     @Column(name = "predefined")
     private boolean isPredefined;
 

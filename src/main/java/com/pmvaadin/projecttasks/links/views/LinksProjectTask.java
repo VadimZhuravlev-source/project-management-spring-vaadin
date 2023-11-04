@@ -74,14 +74,6 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     }
 
-    public boolean isEditing() {
-        return editor.isOpen();
-    }
-
-    public void endEditing() {
-        editor.closeEditor();
-    }
-
     private void customizeLinks() {
 
         setDeletable(true);

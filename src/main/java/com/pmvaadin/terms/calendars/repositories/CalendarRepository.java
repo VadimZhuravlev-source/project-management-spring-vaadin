@@ -25,24 +25,24 @@ public interface CalendarRepository extends Repository<CalendarImpl, Integer> {
 
     @Query( value = """
             WITH predefined_calendars AS(
-            SELECT\s
+            SELECT
             	id,
             	name,
             	settings_id,
             	start_time,
             	predefined
-            FROM calendars\s
-            WHERE\s
-            id = ANY(ids)\s
+            FROM CalendarImpl --calendars
+            WHERE
+            id IN(:ids)
             	AND predefined
             ),
                         
             used_calendars_ids AS(
             SELECT DISTINCT
             	calendar_id id
-            FROM project_tasks
+            FROM ProjectTaskImpl --project_tasks
             WHERE
-            	project_tasks.calendar_id = ANY(ids)
+            	calendar_id IN(:ids)
             ),
                         
             used_calendars AS (
@@ -57,7 +57,7 @@ public interface CalendarRepository extends Repository<CalendarImpl, Integer> {
             	id IN(SELECT id FROM used_calendars_ids)
             )
                         
-            SELECT DISTINCT\s
+            SELECT DISTINCT
             	*
             FROM predefined_calendars
                         
@@ -66,7 +66,7 @@ public interface CalendarRepository extends Repository<CalendarImpl, Integer> {
             SELECT
             	*
             FROM used_calendars
-            """, nativeQuery = true)
+            """, nativeQuery = false)
     <T> List<T> findCalendarsThatCannotBeDeleted(List<?> ids, Class<T> type);
 
 }
