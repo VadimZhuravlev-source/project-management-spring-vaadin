@@ -83,4 +83,6 @@ public interface Calendar {
     boolean isPredefined();
     void setPredefined(boolean isPredefined);
 
+    boolean isNew();
+
 }

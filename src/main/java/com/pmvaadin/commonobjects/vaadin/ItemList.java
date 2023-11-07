@@ -1,11 +1,13 @@
 package com.pmvaadin.commonobjects.vaadin;
 
 import com.pmvaadin.commonobjects.services.ListService;
+import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
@@ -20,6 +22,9 @@ public class ItemList<T, I> extends SearchableGrid<T> {
     protected Button copy = new Button(new Icon(VaadinIcon.COPY));
 
     protected Consumer<I> beforeAddition;
+
+    protected Consumer<I> onMouseDoubleClick;
+
     protected Consumer<I> onCoping;
 
     public ItemList(ListService<T, I> listService) {
@@ -42,6 +47,7 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         grid.addFocusListener(focusEvent -> {
             isDeletionAvailable = true;
         });
+        this.grid.addItemDoubleClickListener(this::onMouseDoubleClick);
 
     }
 
@@ -51,6 +57,21 @@ public class ItemList<T, I> extends SearchableGrid<T> {
 
     public void onCoping(Consumer<I> onCoping) {
         this.onCoping = onCoping;
+    }
+
+    public void onMouseDoubleClick(Consumer<I> onMouseDoubleClick) {
+        this.onMouseDoubleClick = onMouseDoubleClick;
+    }
+
+    private void onMouseDoubleClick(ItemDoubleClickEvent<T> event) {
+
+        if (event == null) return;
+
+        var item = event.getItem();
+
+        var doubleClickItem = ((ListService<T, I>) itemService).get(item);
+        if (onMouseDoubleClick != null) onMouseDoubleClick.accept(doubleClickItem);
+
     }
 
     public void setDeletionAvailable(boolean deletionAvailable) {

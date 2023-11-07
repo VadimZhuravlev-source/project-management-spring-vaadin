@@ -4,6 +4,7 @@ import com.pmvaadin.commonobjects.services.ItemService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.ItemClickEvent;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -47,6 +48,28 @@ public class SearchableGrid<T> extends VerticalLayout {
         VerticalLayout layout = new VerticalLayout(toolBar, grid);
         layout.setPadding(false);
         add(layout);
+
+    }
+
+    /*
+    Class<T> have to implement interface Predefinable
+     */
+    public Grid.Column<T> addPredefinedColumn() {
+
+        return this.grid.addComponentColumn((item) -> {
+
+            if( !(item instanceof Predefinable)) return new Div();
+
+            var castItem = (Predefinable) item;
+
+            if(!castItem.isPredefined()){
+                return new Div();
+            }
+            var icon = VaadinIcon.CHECK.create();
+            icon.setColor("green");
+            return icon;
+
+        }).setHeader("Predefined");
 
     }
 

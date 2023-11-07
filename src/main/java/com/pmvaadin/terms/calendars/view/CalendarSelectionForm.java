@@ -27,7 +27,7 @@ public class CalendarSelectionForm extends Dialog implements SelectionForm<Calen
     public CalendarSelectionForm(CalendarService calendarService) {
         super();
         this.calendarService = calendarService;
-        grid.setItems(calendarService.getCalendars());
+        //grid.setItems(calendarService.getCalendars());
         selectionAction.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         getFooter().add(selectionAction);
         selectionAction.getStyle().set("margin-right", "auto");

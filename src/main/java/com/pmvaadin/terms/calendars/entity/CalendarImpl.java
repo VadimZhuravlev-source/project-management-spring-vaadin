@@ -111,6 +111,11 @@ public class CalendarImpl implements Calendar, Serializable {
     }
 
     @Override
+    public boolean isNew() {
+        return id == null;
+    }
+
+    @Override
     public Calendar getDefaultCalendar() {
 
         Calendar calendar = new CalendarImpl("Standard");

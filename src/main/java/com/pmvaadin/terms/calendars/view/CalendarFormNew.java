@@ -5,7 +5,6 @@ import com.pmvaadin.commonobjects.ObjectGrid;
 import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.entity.Calendar;
-import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.services.CalendarService;
@@ -19,7 +18,6 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.grid.ItemClickEvent;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
@@ -37,7 +35,6 @@ import java.util.*;
 @SpringComponent
 public class CalendarFormNew extends Dialog {
 
-    private CalendarRepresentation calendarRep;
     private Calendar calendar;
     private final CalendarService calendarService;
 
@@ -80,15 +77,6 @@ public class CalendarFormNew extends Dialog {
         return new CalendarFormNew(calendarService);
     }
 
-    public void read(CalendarRepresentation calendarRep) {
-
-        this.calendarRep = calendarRep;
-        this.calendar = calendarService.getCalendar(this.calendarRep);
-
-        read();
-
-    }
-
     public void read(Calendar calendar) {
 
         this.calendar = calendar;
@@ -123,16 +111,10 @@ public class CalendarFormNew extends Dialog {
     private void customizeBinder() {
 
         binder.bindInstanceFields(this);
-        dayOfWeekMap.forEach((dayOfWeek, numberField) -> {
-            binder.forField(numberField).bind(c -> getHoursInTheDay(dayOfWeek), (c, aDouble) -> setHoursInTheDay(dayOfWeek, aDouble));
-        });
-//        binder.forField(monday).bind(c -> getHoursInTheDay(DayOfWeek.MONDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.MONDAY, aDouble));
-//        binder.forField(tuesday).bind(c -> getHoursInTheDay(DayOfWeek.TUESDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.TUESDAY, aDouble));
-//        binder.forField(wednesday).bind(c -> getHoursInTheDay(DayOfWeek.WEDNESDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.WEDNESDAY, aDouble));
-//        binder.forField(thursday).bind(c -> getHoursInTheDay(DayOfWeek.THURSDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.THURSDAY, aDouble));
-//        binder.forField(friday).bind(c -> getHoursInTheDay(DayOfWeek.FRIDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.FRIDAY, aDouble));
-//        binder.forField(saturday).bind(c -> getHoursInTheDay(DayOfWeek.SATURDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.SATURDAY, aDouble));
-//        binder.forField(sunday).bind(c -> getHoursInTheDay(DayOfWeek.SUNDAY), (c, aDouble) -> setHoursInTheDay(DayOfWeek.SUNDAY, aDouble));
+        dayOfWeekMap.forEach((dayOfWeek, numberField) ->
+                binder.forField(numberField).bind(c -> getHoursInTheDay(dayOfWeek),
+                        (c, aDouble) -> setHoursInTheDay(dayOfWeek, aDouble))
+        );
 
     }
 
@@ -173,6 +155,8 @@ public class CalendarFormNew extends Dialog {
         binder.readBean(this.calendar);
         fillExceptions();
         refreshHeader();
+
+        if (this.calendar.isNew()) sync.setEnabled(false);
 
     }
 
@@ -284,7 +268,7 @@ public class CalendarFormNew extends Dialog {
         try {
             binder.writeBean(this.calendar);
             this.calendar.setCalendarException(exceptionDays.getItems());
-            calendarService.saveCalendars(calendar);
+            calendarService.saveCalendar(calendar);
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
             return false;
@@ -295,8 +279,9 @@ public class CalendarFormNew extends Dialog {
     }
 
     private void syncData() {
-        if (this.calendarRep == null) return;
-        read(this.calendarRep);
+        if (this.calendar.isNew()) return;
+        this.calendar = calendarService.getCalendarById(this.calendar.getId());
+        read();
     }
 
     public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType,
