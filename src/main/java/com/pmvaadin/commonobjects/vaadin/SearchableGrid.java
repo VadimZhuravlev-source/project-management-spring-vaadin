@@ -18,6 +18,7 @@ import org.springframework.data.domain.PageRequest;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public class SearchableGrid<T> extends VerticalLayout {
@@ -51,18 +52,11 @@ public class SearchableGrid<T> extends VerticalLayout {
 
     }
 
-    /*
-    Class<T> have to implement interface Predefinable
-     */
-    public Grid.Column<T> addPredefinedColumn() {
+    public Grid.Column<T> addPredefinedColumn(Predicate<T> predicate) {
 
         return this.grid.addComponentColumn((item) -> {
 
-            if( !(item instanceof Predefinable)) return new Div();
-
-            var castItem = (Predefinable) item;
-
-            if(!castItem.isPredefined()){
+            if(!predicate.test(item)){
                 return new Div();
             }
             var icon = VaadinIcon.CHECK.create();

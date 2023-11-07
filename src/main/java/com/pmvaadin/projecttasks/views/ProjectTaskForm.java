@@ -42,7 +42,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.util.Date;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -82,7 +81,7 @@ public class ProjectTaskForm extends Dialog {
 
     // this need to stretch a grid in a tab
     private final VerticalLayout linksGridContainer = new VerticalLayout();
-    private ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
+    private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
 
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
@@ -182,8 +181,6 @@ public class ProjectTaskForm extends Dialog {
 
     private void customizeFields() {
 
-        Map<String, String> mapRepresentation = propertyNames.getProjectTaskPropertyNames();
-
         id.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         version.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         wbs.setEnabled(false);
@@ -195,9 +192,13 @@ public class ProjectTaskForm extends Dialog {
         name.setAutofocus(true);
         name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         calendarField.setSelectable(true);
-        calendarField.addSelectionListener(event -> calendarSelectionForm.open());
+
+        calendarField.addSelectionListener(event -> {
+            var currentInstanceOfCalendarSelectionForm = calendarSelectionForm.newInstance();
+            currentInstanceOfCalendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
+            currentInstanceOfCalendarSelectionForm.open();
+        });
         calendarField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        calendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         startDate.addValueChangeListener(this::startDateChangeListener);
         finishDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);

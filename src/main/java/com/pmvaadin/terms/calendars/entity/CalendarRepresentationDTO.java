@@ -1,11 +1,9 @@
 package com.pmvaadin.terms.calendars.entity;
 
-import com.pmvaadin.commonobjects.vaadin.Predefinable;
-
 import java.time.LocalTime;
 import java.util.Objects;
 
-public record CalendarRepresentationDTO(Integer id, String name, CalendarSettings setting, LocalTime startTime, boolean isPredefined) implements CalendarRepresentation, Predefinable {
+public record CalendarRepresentationDTO(Integer id, String name, CalendarSettings setting, LocalTime startTime, boolean isPredefined) implements CalendarRepresentation{
 //@AllArgsConstructor
 //public class CalendarRepresentationDTO implements CalendarRepresentation {
 

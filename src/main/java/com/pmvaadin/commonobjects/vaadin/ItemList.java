@@ -1,7 +1,6 @@
 package com.pmvaadin.commonobjects.vaadin;
 
 import com.pmvaadin.commonobjects.services.ListService;
-import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
@@ -41,12 +40,12 @@ public class ItemList<T, I> extends SearchableGrid<T> {
 
         toolBar.add(add, copy, delete);
 
-        searchField.addFocusListener(focusEvent -> {
-            isDeletionAvailable = false;
-        });
-        grid.addFocusListener(focusEvent -> {
-            isDeletionAvailable = true;
-        });
+        searchField.addFocusListener(focusEvent ->
+            isDeletionAvailable = false
+        );
+        grid.addFocusListener(focusEvent ->
+            isDeletionAvailable = true
+        );
         this.grid.addItemDoubleClickListener(this::onMouseDoubleClick);
 
     }
