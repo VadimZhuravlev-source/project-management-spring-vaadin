@@ -16,6 +16,7 @@ import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.ComboBoxVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -61,6 +62,8 @@ public class ProjectTaskForm extends Dialog {
     private final TextField updateDate = new TextField();
     private final TextField name = new TextField();
     private final TextField wbs = new TextField();
+
+    private final Checkbox checkbox = new Checkbox();
 
     // Term fields
     private final SelectableTextField<Calendar> calendarField = new SelectableTextField<>();
@@ -166,6 +169,7 @@ public class ProjectTaskForm extends Dialog {
         FormLayout formLayout = new FormLayout();
         formLayout.addFormItem(name, propertyNames.getHeaderName());
         formLayout.addFormItem(wbs, propertyNames.getHeaderWbs());
+        formLayout.addFormItem(checkbox, propertyNames.getHeaderIsProject());
         FormLayout termsLayout = new FormLayout();
         termsLayout.addFormItem(startDate, propertyNames.getHeaderStartDate());
         termsLayout.addFormItem(finishDate, propertyNames.getHeaderFinishDate());
@@ -192,7 +196,6 @@ public class ProjectTaskForm extends Dialog {
         name.setAutofocus(true);
         name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         calendarField.setSelectable(true);
-
         calendarField.addSelectionListener(event -> {
             var currentInstanceOfCalendarSelectionForm = calendarSelectionForm.newInstance();
             currentInstanceOfCalendarSelectionForm.addSelectionListener(this::calendarSelectionListener);

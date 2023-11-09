@@ -268,7 +268,7 @@ public class CalendarForm extends Dialog {
         try {
             binder.writeBean(this.calendar);
             this.calendar.setCalendarException(exceptionDays.getItems());
-            calendarService.saveCalendar(calendar);
+            calendarService.save(calendar);
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
             return false;

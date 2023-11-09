@@ -9,7 +9,7 @@ public interface CalendarService {
 
     Calendar getDefaultCalendar();
 
-    void saveCalendar(Calendar calendar);
+    void save(Calendar calendar);
 
     void fillCalendars(TermCalculationData termCalculationData);
 

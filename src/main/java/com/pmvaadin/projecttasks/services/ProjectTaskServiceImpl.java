@@ -1,6 +1,7 @@
 package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.AppConfiguration;
+import com.pmvaadin.projectstructure.ProjectRecalculation;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
@@ -233,6 +234,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         List<ProjectTask> savedTasks = projectTaskRepository.saveAll(respond.getChangedTasks());
 
         //TODO async recalculating of changed projects respond.getRecalculatedProjects()
+        var projectRecalculation = context.getBean(ProjectRecalculation.class);
+        projectRecalculation.recalculate(respond.getRecalculatedProjects());
 
         return savedTasks;
 

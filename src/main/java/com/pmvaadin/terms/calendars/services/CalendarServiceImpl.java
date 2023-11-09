@@ -2,6 +2,8 @@ package com.pmvaadin.terms.calendars.services;
 
 import com.pmvaadin.commonobjects.services.ListService;
 import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.terms.calendars.common.CheckAccuracyOfData;
+import com.pmvaadin.terms.calendars.common.CheckAccuracyOfDataImpl;
 import com.pmvaadin.terms.calendars.entity.*;
 import com.pmvaadin.terms.calendars.repositories.CalendarRepository;
 import com.pmvaadin.terms.calculation.TermCalculationData;
@@ -55,7 +57,11 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
     @Transactional
     @Override
-    public void saveCalendar(Calendar calendar) {
+    public void save(Calendar calendar) {
+
+        //TODO Check the accuracy of the data
+        var proceed = checkAccuracyOfData(calendar);
+        if (!proceed) return;
 
         if (!calendar.isNew()) {
 
@@ -66,6 +72,7 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
             var calendarDataBase = calendarDataBaseOpt.get();
             if (!calendarDataBase.getVersion().equals(calendar.getVersion()))
                 throw new StandardError("The calendar has been changed by another user.");
+
         }
 
         // TODO to define alterations of the DaysOfWeekSettings and the CalendarException and to find tasks that used this calendar
@@ -153,6 +160,13 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
     }
 
+    private boolean checkAccuracyOfData(Calendar calendar) {
+
+        var checkAccuracyOfData = new CheckAccuracyOfDataImpl();
+        return checkAccuracyOfData.check(calendar);
+
+    }
+
     private List<?> checkIfItemsCanBeDeleted(List<?> ids) {
 
         var calendarReps = findCalendarDTOForDetectionOfUndeletableCalendars(ids);
@@ -178,7 +192,6 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         var idsParameter = String.valueOf(ids).replace("[", "'{").replace("]", "}'");
         queryText = queryText.replace(":ids", idsParameter);
         var query = entityManager.createNativeQuery(queryText);
-        //query.setParameter("ids", idsParameter);
 
         List<Object[]> resultList = query.getResultList();
 
