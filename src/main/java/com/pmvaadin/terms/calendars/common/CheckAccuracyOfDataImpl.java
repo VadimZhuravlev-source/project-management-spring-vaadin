@@ -42,7 +42,7 @@ public class CheckAccuracyOfDataImpl implements CheckAccuracyOfData {
         var sum = 0;
         for (DayOfWeekSettings dayOfWeekSettings : daysOfWeek) {
             sum = sum + dayOfWeekSettings.getCountHours();
-            if (dayOfWeekSettings.getCountHours() >= this.availableNumberOfSeconds) continue;
+            if (dayOfWeekSettings.getCountHours() <= this.availableNumberOfSeconds) continue;
             var dayOfWeek = DayOfWeek.of(dayOfWeekSettings.getDayOfWeek());
             var text = getTextMessageExceedingWorkingDay();
             text = text.replace(":day", dayOfWeek.toString());
@@ -65,7 +65,7 @@ public class CheckAccuracyOfDataImpl implements CheckAccuracyOfData {
             if (days.contains(day)) throw new StandardError("");
             days.add(day);
 
-            if (exceptionDay.getDuration() >= this.availableNumberOfSeconds) continue;
+            if (exceptionDay.getDuration() <= this.availableNumberOfSeconds) continue;
             var text = getTextMessageExceedingWorkingDay();
             text = text.replace(":day", day.toString());
             throw new StandardError(text);

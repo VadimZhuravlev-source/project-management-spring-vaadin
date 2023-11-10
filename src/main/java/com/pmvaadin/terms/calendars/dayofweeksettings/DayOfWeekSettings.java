@@ -25,6 +25,9 @@ public class DayOfWeekSettings implements Serializable {
     @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Integer id;
 
+    @Version
+    private Integer version;
+
     @Setter
     @ManyToOne
     @JoinColumn(name = "calendar_id", nullable = false)
