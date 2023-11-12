@@ -97,10 +97,6 @@ public class CalendarForm extends Dialog {
     private void customizeElements() {
 
         this.setting.setItems(CalendarSettings.values());
-        setting.addValueChangeListener(l -> {
-            var value = l.getValue();
-            workingDaysLayout.setEnabled(value == CalendarSettings.DAYSOFWEEKSETTINGS);
-        });
 
         startTime.addValueChangeListener(event -> {
 

@@ -5,7 +5,7 @@ import com.pmvaadin.terms.calendars.common.Interval;
 import java.time.DayOfWeek;
 import java.util.List;
 
-public interface DayOfWeekSetting {
+public interface WorkingTime {
 
     Integer getId();
     void setId(Integer id);
@@ -17,8 +17,8 @@ public interface DayOfWeekSetting {
     DayOfWeek getDayOfWeek();
     void setDayOfWeek(DayOfWeek dayOfWeek);
 
-    IntervalSettings getIntervalSettings();
-    void setIntervalSettings(IntervalSettings intervalSettings);
+    IntervalSetting getIntervalSetting();
+    void setIntervalSetting(IntervalSetting intervalSetting);
 
     List<Interval> getIntervals();
 

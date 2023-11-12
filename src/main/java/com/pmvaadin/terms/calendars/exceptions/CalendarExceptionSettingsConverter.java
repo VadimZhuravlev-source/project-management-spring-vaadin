@@ -1,4 +1,4 @@
-package com.pmvaadin.terms.calendars.workingweeks;
+package com.pmvaadin.terms.calendars.exceptions;
 
 import org.springframework.stereotype.Component;
 
@@ -7,23 +7,23 @@ import javax.persistence.Converter;
 
 @Component
 @Converter(autoApply = true)
-public class IntervalSettingsConverter implements AttributeConverter<IntervalSetting, Integer> {
+public class CalendarExceptionSettingsConverter implements AttributeConverter<CalendarExceptionSetting, Integer> {
 
     @Override
-    public Integer convertToDatabaseColumn(IntervalSetting intervalSetting) {
-        if (intervalSetting == null) {
+    public Integer convertToDatabaseColumn(CalendarExceptionSetting settings) {
+        if (settings == null) {
             return null;
         }
-        return intervalSetting.getCode();
+        return settings.getCode();
     }
 
     @Override
-    public IntervalSetting convertToEntityAttribute(Integer code) {
+    public CalendarExceptionSetting convertToEntityAttribute(Integer code) {
         if (code == null) {
             return null;
         }
 
-        return IntervalSetting.of(code);
+        return CalendarExceptionSetting.of(code);
 
 //        return Stream.of(IntervalSettings.values())
 //                .filter(c -> c.getCode().equals(code))

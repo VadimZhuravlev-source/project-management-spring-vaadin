@@ -2,7 +2,7 @@ package com.pmvaadin.terms.calendars.workingweeks;
 
 import java.util.NoSuchElementException;
 
-public enum IntervalSettings {
+public enum IntervalSetting {
 
     DEFAULT(0),
     NONWORKING(1),
@@ -10,9 +10,9 @@ public enum IntervalSettings {
 
     private final Integer code;
 
-    private static final IntervalSettings[] ENUMS = values();
+    private static final IntervalSetting[] ENUMS = values();
 
-    IntervalSettings(int code) {
+    IntervalSetting(int code) {
         this.code = code;
     }
 
@@ -20,9 +20,9 @@ public enum IntervalSettings {
         return code;
     }
 
-    public static IntervalSettings of(int intervalSettings) {
-        if (intervalSettings >= 1 && intervalSettings <= 4) {
-            return ENUMS[intervalSettings - 1];
+    public static IntervalSetting of(int intervalSettings) {
+        if (intervalSettings >= 0 && intervalSettings <= 2) {
+            return ENUMS[intervalSettings];
         } else {
             throw new NoSuchElementException("Invalid value for interval settings: " + intervalSettings);
         }

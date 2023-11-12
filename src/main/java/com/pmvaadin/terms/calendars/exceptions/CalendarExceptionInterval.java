@@ -1,4 +1,4 @@
-package com.pmvaadin.terms.calendars.workingweeks;
+package com.pmvaadin.terms.calendars.exceptions;
 
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
@@ -9,30 +9,33 @@ import javax.persistence.*;
 import java.time.LocalTime;
 
 @Entity
-@Table(name = "intervals")
+@Table(name = "exception_intervals")
 @Getter
-public class IntervalDayOfWeek implements Interval, HasIdentifyingFields {
+public class CalendarExceptionInterval implements Interval, HasIdentifyingFields {
 
     @Setter
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @ManyToOne
-    @JoinColumn(name = "working_day_setting_id", nullable = false)
-    private DayOfWeekSettingImpl workingDaySetting;
-
     @Version
     private Integer version;
 
     @Setter
+    @ManyToOne
+    @JoinColumn(name = "calendar_exception_id", nullable = false)
+    private CalendarExceptionImpl exception;
+
+    @Setter
+    @Column(name = "from_time")
     private LocalTime from;
 
     @Setter
+    @Column(name = "to_time")
     private LocalTime to;
 
     @Setter
-    private Integer sort;
+    private int sort;
 
     @Override
     public void nullIdentifyingFields() {

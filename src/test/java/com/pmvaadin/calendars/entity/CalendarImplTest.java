@@ -30,9 +30,9 @@ class CalendarImplTest {
 
     {
         //calendar12 = new CalendarImpl();
-        calendar12.setSetting(CalendarSettings.HOURSHIFT12);
+        calendar12.setSetting(CalendarSettings.NIGHT_SHIFT);
         //calendar24 = new CalendarImpl();
-        calendar24.setSetting(CalendarSettings.HOURSHIFT24);
+        calendar24.setSetting(CalendarSettings.FULL_DAY);
 
         List<ExceptionDay> exceptions = calendarWithExceptions.getCalendarException();
         exceptions.addAll(getExceptions());

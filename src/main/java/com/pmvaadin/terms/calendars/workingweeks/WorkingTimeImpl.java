@@ -1,6 +1,7 @@
 package com.pmvaadin.terms.calendars.workingweeks;
 
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
+import com.pmvaadin.terms.calendars.common.Interval;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,11 +9,12 @@ import javax.persistence.*;
 import java.time.DayOfWeek;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "day_of_week_settings")
+@Table(name = "working_times")
 @Getter
-public class DayOfWeekSettingImpl implements DayOfWeekSetting, HasIdentifyingFields {
+public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
 
     @Setter
     @Id
@@ -32,16 +34,29 @@ public class DayOfWeekSettingImpl implements DayOfWeekSetting, HasIdentifyingFie
     private DayOfWeek dayOfWeek;
 
     @Setter
-    @Column(name = "interval_id")
-    private IntervalSettings intervalSettings = IntervalSettings.DEFAULT;
+    @Column(name = "interval_setting_id")
+    private IntervalSetting intervalSetting = IntervalSetting.DEFAULT;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<IntervalDayOfWeek> intervals = new ArrayList<>();
+    @Setter
+    @OneToMany(mappedBy = "workingTime", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OrderBy("sort ASC")
+    private List<DayOfWeekInterval> intervals = new ArrayList<>();
 
     @Override
     public void nullIdentifyingFields() {
+
         this.id = null;
         this.version = null;
+
+        if (intervals == null) return;
+
+        intervals.forEach(DayOfWeekInterval::nullIdentifyingFields);
+
+    }
+
+    @Override
+    public List<Interval> getIntervals() {
+        return intervals.stream().map(i -> (Interval) i).collect(Collectors.toList());
     }
 
 }

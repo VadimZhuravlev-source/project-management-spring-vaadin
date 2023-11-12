@@ -5,6 +5,8 @@ import com.pmvaadin.terms.calendars.dayofweeksettings.DefaultDaySetting;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.OperationListenerForCalendar;
 import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionImpl;
+import com.pmvaadin.terms.calendars.workingweeks.WorkingWeekImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -49,7 +51,7 @@ public class CalendarImpl implements Calendar, Serializable {
 
     @Setter
     @Column(name = "settings_id")
-    private CalendarSettings setting = CalendarSettings.EIGHTHOURWORKINGDAY;
+    private CalendarSettings setting = CalendarSettings.STANDARD;
 
     @Setter
     @Column(name = "start_time")
@@ -69,6 +71,16 @@ public class CalendarImpl implements Calendar, Serializable {
     @OrderBy("dayOfWeek ASC")
     @LazyCollection(LazyCollectionOption.FALSE)
     private List<DayOfWeekSettings> daysOfWeekSettings = new ArrayList<>();
+
+    @Setter
+    @OneToMany(mappedBy = "calendar")
+    @OrderBy("sort ASC")
+    private List<CalendarExceptionImpl> exceptions = new ArrayList<>();
+
+    @Setter
+    @OneToMany(mappedBy = "calendar")
+    @OrderBy("sort ASC")
+    private List<WorkingWeekImpl> workingWeeks = new ArrayList<>();
 
     @Transient
     private CalendarData calendarData;
@@ -119,7 +131,7 @@ public class CalendarImpl implements Calendar, Serializable {
     public Calendar getDefaultCalendar() {
 
         Calendar calendar = new CalendarImpl("Standard");
-        calendar.setSetting(CalendarSettings.EIGHTHOURWORKINGDAY);
+        calendar.setSetting(CalendarSettings.STANDARD);
         return calendar;
 
     }
@@ -231,12 +243,8 @@ public class CalendarImpl implements Calendar, Serializable {
         List<ExceptionDay> exceptionDayList = this.getCalendarException();
 
         List<DefaultDaySetting> settingList;
-        if (this.getSetting() == CalendarSettings.DAYSOFWEEKSETTINGS) {
-            List<DayOfWeekSettings> list = this.getDaysOfWeekSettings();
-            settingList = list.stream().map(d -> new DefaultDaySetting(d.getDayOfWeek(), d.getCountHours())).toList();
-        } else {
-            settingList = this.getSetting().getDefaultDaySettings();
-        }
+
+        settingList = this.getSetting().getDefaultDaySettings();
 
         Map<LocalDate, Integer> mapExceptions =
                 exceptionDayList.stream().collect(
@@ -244,7 +252,7 @@ public class CalendarImpl implements Calendar, Serializable {
                 );
 
         int secondFromBeggingOfDay = startTime.toSecondOfDay();
-        if (setting == CalendarSettings.HOURSHIFT24) {
+        if (setting == CalendarSettings.FULL_DAY) {
             secondFromBeggingOfDay = 0;
         }
 

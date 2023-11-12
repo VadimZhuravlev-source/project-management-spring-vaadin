@@ -8,10 +8,9 @@ import java.util.*;
 
 public enum CalendarSettings {
     // after new value has been added, there is a need to add an initialization of DayOfWeekSettings set in the class Sets below
-    EIGHTHOURWORKINGDAY(0),
-    HOURSHIFT12(1),
-    HOURSHIFT24(2),
-    DAYSOFWEEKSETTINGS(3);
+    STANDARD(0),
+    NIGHT_SHIFT(1),
+    FULL_DAY(2);
 
     private final Integer code;
 
@@ -36,14 +35,12 @@ public enum CalendarSettings {
     @Override
     public String toString() {
 
-        if (this == EIGHTHOURWORKINGDAY) {
-            return "Eight hour working day";
-        }else if (this == HOURSHIFT12) {
-            return "Twelve hour shift";
-        }else if (this == HOURSHIFT24) {
-            return "Twenty four hour shift";
-        }else if (this == DAYSOFWEEKSETTINGS) {
-            return "Days of the week settings";
+        if (this == STANDARD) {
+            return "Standard";
+        }else if (this == NIGHT_SHIFT) {
+            return "Night Shift";
+        }else if (this == FULL_DAY) {
+            return "24 Hours";
         }
         return "";
 
@@ -68,10 +65,9 @@ public enum CalendarSettings {
 
             Map<CalendarSettings, List<DefaultDaySetting>> map = new HashMap<>(CalendarSettings.values().length);
 
-            map.put(CalendarSettings.EIGHTHOURWORKINGDAY, initiateSettingsEightHour());
-            map.put(CalendarSettings.HOURSHIFT12, initiateShiftSettings(12));
-            map.put(CalendarSettings.HOURSHIFT24, initiateShiftSettings(24));
-            map.put(CalendarSettings.DAYSOFWEEKSETTINGS, initiateSettingsEightHour());
+            map.put(CalendarSettings.STANDARD, initiateSettingsEightHour());
+            map.put(CalendarSettings.NIGHT_SHIFT, initiateShiftSettings(12));
+            map.put(CalendarSettings.FULL_DAY, initiateShiftSettings(24));
 
             return map;
 

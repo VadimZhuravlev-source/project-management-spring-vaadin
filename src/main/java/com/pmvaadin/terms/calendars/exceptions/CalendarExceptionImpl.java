@@ -1,6 +1,7 @@
-package com.pmvaadin.terms.calendars.workingweeks;
+package com.pmvaadin.terms.calendars.exceptions;
 
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
+import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,10 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Entity
-@Table(name = "working_weeks")
 @Getter
-public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
+@Entity
+@Table(name = "calendar_exceptions")
+public class CalendarExceptionImpl implements CalendarException, HasIdentifyingFields {
 
     @Setter
     @Id
@@ -33,33 +34,36 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
     private String name = "";
 
     @Setter
-    private LocalDate start = LocalDate.now();
+    private CalendarExceptionSetting setting = CalendarExceptionSetting.NONWORKING;
 
+    @Setter
+    private LocalDate start = LocalDate.now();
     @Setter
     private LocalDate finish = LocalDate.now();
 
     @Setter
-    private int sort = 0;
+    private Integer sort = 0;
 
     @Setter
-    @OneToMany(mappedBy = "workingWeek", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @OrderBy("dayOfWeek ASC")
-    private List<WorkingTimeImpl> workingTimes = new ArrayList<>();
+    @OneToMany(mappedBy = "exception", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OrderBy("sort ASC")
+    private List<CalendarExceptionInterval> intervals = new ArrayList<>();
 
     @Override
     public void nullIdentifyingFields() {
+
         this.id = null;
         this.version = null;
 
-        if (workingTimes == null) return;
+        if (intervals == null) return;
 
-        workingTimes.forEach(WorkingTimeImpl::nullIdentifyingFields);
+        intervals.forEach(CalendarExceptionInterval::nullIdentifyingFields);
 
     }
 
     @Override
-    public List<WorkingTime> getWorkingTimes() {
-        return workingTimes.stream().map(w -> (WorkingTime) w).collect(Collectors.toList());
+    public List<Interval> getIntervals() {
+        return intervals.stream().map(i -> (Interval) i).collect(Collectors.toList());
     }
 
 }

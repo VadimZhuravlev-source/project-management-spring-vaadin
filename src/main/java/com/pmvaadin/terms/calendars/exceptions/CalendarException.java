@@ -1,9 +1,11 @@
-package com.pmvaadin.terms.calendars.workingweeks;
+package com.pmvaadin.terms.calendars.exceptions;
+
+import com.pmvaadin.terms.calendars.common.Interval;
 
 import java.time.LocalDate;
 import java.util.List;
 
-public interface WorkingWeek {
+public interface CalendarException {
 
     Integer getId();
     void setId(Integer id);
@@ -19,9 +21,9 @@ public interface WorkingWeek {
     LocalDate getFinish();
     void setFinish(LocalDate finish);
 
-    int getSort();
-    void setSort(int sort);
+    Integer getSort();
+    void setSort(Integer sort);
 
-    List<WorkingTime> getWorkingTimes();
+    List<Interval> getIntervals();
 
 }

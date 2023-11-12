@@ -32,24 +32,24 @@ public class CheckAccuracyOfDataImpl implements CheckAccuracyOfData {
 
     private void checkDayOfWeek() {
 
-        if (this.calendar.getSetting() != CalendarSettings.DAYSOFWEEKSETTINGS) return;
-
-        var daysOfWeek = this.calendar.getDaysOfWeekSettings();
-
-        var messageZeroDuration = new StandardError("The sum of working hours cannot be less than or equal to zero");
-        if (daysOfWeek == null) throw messageZeroDuration;
-
-        var sum = 0;
-        for (DayOfWeekSettings dayOfWeekSettings : daysOfWeek) {
-            sum = sum + dayOfWeekSettings.getCountHours();
-            if (dayOfWeekSettings.getCountHours() <= this.availableNumberOfSeconds) continue;
-            var dayOfWeek = DayOfWeek.of(dayOfWeekSettings.getDayOfWeek());
-            var text = getTextMessageExceedingWorkingDay();
-            text = text.replace(":day", dayOfWeek.toString());
-            throw new StandardError(text);
-        }
-
-        if (sum == 0) throw messageZeroDuration;
+//        if (this.calendar.getSetting() != CalendarSettings.DAYSOFWEEKSETTINGS) return;
+//
+//        var daysOfWeek = this.calendar.getDaysOfWeekSettings();
+//
+//        var messageZeroDuration = new StandardError("The sum of working hours cannot be less than or equal to zero");
+//        if (daysOfWeek == null) throw messageZeroDuration;
+//
+//        var sum = 0;
+//        for (DayOfWeekSettings dayOfWeekSettings : daysOfWeek) {
+//            sum = sum + dayOfWeekSettings.getCountHours();
+//            if (dayOfWeekSettings.getCountHours() <= this.availableNumberOfSeconds) continue;
+//            var dayOfWeek = DayOfWeek.of(dayOfWeekSettings.getDayOfWeek());
+//            var text = getTextMessageExceedingWorkingDay();
+//            text = text.replace(":day", dayOfWeek.toString());
+//            throw new StandardError(text);
+//        }
+//
+//        if (sum == 0) throw messageZeroDuration;
 
     }
 

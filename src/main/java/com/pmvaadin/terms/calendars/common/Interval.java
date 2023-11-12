@@ -15,7 +15,7 @@ public interface Interval {
     public LocalTime getTo();
     public void setTo(LocalTime to);
 
-    Integer getSort();
-    void setSort(Integer sort);
+    int getSort();
+    void setSort(int sort);
 
 }
