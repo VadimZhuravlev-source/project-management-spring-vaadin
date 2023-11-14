@@ -24,4 +24,5 @@ public class DayOfWeekConverter implements AttributeConverter<DayOfWeek, Integer
 
         return DayOfWeek.of(code);
     }
+
 }

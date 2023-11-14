@@ -33,10 +33,10 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
     private String name = "";
 
     @Setter
-    private LocalDate start = LocalDate.now();
+    private LocalDate start;
 
     @Setter
-    private LocalDate finish = LocalDate.now();
+    private LocalDate finish;
 
     @Setter
     private int sort = 0;

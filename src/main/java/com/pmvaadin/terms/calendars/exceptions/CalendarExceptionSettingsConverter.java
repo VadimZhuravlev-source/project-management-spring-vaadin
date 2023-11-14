@@ -25,10 +25,6 @@ public class CalendarExceptionSettingsConverter implements AttributeConverter<Ca
 
         return CalendarExceptionSetting.of(code);
 
-//        return Stream.of(IntervalSettings.values())
-//                .filter(c -> c.getCode().equals(code))
-//                .findFirst()
-//                .orElseThrow(IllegalArgumentException::new);
     }
 
 }

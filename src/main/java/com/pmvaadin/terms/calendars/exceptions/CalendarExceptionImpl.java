@@ -7,7 +7,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,15 +36,91 @@ public class CalendarExceptionImpl implements CalendarException, HasIdentifyingF
     private String name = "";
 
     @Setter
+    @Column(name = "setting_id")
     private CalendarExceptionSetting setting = CalendarExceptionSetting.NONWORKING;
 
     @Setter
-    private LocalDate start = LocalDate.now();
+    private LocalDate start;
     @Setter
-    private LocalDate finish = LocalDate.now();
+    private LocalDate finish;
+    @Setter
+    @Column(name = "finish_after")
+    private int finishAfter = 1;
 
     @Setter
     private Integer sort = 0;
+
+    @Setter
+    @Column(name = "pattern_id")
+    private RecurrencePattern pattern;
+
+    // Daily pattern
+    @Setter
+    @Column(name = "number_of_days")
+    private int numberOfDays;
+
+    // Weekly pattern
+    @Setter
+    @Column(name = "number_of_weeks")
+    private int numberOfWeeks;
+    @Setter
+    @Column(name = "every_monday")
+    private boolean everyMonday;
+    @Setter
+    @Column(name = "every_tuesday")
+    private boolean everyTuesday;
+    @Setter
+    @Column(name = "every_wednesday")
+    private boolean everyWednesday;
+    @Setter
+    @Column(name = "every_thursday")
+    private boolean everyThursday;
+    @Setter
+    @Column(name = "every_friday")
+    private boolean everyFriday;
+    @Setter
+    @Column(name = "every_saturday")
+    private boolean everySaturday;
+    @Setter
+    @Column(name = "every_sunday")
+    private boolean everySunday;
+
+    // Monthly pattern
+    @Setter
+    @Column(name = "monthly_pattern_id")
+    private MonthlyPattern monthlyPattern;
+    @Setter
+    @Column(name = "day_of_month")
+    private byte dayOfMonth;
+    @Setter
+    @Column(name = "number_of_months")
+    private int numberOfMonth;
+    @Setter
+    @Column(name = "number_of_weeks_the")
+    private NumberOfWeek numberOfWeekThe;
+    @Setter
+    @Column(name = "day_of_week_the")
+    private DayOfWeek dayOfWeekThe;
+    @Setter
+    @Column(name = "number_of_months_the")
+    private int numberOfMonthThe;
+
+    // Yearly pattern
+    @Setter
+    @Column(name = "yearly_pattern_id")
+    private YearlyPattern yearlyPattern;
+    @Setter
+    @Column(name = "on_date")
+    private LocalDate onDate;
+    @Setter
+    @Column(name = "number_of_week_year")
+    private NumberOfWeek numberOfWeekYear;
+    @Setter
+    @Column(name = "day_of_week_year")
+    private DayOfWeek dayOfWeekYear;
+    @Setter
+    @Column(name = "month_year")
+    private Month monthYear;
 
     @Setter
     @OneToMany(mappedBy = "exception", cascade = CascadeType.ALL, fetch = FetchType.EAGER)

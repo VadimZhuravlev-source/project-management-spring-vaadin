@@ -5,7 +5,7 @@ import java.util.NoSuchElementException;
 public enum CalendarExceptionSetting {
 
     NONWORKING(0),
-    WORKINGTIMES(1);
+    WORKING_TIMES(1);
 
     private final Integer code;
 
@@ -32,7 +32,7 @@ public enum CalendarExceptionSetting {
 
         if (this == NONWORKING) {
             return "Nonworking";
-        }else if (this == WORKINGTIMES) {
+        }else if (this == WORKING_TIMES) {
             return "Working times";
         }
 
