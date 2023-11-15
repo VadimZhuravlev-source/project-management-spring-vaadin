@@ -42,12 +42,17 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
     private int sort = 0;
 
     @Setter
-    @OneToMany(mappedBy = "workingWeek", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @Column(name = "is_default")
+    private boolean isDefault = false;
+
+    @Setter
+    @OneToMany(mappedBy = "workingWeek")
     @OrderBy("dayOfWeek ASC")
     private List<WorkingTimeImpl> workingTimes = new ArrayList<>();
 
     @Override
     public void nullIdentifyingFields() {
+
         this.id = null;
         this.version = null;
 
@@ -60,6 +65,16 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
     @Override
     public List<WorkingTime> getWorkingTimes() {
         return workingTimes.stream().map(w -> (WorkingTime) w).collect(Collectors.toList());
+    }
+
+    @Override
+    public WorkingWeek getInstance() {
+        return new WorkingWeekImpl();
+    }
+
+    @Override
+    public WorkingTime getWorkingTimeInstance() {
+        return new WorkingTimeImpl();
     }
 
 }

@@ -24,7 +24,7 @@ public enum IntervalSetting {
         if (intervalSettings >= 0 && intervalSettings <= 2) {
             return ENUMS[intervalSettings];
         } else {
-            throw new NoSuchElementException("Invalid value for interval settings: " + intervalSettings);
+            throw new NoSuchElementException("Invalid value for IntervalSetting: " + intervalSettings);
         }
     }
 
@@ -32,7 +32,7 @@ public enum IntervalSetting {
     public String toString() {
 
         if (this == DEFAULT) {
-            return "Use Project default times for these days.";
+            return "Use times from default work week for these days.";
         }else if (this == NONWORKING) {
             return "Set days to nonworking time.";
         }else if (this == CUSTOM) {

@@ -43,4 +43,9 @@ public class CalendarExceptionInterval implements Interval, HasIdentifyingFields
         this.version = null;
     }
 
+    @Override
+    public Interval getInstance() {
+        return new CalendarExceptionInterval();
+    }
+
 }

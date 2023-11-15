@@ -4,18 +4,20 @@ import java.time.LocalTime;
 
 public interface Interval {
 
-    public Integer getId();
-    public void setId(Integer id);
+    Integer getId();
+    void setId(Integer id);
 
-    public Integer getVersion();
+    Integer getVersion();
 
-    public LocalTime getFrom();
-    public void setFrom(LocalTime from);
+    LocalTime getFrom();
+    void setFrom(LocalTime from);
 
-    public LocalTime getTo();
-    public void setTo(LocalTime to);
+    LocalTime getTo();
+    void setTo(LocalTime to);
 
     int getSort();
     void setSort(int sort);
+
+    Interval getInstance();
 
 }

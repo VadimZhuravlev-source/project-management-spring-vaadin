@@ -1,6 +1,7 @@
 package com.pmvaadin.terms.calendars.workingweeks;
 
 import com.pmvaadin.terms.calendars.common.Interval;
+import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 
 import java.time.DayOfWeek;
 import java.util.List;
@@ -21,5 +22,9 @@ public interface WorkingTime {
     void setIntervalSetting(IntervalSetting intervalSetting);
 
     List<Interval> getIntervals();
+
+    Interval getIntervalInstance();
+
+    List<Interval> getDefaultIntervals(DayOfWeek dayOfWeek, CalendarSettings settings);
 
 }

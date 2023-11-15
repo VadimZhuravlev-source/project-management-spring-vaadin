@@ -3,6 +3,8 @@ package com.pmvaadin.terms.calendars.workingweeks;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
@@ -11,6 +13,7 @@ import java.time.LocalTime;
 @Entity
 @Table(name = "working_time_intervals")
 @Getter
+@NoArgsConstructor
 public class DayOfWeekInterval implements Interval, HasIdentifyingFields {
 
     @Setter
@@ -37,10 +40,22 @@ public class DayOfWeekInterval implements Interval, HasIdentifyingFields {
     @Setter
     private int sort;
 
+    public DayOfWeekInterval(WorkingTimeImpl workingTime, LocalTime from, LocalTime to, int sort) {
+        this.workingTime = workingTime;
+        this.from = from;
+        this.to = to;
+        this.sort = sort;
+    }
+
     @Override
     public void nullIdentifyingFields() {
         this.id = null;
         this.version = null;
+    }
+
+    @Override
+    public Interval getInstance() {
+        return new DayOfWeekInterval();
     }
 
 }

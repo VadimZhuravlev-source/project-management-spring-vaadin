@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 @Getter
 @Entity
 @Table(name = "calendar_exceptions")
-public class CalendarExceptionImpl implements CalendarException, HasIdentifyingFields {
+public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarException {
 
     @Setter
     @Id
@@ -96,7 +96,7 @@ public class CalendarExceptionImpl implements CalendarException, HasIdentifyingF
     @Column(name = "number_of_months")
     private int numberOfMonth;
     @Setter
-    @Column(name = "number_of_weeks_the")
+    @Column(name = "number_of_weeks_the_id")
     private NumberOfWeek numberOfWeekThe;
     @Setter
     @Column(name = "day_of_week_the")
@@ -113,7 +113,7 @@ public class CalendarExceptionImpl implements CalendarException, HasIdentifyingF
     @Column(name = "on_date")
     private LocalDate onDate;
     @Setter
-    @Column(name = "number_of_week_year")
+    @Column(name = "number_of_week_year_id")
     private NumberOfWeek numberOfWeekYear;
     @Setter
     @Column(name = "day_of_week_year")
@@ -122,8 +122,11 @@ public class CalendarExceptionImpl implements CalendarException, HasIdentifyingF
     @Column(name = "month_year")
     private Month monthYear;
 
+
+    private final Interval intervalInstance = new CalendarExceptionInterval();
+
     @Setter
-    @OneToMany(mappedBy = "exception", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "exception")
     @OrderBy("sort ASC")
     private List<CalendarExceptionInterval> intervals = new ArrayList<>();
 
