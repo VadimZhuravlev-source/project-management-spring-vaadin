@@ -4,7 +4,6 @@ import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
 import javax.persistence.*;
@@ -45,6 +44,17 @@ public class DayOfWeekInterval implements Interval, HasIdentifyingFields {
         this.from = from;
         this.to = to;
         this.sort = sort;
+    }
+
+    public DayOfWeekInterval(DayOfWeekInterval interval) {
+
+        this.id = interval.id;
+        this.version = interval.version;
+        this.workingTime = interval.workingTime;
+        this.from = interval.from;
+        this.to = interval.to;
+        this.sort = interval.sort;
+
     }
 
     @Override

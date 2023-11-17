@@ -22,10 +22,14 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.shared.Registration;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 import java.time.DayOfWeek;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +47,7 @@ public class WorkingWeekForm extends Dialog {
 
     private final Binder<WorkingWeek> binder = new Binder<>();
 
-    private final ObjectGrid<Interval> intervals = new ObjectGrid<>();
+    private final IntervalGrid intervals = new IntervalGrid();
 
     private final Map<DayOfWeek, WorkingDaysSetting> mapIntervalChanges = new HashMap<>();
 
@@ -60,10 +64,8 @@ public class WorkingWeekForm extends Dialog {
 
     private void fillMapIntervalChanges() {
         var workingTimes = workingWeek.getWorkingTimes();
-        workingTimes.forEach(workingTime -> {
-            mapIntervalChanges.put(workingTime.getDayOfWeek(),
-                    new WorkingDaysSetting(workingTime.getIntervalSetting(), workingTime.getIntervals()));
-        });
+        workingTimes.forEach(workingTime -> mapIntervalChanges.put(workingTime.getDayOfWeek(),
+                new WorkingDaysSetting(workingTime.getIntervalSetting(), workingTime.getCopyOfIntervals())));
     }
 
     private void customizeElements() {
@@ -71,12 +73,12 @@ public class WorkingWeekForm extends Dialog {
         binder.readBean(this.workingWeek);
         days.setItems(DayOfWeek.values());
         days.addColumn(DayOfWeek::toString);
-        days.setSelectionMode(Grid.SelectionMode.MULTI);
-        days.getElement().getNode().runWhenAttached(ui ->
-                ui.beforeClientResponse(this, context ->
-                        getElement().executeJs(
-                                "if (this.querySelector('vaadin-grid-flow-selection-column')) {" +
-                                        " this.querySelector('vaadin-grid-flow-selection-column').hidden = true }")));
+//        days.setSelectionMode(Grid.SelectionMode.MULTI);
+//        days.getElement().getNode().runWhenAttached(ui ->
+//                ui.beforeClientResponse(this, context ->
+//                        getElement().executeJs(
+//                                "if (this.querySelector('vaadin-grid-flow-selection-column')) {" +
+//                                        " this.querySelector('vaadin-grid-flow-selection-column').hidden = true }")));
         intervals.setEnabled(false);
         days.select(DayOfWeek.MONDAY);
 
@@ -116,23 +118,26 @@ public class WorkingWeekForm extends Dialog {
     private void radioButtonChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<IntervalSetting>, IntervalSetting> event) {
 
         var selectedSetting = event.getValue();
-        if (selectedSetting == IntervalSetting.CUSTOM) {
-            intervals.setEnabled(true);
-            return;
-        }
-        intervals.setEnabled(false);
+        intervals.setEnabled(selectedSetting == IntervalSetting.CUSTOM);
+        intervals.endEditing();
 
         var selectedDays = days.getSelectedItems();
-        if (selectedDays.isEmpty()) return;
 
         selectedDays.forEach(dayOfWeek -> {
             var workingDaysSetting = mapIntervalChanges.get(dayOfWeek);
             if (workingDaysSetting == null) return;
-            if (selectedSetting == IntervalSetting.NONWORKING)
-            var intervalList = workingTimeInstance.getDefaultIntervals(dayOfWeek, workingWeek.getCalendar().getSetting());
-            workingDaysSetting.intervalSetting
+            workingDaysSetting.setIntervalSetting(selectedSetting);
+            if (selectedSetting == IntervalSetting.CUSTOM) {
+                intervals.setItems(workingDaysSetting.getIntervals());
+                return;
+            }
+            workingDaysSetting.getIntervals().clear();
+            if (selectedSetting == IntervalSetting.DEFAULT) {
+                var intervalList = workingTimeInstance.getDefaultIntervals(dayOfWeek, workingWeek.getCalendar().getSetting());
+                workingDaysSetting.getIntervals().addAll(intervalList);
+                intervals.setItems(intervalList);
+            }
         });
-
 
     }
 
@@ -154,9 +159,10 @@ public class WorkingWeekForm extends Dialog {
         ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         ok.addClickListener(event -> {
 
-            boolean validationDone = validateAndSave();
+            boolean validationDone = validate();
             if (!validationDone) return;
             fireEvent(new SaveEvent(this));
+            close();
 
         });
 
@@ -166,6 +172,10 @@ public class WorkingWeekForm extends Dialog {
 
         getFooter().add(ok, close);
 
+    }
+
+    private boolean validate() {
+        return false;
     }
 
     private void refreshHeader() {
@@ -200,7 +210,73 @@ public class WorkingWeekForm extends Dialog {
         }
     }
 
-    private record WorkingDaysSetting(IntervalSetting intervalSetting, List<Interval> intervals) {}
+    @Data
+    @AllArgsConstructor
+    private static class WorkingDaysSetting {
+
+        private IntervalSetting intervalSetting;
+        private List<Interval> intervals;
+
+    }
+
+    private class IntervalGrid extends ObjectGrid<Interval> {
+
+        IntervalGrid() {
+
+            customizeGrid();
+            addColumns();
+
+        }
+
+        private void customizeGrid() {
+
+            this.setInstantiatable(this::onAddInterval);
+            this.setDeletable(true);
+
+        }
+
+        private Interval onAddInterval() {
+
+            var newInterval = workingTimeInstance.getIntervalInstance();
+            var maxSort = this.grid.getListDataView().getItems().map(Interval::getSort).max(Comparator.naturalOrder()).orElse(-1);
+            newInterval.setSort(++maxSort);
+            var selectedDays = days.getSelectedItems();
+            selectedDays.forEach(dayOfWeek -> {
+                var workingDaysSetting = mapIntervalChanges.get(dayOfWeek);
+                if (workingDaysSetting == null) return;
+                var intervalList = workingDaysSetting.getIntervals();
+                intervalList.add(newInterval);
+            });
+            return newInterval;
+
+        }
+
+        private void addColumns() {
+
+            var fromColumn = addColumn(Interval::getFrom).
+                    setHeader("From");
+            var fromPicker = new TimePicker();
+            fromPicker.setWidthFull();
+            addCloseHandler(fromPicker, this.editor);
+            this.binder.forField(fromPicker).withValidator(localTime -> {
+                var currentInterval = this.editor.getItem();
+                var previousIntervalOpt = grid.getListDataView().getPreviousItem(currentInterval);
+                if (previousIntervalOpt.isEmpty()) return true;
+                return localTime.compareTo(previousIntervalOpt.get().getTo()) >= 0;
+            }, "");
+            fromColumn.setEditorComponent(fromPicker);
+
+            var toColumn = addColumn(Interval::getTo).
+                    setHeader("To");
+            var toPicker = new TimePicker();
+            toPicker.setWidthFull();
+            addCloseHandler(toPicker, this.editor);
+            this.binder.forField(toPicker);
+            toColumn.setEditorComponent(toPicker);
+
+        }
+
+    }
 
 }
 

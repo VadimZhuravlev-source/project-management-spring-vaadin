@@ -74,7 +74,9 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
 
     @Override
     public WorkingTime getWorkingTimeInstance() {
-        return new WorkingTimeImpl();
+        var time = new WorkingTimeImpl();
+        time.setWorkingWeek(this);
+        return time;
     }
 
 }

@@ -39,8 +39,6 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
     @Column(name = "interval_setting_id")
     private IntervalSetting intervalSetting = IntervalSetting.DEFAULT;
 
-    private final Interval intervalInstance = new DayOfWeekInterval();
-
     @Setter
     @OneToMany(mappedBy = "workingTime")
     @OrderBy("sort ASC")
@@ -91,6 +89,26 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
             list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0), 0));
         }
 
+        return list;
+
+    }
+
+    @Override
+    public Interval getIntervalInstance() {
+        var interval = new DayOfWeekInterval();
+        interval.setWorkingTime(this);
+        return interval;
+    }
+
+    @Override
+    public List<Interval> getCopyOfIntervals() {
+
+        List<Interval> list = new ArrayList<>(intervals.size());
+
+        for (DayOfWeekInterval interval: intervals) {
+            var newInterval = new DayOfWeekInterval(interval);
+            list.add(newInterval);
+        }
         return list;
 
     }
