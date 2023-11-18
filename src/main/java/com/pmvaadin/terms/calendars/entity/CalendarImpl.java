@@ -6,6 +6,7 @@ import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.OperationListenerForCalendar;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionImpl;
+import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeekImpl;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -77,7 +78,6 @@ public class CalendarImpl implements Calendar, Serializable {
     @OrderBy("sort ASC")
     private List<CalendarExceptionImpl> exceptions = new ArrayList<>();
 
-    @Setter
     @OneToMany(mappedBy = "calendar")
     @OrderBy("sort ASC")
     private List<WorkingWeekImpl> workingWeeks = new ArrayList<>();
@@ -125,6 +125,16 @@ public class CalendarImpl implements Calendar, Serializable {
     @Override
     public boolean isNew() {
         return id == null;
+    }
+
+    @Override
+    public WorkingWeek getWorkingWeekInstance() {
+        return new WorkingWeekImpl();
+    }
+
+    @Override
+    public void setWorkingWeeks(List<WorkingWeek> workingWeeks) {
+        this.workingWeeks = workingWeeks.stream().map(workingWeek -> (WorkingWeekImpl) workingWeek).toList();
     }
 
     @Override

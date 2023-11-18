@@ -14,6 +14,7 @@ import com.vaadin.flow.function.ValueProvider;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -28,6 +29,8 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     protected Supplier<T> createNewItem;
     protected UnaryOperator<T> copy;
+
+    protected Predicate<T> constraintForDeletion;
 
     protected Button addButton = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
     protected Button deleteButton = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));

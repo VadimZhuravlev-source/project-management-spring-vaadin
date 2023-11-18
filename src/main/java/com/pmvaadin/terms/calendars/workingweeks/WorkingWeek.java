@@ -35,7 +35,7 @@ public interface WorkingWeek {
     WorkingWeek getInstance();
 
     boolean isDefault();
-    boolean setDefault(boolean isDefault);
+    void setDefault(boolean isDefault);
 
     WorkingTime getWorkingTimeInstance();
 

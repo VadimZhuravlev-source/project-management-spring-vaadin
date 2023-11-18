@@ -144,7 +144,7 @@ public class WorkingWeekForm extends Dialog {
     private void customizeHeader() {
 
         Button closeButton = new Button(new Icon("lumo", "cross"),
-                e -> fireEvent(new CloseEvent(this))
+                e -> fireEvent(new CloseEvent(this, this.workingWeek))
         );
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         closeButton.addClickShortcut(Key.ESCAPE);
@@ -161,14 +161,14 @@ public class WorkingWeekForm extends Dialog {
 
             boolean validationDone = validate();
             if (!validationDone) return;
-            fireEvent(new SaveEvent(this));
+            fireEvent(new SaveEvent(this, this.workingWeek));
             close();
 
         });
 
         Button close = new Button("Cancel");
         close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        close.addClickListener(event -> fireEvent(new CloseEvent(this)));
+        close.addClickListener(event -> fireEvent(new CloseEvent(this, this.workingWeek)));
 
         getFooter().add(ok, close);
 
@@ -192,21 +192,28 @@ public class WorkingWeekForm extends Dialog {
 
     public static abstract class WorkingWeekFormEvent extends ComponentEvent<WorkingWeekForm> {
 
-        protected WorkingWeekFormEvent(WorkingWeekForm source) {
+        private WorkingWeek workingWeek;
+
+        protected WorkingWeekFormEvent(WorkingWeekForm source, WorkingWeek workingWeek) {
             super(source, false);
+            this.workingWeek = workingWeek;
+        }
+
+        public WorkingWeek getWorkingWeek() {
+            return workingWeek;
         }
 
     }
 
     public static class CloseEvent extends WorkingWeekFormEvent {
-        CloseEvent(WorkingWeekForm source) {
-            super(source);
+        CloseEvent(WorkingWeekForm source, WorkingWeek workingWeek) {
+            super(source, workingWeek);
         }
     }
 
     public static class SaveEvent extends WorkingWeekFormEvent {
-        SaveEvent(WorkingWeekForm source) {
-            super(source);
+        SaveEvent(WorkingWeekForm source, WorkingWeek workingWeek) {
+            super(source, workingWeek);
         }
     }
 
@@ -263,7 +270,7 @@ public class WorkingWeekForm extends Dialog {
                 var previousIntervalOpt = grid.getListDataView().getPreviousItem(currentInterval);
                 if (previousIntervalOpt.isEmpty()) return true;
                 return localTime.compareTo(previousIntervalOpt.get().getTo()) >= 0;
-            }, "");
+            }, "The start of a shaft must be later then the end of the previous shift.");
             fromColumn.setEditorComponent(fromPicker);
 
             var toColumn = addColumn(Interval::getTo).
@@ -271,7 +278,10 @@ public class WorkingWeekForm extends Dialog {
             var toPicker = new TimePicker();
             toPicker.setWidthFull();
             addCloseHandler(toPicker, this.editor);
-            this.binder.forField(toPicker);
+            this.binder.forField(toPicker).withValidator(localTime -> {
+                var currentInterval = this.editor.getItem();
+                return localTime.compareTo(currentInterval.getFrom()) <= 0;
+            }, "The end of a shaft must be later then the start.");
             toColumn.setEditorComponent(toPicker);
 
         }

@@ -7,7 +7,10 @@ import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
+import com.pmvaadin.terms.calendars.exceptions.views.WorkingWeekForm;
 import com.pmvaadin.terms.calendars.services.CalendarService;
+import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
+import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
@@ -18,8 +21,11 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -30,7 +36,9 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @SpringComponent
 public class CalendarForm extends Dialog {
@@ -59,6 +67,9 @@ public class CalendarForm extends Dialog {
     private final Button sync = new Button("Refresh", new Icon("lumo", "reload"));
 
     private final Map<DayOfWeek, NumberField> dayOfWeekMap = new LinkedHashMap<>(7);
+
+    // Working week
+    private final WorkingWeeks workingWeeks = new WorkingWeeks();
 
     public CalendarForm(CalendarService calendarService) {
 
@@ -151,6 +162,7 @@ public class CalendarForm extends Dialog {
         binder.readBean(this.calendar);
         fillExceptions();
         refreshHeader();
+        workingWeeks.setWorkingWeeks(calendar.getWorkingWeeks());
 
         if (this.calendar.isNew()) sync.setEnabled(false);
 
@@ -264,6 +276,7 @@ public class CalendarForm extends Dialog {
         try {
             binder.writeBean(this.calendar);
             this.calendar.setCalendarException(exceptionDays.getItems());
+            this.calendar.setWorkingWeeks(workingWeeks.getWorkingWeeks());
             calendarService.save(calendar);
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
@@ -395,6 +408,87 @@ public class CalendarForm extends Dialog {
 
         private Double getCountOfHours(ExceptionDay exceptionDay) {
             return Calendar.getCountOfHoursDouble(exceptionDay.getDuration());
+        }
+
+    }
+
+    private class WorkingWeeks extends VerticalLayout {
+
+        private final Grid<WorkingWeek> grid = new Grid<>();
+        private final HorizontalLayout toolbar = new HorizontalLayout();
+
+        WorkingWeeks() {
+            this.addColumns();
+            this.addButtonToToolbar();
+            this.customizeGrid();
+            this.add(toolbar, grid);
+        }
+
+        public void setWorkingWeeks(List<WorkingWeek> workingWeeks) {
+            this.grid.setItems(workingWeeks);
+        }
+
+        public List<WorkingWeek> getWorkingWeeks() {
+            return this.grid.getListDataView().getItems().collect(Collectors.toList());
+        }
+
+        private void addColumns() {
+
+            grid.addColumn(WorkingWeek::getName).setHeader("Name");
+            grid.addColumn(WorkingWeek::getStart).setHeader("Start");
+            grid.addColumn(WorkingWeek::getFinish).setHeader("Finish");
+
+        }
+
+        private void addButtonToToolbar() {
+
+            var addButton = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
+            addButton.addClickListener(this::addWorkingWeek);
+            var deleteButton = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));
+            deleteButton.addClickListener(this::deleteWorkingWeek);
+            toolbar.add(addButton, deleteButton);
+
+        }
+
+        private void customizeGrid() {
+            this.grid.addItemDoubleClickListener(event -> {
+                var workingWeek = event.getItem();
+                if (workingWeek == null) return;
+                var workingWeekForm = new WorkingWeekForm(workingWeek);
+                workingWeekForm.addListener(WorkingWeekForm.SaveEvent.class, this::saveWorkingWeekListener);
+                workingWeekForm.open();
+            });
+        }
+
+        private void saveWorkingWeekListener(WorkingWeekForm.SaveEvent event) {
+            var workingWeek = event.getWorkingWeek();
+            if (workingWeek == null) return;
+            grid.getListDataView().refreshItem(workingWeek);
+        }
+
+        private void addWorkingWeek(ClickEvent<Button> event) {
+
+            var workingWeek = calendar.getWorkingWeekInstance();
+            var start = this.grid.getListDataView().getItems()
+                    .filter(w -> !w.isDefault()).map(WorkingWeek::getFinish)
+                    .max(LocalDate::compareTo)
+                    .orElse(LocalDate.now());
+            workingWeek.setStart(start);
+            workingWeek.setFinish(start);
+            this.grid.getListDataView().addItem(workingWeek);
+
+        }
+
+        private void deleteWorkingWeek(ClickEvent<Button> event) {
+
+            var selectedWeeks = this.grid.getSelectedItems();
+            var weeksToDeletion = new ArrayList<WorkingWeek>();
+            selectedWeeks.forEach(workingWeek -> {
+                if (workingWeek.isDefault()) return;
+                weeksToDeletion.add(workingWeek);
+            });
+            this.grid.getListDataView().removeItems(weeksToDeletion);
+
         }
 
     }

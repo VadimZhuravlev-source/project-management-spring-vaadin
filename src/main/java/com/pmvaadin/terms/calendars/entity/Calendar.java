@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
+import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 
 public interface Calendar {
 
@@ -84,5 +85,10 @@ public interface Calendar {
     void setPredefined(boolean isPredefined);
 
     boolean isNew();
+
+    WorkingWeek getWorkingWeekInstance();
+
+    List<WorkingWeek> getWorkingWeeks();
+    void setWorkingWeeks(List<WorkingWeek> workingWeeks);
 
 }

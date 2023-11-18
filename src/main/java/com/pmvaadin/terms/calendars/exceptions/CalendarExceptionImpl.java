@@ -121,10 +121,7 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Setter
     @Column(name = "month_year")
     private Month monthYear;
-
-
-    private final Interval intervalInstance = new CalendarExceptionInterval();
-
+    
     @Setter
     @OneToMany(mappedBy = "exception")
     @OrderBy("sort ASC")
@@ -145,6 +142,11 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Override
     public List<Interval> getIntervals() {
         return intervals.stream().map(i -> (Interval) i).collect(Collectors.toList());
+    }
+
+    @Override
+    public Interval getIntervalInstance() {
+        return new CalendarExceptionInterval();
     }
 
 }
