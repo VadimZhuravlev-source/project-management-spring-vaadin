@@ -1,6 +1,7 @@
 package com.pmvaadin.terms.calendars.exceptions.views;
 
 import com.pmvaadin.commonobjects.ObjectGrid;
+import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.workingweeks.IntervalSetting;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingTime;
@@ -11,6 +12,7 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
@@ -23,12 +25,14 @@ import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.timepicker.TimePicker;
-import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.selection.SelectionEvent;
 import com.vaadin.flow.shared.Registration;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -39,16 +43,14 @@ public class WorkingWeekForm extends Dialog {
     private final WorkingWeek workingWeek;
     private final WorkingTime workingTimeInstance;
 
-    private final TextField name = new TextField("Name");
-    private final DatePicker start = new DatePicker("Start");
-    private final DatePicker finish = new DatePicker("Finish");
+    private final TextField name = new TextField();
+    private final DatePicker start = new DatePicker();
+    private final DatePicker finish = new DatePicker();
 
     private final Grid<DayOfWeek> days = new Grid<>();
 
-    private final Binder<WorkingWeek> binder = new Binder<>();
-
     private final IntervalGrid intervals = new IntervalGrid();
-
+    private final RadioButtonGroup<IntervalSetting> radioGroup = new RadioButtonGroup<>();
     private final Map<DayOfWeek, WorkingDaysSetting> mapIntervalChanges = new HashMap<>();
 
     public WorkingWeekForm(WorkingWeek workingWeek) {
@@ -60,6 +62,10 @@ public class WorkingWeekForm extends Dialog {
         customizeHeader();
         createButtons();
         refreshHeader();
+        name.setValue(this.workingWeek.getName());
+        start.setValue(this.workingWeek.getStart());
+        finish.setValue(this.workingWeek.getFinish());
+        days.select(DayOfWeek.MONDAY);
     }
 
     private void fillMapIntervalChanges() {
@@ -70,17 +76,39 @@ public class WorkingWeekForm extends Dialog {
 
     private void customizeElements() {
 
-        binder.readBean(this.workingWeek);
         days.setItems(DayOfWeek.values());
         days.addColumn(DayOfWeek::toString);
-//        days.setSelectionMode(Grid.SelectionMode.MULTI);
-//        days.getElement().getNode().runWhenAttached(ui ->
-//                ui.beforeClientResponse(this, context ->
-//                        getElement().executeJs(
-//                                "if (this.querySelector('vaadin-grid-flow-selection-column')) {" +
-//                                        " this.querySelector('vaadin-grid-flow-selection-column').hidden = true }")));
+        days.setWidthFull();
         intervals.setEnabled(false);
-        days.select(DayOfWeek.MONDAY);
+        intervals.setWidthFull();
+        start.setEnabled(!workingWeek.isDefault());
+        start.addValueChangeListener(this::startValueChangeListener);
+        finish.setEnabled(!workingWeek.isDefault());
+        finish.addValueChangeListener(this::finishValueChangeListener);
+        days.addSelectionListener(this::daysSelectionListener);
+
+    }
+
+    private void startValueChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
+        var value = event.getValue();
+        if (value.compareTo(finish.getValue()) > 0) finish.setValue(value);
+    }
+
+    private void finishValueChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
+        var value = event.getValue();
+        if (value.compareTo(start.getValue()) < 0) start.setValue(value);
+    }
+
+
+    private void daysSelectionListener(SelectionEvent<Grid<DayOfWeek>, DayOfWeek> event) {
+
+        var selectedDay = event.getFirstSelectedItem().orElse(null);
+        if (selectedDay == null) return;
+        var values = mapIntervalChanges.getOrDefault(selectedDay, null);
+        if (values == null) return;
+        if (radioGroup.getValue() == values.intervalSetting)
+            refreshIntervals(values.intervalSetting);
+        radioGroup.setValue(values.intervalSetting);
 
     }
 
@@ -98,17 +126,22 @@ public class WorkingWeekForm extends Dialog {
         mainLayout.addFormItem(name, "Name");
         mainLayout.addFormItem(start, "Start");
         mainLayout.addFormItem(finish, "Finish");
+        mainLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1),
+                new FormLayout.ResponsiveStep("300px", 3));
 
-        RadioButtonGroup<IntervalSetting> radioGroup = new RadioButtonGroup<>();
+
         radioGroup.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         radioGroup.setItems(IntervalSetting.values());
         radioGroup.addValueChangeListener(this::radioButtonChangeListener);
 
         var intervalSetting = new VerticalLayout(radioGroup, intervals);
+        intervalSetting.setWidthFull();
 
         var horizontalLayout = new HorizontalLayout(days, intervalSetting);
+        horizontalLayout.setWidthFull();
 
         var verticalLayout = new VerticalLayout(mainLayout, horizontalLayout);
+        verticalLayout.setWidthFull();
 
         add(verticalLayout);
 
@@ -118,6 +151,12 @@ public class WorkingWeekForm extends Dialog {
     private void radioButtonChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<IntervalSetting>, IntervalSetting> event) {
 
         var selectedSetting = event.getValue();
+        refreshIntervals(selectedSetting);
+
+    }
+
+    private void refreshIntervals(IntervalSetting selectedSetting) {
+
         intervals.setEnabled(selectedSetting == IntervalSetting.CUSTOM);
         intervals.endEditing();
 
@@ -144,8 +183,10 @@ public class WorkingWeekForm extends Dialog {
     private void customizeHeader() {
 
         Button closeButton = new Button(new Icon("lumo", "cross"),
-                e -> fireEvent(new CloseEvent(this, this.workingWeek))
-        );
+                e -> {
+            fireEvent(new CloseEvent(this, this.workingWeek));
+            this.close();
+        });
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         closeButton.addClickShortcut(Key.ESCAPE);
 
@@ -159,7 +200,14 @@ public class WorkingWeekForm extends Dialog {
         ok.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         ok.addClickListener(event -> {
 
-            boolean validationDone = validate();
+            var validationDone = false;
+            try {
+                validationDone = validate();
+            } catch (StandardError error) {
+                var confDialog = new ConfirmDialog();
+                confDialog.setText(error.getMessage());
+                confDialog.open();
+            }
             if (!validationDone) return;
             fireEvent(new SaveEvent(this, this.workingWeek));
             close();
@@ -168,14 +216,32 @@ public class WorkingWeekForm extends Dialog {
 
         Button close = new Button("Cancel");
         close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        close.addClickListener(event -> fireEvent(new CloseEvent(this, this.workingWeek)));
+        close.addClickListener(event ->
+        {
+            fireEvent(new CloseEvent(this, this.workingWeek));
+            close();
+        });
 
         getFooter().add(ok, close);
 
     }
 
     private boolean validate() {
-        return false;
+
+        if (start.getValue() == null || finish.getValue() == null) return false;
+
+        mapIntervalChanges.forEach((dayOfWeek, workingDaysSetting) -> {
+            var intervals = workingDaysSetting.intervals;
+            LocalTime previousTo = null;
+            for (Interval interval: intervals) {
+                if (interval.getFrom().compareTo(interval.getTo()) >= 0) return;
+                if (previousTo != null && previousTo.compareTo(interval.getFrom()) > 0) return;
+                previousTo = interval.getTo();
+            }
+        });
+
+        return true;
+
     }
 
     private void refreshHeader() {
@@ -192,7 +258,7 @@ public class WorkingWeekForm extends Dialog {
 
     public static abstract class WorkingWeekFormEvent extends ComponentEvent<WorkingWeekForm> {
 
-        private WorkingWeek workingWeek;
+        private final WorkingWeek workingWeek;
 
         protected WorkingWeekFormEvent(WorkingWeekForm source, WorkingWeek workingWeek) {
             super(source, false);
@@ -265,12 +331,14 @@ public class WorkingWeekForm extends Dialog {
             var fromPicker = new TimePicker();
             fromPicker.setWidthFull();
             addCloseHandler(fromPicker, this.editor);
-            this.binder.forField(fromPicker).withValidator(localTime -> {
+            this.binder.forField(fromPicker)
+                    .withValidator(localTime -> {
                 var currentInterval = this.editor.getItem();
                 var previousIntervalOpt = grid.getListDataView().getPreviousItem(currentInterval);
                 if (previousIntervalOpt.isEmpty()) return true;
                 return localTime.compareTo(previousIntervalOpt.get().getTo()) >= 0;
-            }, "The start of a shaft must be later then the end of the previous shift.");
+            }, "The start of a shaft must be later then the end of the previous shift.")
+                    .bind(Interval::getFrom, Interval::setFrom);
             fromColumn.setEditorComponent(fromPicker);
 
             var toColumn = addColumn(Interval::getTo).
@@ -278,10 +346,12 @@ public class WorkingWeekForm extends Dialog {
             var toPicker = new TimePicker();
             toPicker.setWidthFull();
             addCloseHandler(toPicker, this.editor);
-            this.binder.forField(toPicker).withValidator(localTime -> {
+            this.binder.forField(toPicker)
+                    .withValidator(localTime -> {
                 var currentInterval = this.editor.getItem();
                 return localTime.compareTo(currentInterval.getFrom()) <= 0;
-            }, "The end of a shaft must be later then the start.");
+            }, "The end of a shaft must be later then the start.")
+                    .bind(Interval::getTo, Interval::setTo);
             toColumn.setEditorComponent(toPicker);
 
         }

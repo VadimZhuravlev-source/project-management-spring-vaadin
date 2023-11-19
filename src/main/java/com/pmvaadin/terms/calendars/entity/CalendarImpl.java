@@ -74,12 +74,16 @@ public class CalendarImpl implements Calendar, Serializable {
     private List<DayOfWeekSettings> daysOfWeekSettings = new ArrayList<>();
 
     @Setter
-    @OneToMany(mappedBy = "calendar")
+    @OneToMany(mappedBy = "calendar",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @OrderBy("sort ASC")
+    @LazyCollection(LazyCollectionOption.FALSE)
     private List<CalendarExceptionImpl> exceptions = new ArrayList<>();
 
-    @OneToMany(mappedBy = "calendar")
+    @OneToMany(mappedBy = "calendar",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @OrderBy("sort ASC")
+    @LazyCollection(LazyCollectionOption.FALSE)
     private List<WorkingWeekImpl> workingWeeks = new ArrayList<>();
 
     @Transient
@@ -129,7 +133,16 @@ public class CalendarImpl implements Calendar, Serializable {
 
     @Override
     public WorkingWeek getWorkingWeekInstance() {
-        return new WorkingWeekImpl();
+        return new WorkingWeekImpl().getInstance(this);
+    }
+
+    @Override
+    public List<WorkingWeek> getWorkingWeeks() {
+        if (this.id == null || this.workingWeeks.size() == 0) {
+            var defaultWorkingWeek = WorkingWeekImpl.getDefaultInstance(this);
+            this.workingWeeks.add(defaultWorkingWeek);
+        }
+        return this.workingWeeks.stream().map(workingWeek -> (WorkingWeek) workingWeek).collect(Collectors.toList());
     }
 
     @Override

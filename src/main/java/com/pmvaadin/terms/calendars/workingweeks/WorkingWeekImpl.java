@@ -1,13 +1,16 @@
 package com.pmvaadin.terms.calendars.workingweeks;
 
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
+import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,6 +53,15 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
     @OrderBy("dayOfWeek ASC")
     private List<WorkingTimeImpl> workingTimes = new ArrayList<>();
 
+    public static WorkingWeekImpl getDefaultInstance(Calendar calendar) {
+        var defaultWeek = new WorkingWeekImpl();
+        defaultWeek.name = "Default";
+        defaultWeek.isDefault = true;
+        defaultWeek.calendar = (CalendarImpl) calendar;
+        fillWorkingTimes(defaultWeek);
+        return defaultWeek;
+    }
+
     @Override
     public void nullIdentifyingFields() {
 
@@ -68,8 +80,11 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
     }
 
     @Override
-    public WorkingWeek getInstance() {
-        return new WorkingWeekImpl();
+    public WorkingWeek getInstance(Calendar calendar) {
+        var workingWeek = new WorkingWeekImpl();
+        workingWeek.calendar = (CalendarImpl) calendar;
+        fillWorkingTimes(workingWeek);
+        return workingWeek;
     }
 
     @Override
@@ -77,6 +92,17 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
         var time = new WorkingTimeImpl();
         time.setWorkingWeek(this);
         return time;
+    }
+
+    private static void fillWorkingTimes(WorkingWeekImpl workingWeek) {
+        var workingTimes = Arrays.stream(DayOfWeek.values()).map(dayOfWeek -> {
+            var workingTimeInstance = new WorkingTimeImpl();
+            workingTimeInstance.setDayOfWeek(dayOfWeek);
+            workingTimeInstance.setWorkingWeek(workingWeek);
+            workingTimeInstance.fillIntervalsByDefault();
+            return workingTimeInstance;
+        }).collect(Collectors.toList());
+        workingWeek.setWorkingTimes(workingTimes);
     }
 
 }

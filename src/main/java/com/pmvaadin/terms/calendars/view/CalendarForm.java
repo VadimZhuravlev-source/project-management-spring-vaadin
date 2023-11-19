@@ -26,6 +26,8 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -70,6 +72,11 @@ public class CalendarForm extends Dialog {
 
     // Working week
     private final WorkingWeeks workingWeeks = new WorkingWeeks();
+
+    // tabs
+    private final Tab exceptionsTab = new Tab("Exceptions");
+    private final Tab workWeeksTab = new Tab("Work Weeks");
+    private final TabSheet tabSheet = new TabSheet();
 
     public CalendarForm(CalendarService calendarService) {
 
@@ -221,7 +228,12 @@ public class CalendarForm extends Dialog {
 
         var horizontalLayout = new HorizontalLayout(mainLayout, workingDaysLayout, exceptionDays);
 
-        add(horizontalLayout);
+        var verticalLayout = new VerticalLayout();
+
+        tabSheet.add(exceptionsTab, new Grid<>());
+        tabSheet.add(workWeeksTab, workingWeeks);
+
+        super.add(tabSheet);
 
     }
 

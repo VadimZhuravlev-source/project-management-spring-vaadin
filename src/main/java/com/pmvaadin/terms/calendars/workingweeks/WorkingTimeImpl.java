@@ -113,4 +113,11 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
 
     }
 
+    public void fillIntervalsByDefault() {
+        this.intervals.clear();
+        var newIntervals = getDefaultIntervals(this.dayOfWeek, this.workingWeek.getCalendar().getSetting());
+        var newInterval2 = newIntervals.stream().map(i -> (DayOfWeekInterval) i).collect(Collectors.toList());
+        this.intervals.addAll(newInterval2);
+    }
+
 }

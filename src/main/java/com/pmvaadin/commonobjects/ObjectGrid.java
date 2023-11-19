@@ -190,10 +190,11 @@ public class ObjectGrid<T> extends VerticalLayout {
         grid.getListDataView().addItem(item);
         editor.editItem(item);
         Component editorComponent = grid.getColumns().get(0).getEditorComponent();
-        grid.getSelectionModel().select(item);
+        grid.select(item);
         if (editorComponent instanceof Focusable) {
             ((Focusable<?>) editorComponent).focus();
         }
+        grid.getListDataView().refreshAll();
 
     }
 

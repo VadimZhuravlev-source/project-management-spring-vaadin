@@ -32,7 +32,7 @@ public interface WorkingWeek {
 
     List<WorkingTime> getWorkingTimes();
 
-    WorkingWeek getInstance();
+    WorkingWeek getInstance(Calendar calendar);
 
     boolean isDefault();
     void setDefault(boolean isDefault);
