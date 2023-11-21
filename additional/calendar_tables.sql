@@ -54,7 +54,6 @@ CREATE TABLE exception_intervals(
 	calendar_exception_id INT NOT NULL,
 	from_time TIME,
 	to_time TIME,
-	sort INT,
 	CONSTRAINT exception_intervals_pkey PRIMARY KEY (id),
 	CONSTRAINT fk_exception_intervals_calendar_exceptions_id
 		FOREIGN KEY(calendar_exception_id)
@@ -98,7 +97,6 @@ CREATE TABLE working_time_intervals(
 	working_time_id INT NOT NULL,
 	from_time TIME,
 	to_time TIME,
-	sort INT,
 	CONSTRAINT working_time_intervals_pkey PRIMARY KEY (id),
 	CONSTRAINT fk_working_time_intervals_working_times_id
 		FOREIGN KEY(working_time_id)

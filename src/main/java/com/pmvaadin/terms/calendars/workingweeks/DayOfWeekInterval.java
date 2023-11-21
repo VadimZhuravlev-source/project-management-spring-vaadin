@@ -36,14 +36,10 @@ public class DayOfWeekInterval implements Interval, HasIdentifyingFields {
     @Column(name = "to_time")
     private LocalTime to;
 
-    @Setter
-    private int sort;
-
-    public DayOfWeekInterval(WorkingTimeImpl workingTime, LocalTime from, LocalTime to, int sort) {
+    public DayOfWeekInterval(WorkingTimeImpl workingTime, LocalTime from, LocalTime to) {
         this.workingTime = workingTime;
         this.from = from;
         this.to = to;
-        this.sort = sort;
     }
 
     public DayOfWeekInterval(DayOfWeekInterval interval) {
@@ -53,7 +49,6 @@ public class DayOfWeekInterval implements Interval, HasIdentifyingFields {
         this.workingTime = interval.workingTime;
         this.from = interval.from;
         this.to = interval.to;
-        this.sort = interval.sort;
 
     }
 

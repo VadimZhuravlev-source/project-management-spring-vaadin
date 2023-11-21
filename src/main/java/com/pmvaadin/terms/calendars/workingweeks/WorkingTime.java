@@ -22,6 +22,7 @@ public interface WorkingTime {
     void setIntervalSetting(IntervalSetting intervalSetting);
 
     List<Interval> getIntervals();
+    void setIntervals(List<Interval> intervals);
     List<Interval> getCopyOfIntervals();
 
     Interval getIntervalInstance();

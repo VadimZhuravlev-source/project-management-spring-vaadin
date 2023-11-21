@@ -34,9 +34,6 @@ public class CalendarExceptionInterval implements Interval, HasIdentifyingFields
     @Column(name = "to_time")
     private LocalTime to;
 
-    @Setter
-    private int sort;
-
     @Override
     public void nullIdentifyingFields() {
         this.id = null;

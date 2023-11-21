@@ -124,7 +124,7 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     
     @Setter
     @OneToMany(mappedBy = "exception")
-    @OrderBy("sort ASC")
+    @OrderBy("from ASC")
     private List<CalendarExceptionInterval> intervals = new ArrayList<>();
 
     @Override

@@ -39,9 +39,8 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
     @Column(name = "interval_setting_id")
     private IntervalSetting intervalSetting = IntervalSetting.DEFAULT;
 
-    @Setter
     @OneToMany(mappedBy = "workingTime")
-    @OrderBy("sort ASC")
+    @OrderBy("from ASC")
     private List<DayOfWeekInterval> intervals = new ArrayList<>();
 
     @Override
@@ -62,31 +61,38 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
     }
 
     @Override
+    public void setIntervals(List<Interval> intervals) {
+
+        this.intervals = intervals.stream().map(i -> (DayOfWeekInterval) i).collect(Collectors.toList());
+
+    }
+
+    @Override
     public List<Interval> getDefaultIntervals(DayOfWeek dayOfWeek, CalendarSettings settings) {
 
         ArrayList<Interval> list = new ArrayList<>();
         if (settings == CalendarSettings.STANDARD) {
             if (dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY)
                 return list;
-            list.add(new DayOfWeekInterval(this, LocalTime.of(8, 0), LocalTime.of(12, 0), 0));
-            list.add(new DayOfWeekInterval(this, LocalTime.of(13, 0), LocalTime.of(17, 0), 1));
+            list.add(new DayOfWeekInterval(this, LocalTime.of(8, 0), LocalTime.of(12, 0)));
+            list.add(new DayOfWeekInterval(this, LocalTime.of(13, 0), LocalTime.of(17, 0)));
         } else if (settings == CalendarSettings.NIGHT_SHIFT) {
             if (dayOfWeek == DayOfWeek.SATURDAY) {
-                list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0), 0));
-                list.add(new DayOfWeekInterval(this, LocalTime.of(4, 0), LocalTime.of(8, 0), 1));
+                list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0)));
+                list.add(new DayOfWeekInterval(this, LocalTime.of(4, 0), LocalTime.of(8, 0)));
                 return list;
             }
             if (dayOfWeek == DayOfWeek.SUNDAY)
                 return list;
             if (dayOfWeek == DayOfWeek.MONDAY) {
-                list.add(new DayOfWeekInterval(this, LocalTime.of(23, 0), LocalTime.of(0, 0), 0));
+                list.add(new DayOfWeekInterval(this, LocalTime.of(23, 0), LocalTime.of(0, 0)));
                 return list;
             }
-            list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0), 0));
-            list.add(new DayOfWeekInterval(this, LocalTime.of(4, 0), LocalTime.of(8, 0), 1));
-            list.add(new DayOfWeekInterval(this, LocalTime.of(23, 0), LocalTime.of(0, 0), 2));
+            list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0)));
+            list.add(new DayOfWeekInterval(this, LocalTime.of(4, 0), LocalTime.of(8, 0)));
+            list.add(new DayOfWeekInterval(this, LocalTime.of(23, 0), LocalTime.of(0, 0)));
         } else if (settings == CalendarSettings.FULL_DAY) {
-            list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0), 0));
+            list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0)));
         }
 
         return list;

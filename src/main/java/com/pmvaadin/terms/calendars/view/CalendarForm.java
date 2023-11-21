@@ -447,9 +447,19 @@ public class CalendarForm extends Dialog {
         private void addColumns() {
 
             grid.addColumn(WorkingWeek::getName).setHeader("Name");
-            grid.addColumn(WorkingWeek::getStart).setHeader("Start");
-            grid.addColumn(WorkingWeek::getFinish).setHeader("Finish");
+            grid.addColumn(this::getStartRep).setHeader("Start");
+            grid.addColumn(this::getFinishRep).setHeader("Finish");
 
+        }
+
+        private String getStartRep(WorkingWeek workingWeek) {
+            if (!workingWeek.isDefault()) return workingWeek.getStart().toString();
+            return "NA";
+        }
+
+        private String getFinishRep(WorkingWeek workingWeek) {
+            if (!workingWeek.isDefault()) return workingWeek.getFinish().toString();
+            return "NA";
         }
 
         private void addButtonToToolbar() {

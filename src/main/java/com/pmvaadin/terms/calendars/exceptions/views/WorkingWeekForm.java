@@ -91,12 +91,12 @@ public class WorkingWeekForm extends Dialog {
 
     private void startValueChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
         var value = event.getValue();
-        if (value.compareTo(finish.getValue()) > 0) finish.setValue(value);
+        if (value != null && (finish.getValue() == null || value.compareTo(finish.getValue()) > 0)) finish.setValue(value);
     }
 
     private void finishValueChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
         var value = event.getValue();
-        if (value.compareTo(start.getValue()) < 0) start.setValue(value);
+        if (value != null && (start.getValue() == null || value.compareTo(start.getValue()) > 0)) start.setValue(value);
     }
 
 
@@ -209,6 +209,7 @@ public class WorkingWeekForm extends Dialog {
                 confDialog.open();
             }
             if (!validationDone) return;
+            writeChanges();
             fireEvent(new SaveEvent(this, this.workingWeek));
             close();
 
@@ -228,19 +229,44 @@ public class WorkingWeekForm extends Dialog {
 
     private boolean validate() {
 
-        if (start.getValue() == null || finish.getValue() == null) return false;
+        if (!workingWeek.isDefault()) {
+            var start = this.start.getValue();
+            var finish = this.finish.getValue();
+            if (start == null || finish == null)
+                throw new StandardError("The dates must not be empty.");
+            if (start.compareTo(finish) > 0)
+                throw new StandardError("The finish must be greater than the start.");
+        }
 
         mapIntervalChanges.forEach((dayOfWeek, workingDaysSetting) -> {
             var intervals = workingDaysSetting.intervals;
             LocalTime previousTo = null;
             for (Interval interval: intervals) {
-                if (interval.getFrom().compareTo(interval.getTo()) >= 0) return;
-                if (previousTo != null && previousTo.compareTo(interval.getFrom()) > 0) return;
+                if (interval.getFrom().compareTo(interval.getTo()) >= 0)
+                    throw new StandardError("The start of the shift must be later than the end in the " + dayOfWeek + ".");
+                if (previousTo != null && previousTo.compareTo(interval.getFrom()) > 0)
+                    throw new StandardError("The start of the shift must be later than the end of the previous shift in the " + dayOfWeek + ".");
                 previousTo = interval.getTo();
             }
         });
 
         return true;
+
+    }
+
+    private void writeChanges() {
+
+        this.workingWeek.setName(name.getValue());
+        this.workingWeek.setStart(start.getValue());
+        this.workingWeek.setFinish(finish.getValue());
+
+        this.workingWeek.getWorkingTimes().forEach(workingTime -> {
+            var changes = mapIntervalChanges.get(workingTime.getDayOfWeek());
+            if (changes == null)
+                return;
+            workingTime.setIntervalSetting(changes.getIntervalSetting());
+            workingTime.setIntervals(changes.getIntervals());
+        });
 
     }
 
@@ -311,8 +337,10 @@ public class WorkingWeekForm extends Dialog {
         private Interval onAddInterval() {
 
             var newInterval = workingTimeInstance.getIntervalInstance();
-            var maxSort = this.grid.getListDataView().getItems().map(Interval::getSort).max(Comparator.naturalOrder()).orElse(-1);
-            newInterval.setSort(++maxSort);
+            var previousTimeTo = this.grid.getListDataView().getItems().map(Interval::getTo)
+                    .max(Comparator.naturalOrder()).orElse(LocalTime.MIN);
+            newInterval.setFrom(previousTimeTo.plusHours(1));
+            newInterval.setTo(previousTimeTo.plusHours(2));
             var selectedDays = days.getSelectedItems();
             selectedDays.forEach(dayOfWeek -> {
                 var workingDaysSetting = mapIntervalChanges.get(dayOfWeek);
@@ -335,7 +363,9 @@ public class WorkingWeekForm extends Dialog {
                     .withValidator(localTime -> {
                 var currentInterval = this.editor.getItem();
                 var previousIntervalOpt = grid.getListDataView().getPreviousItem(currentInterval);
-                if (previousIntervalOpt.isEmpty()) return true;
+                if (previousIntervalOpt.isEmpty() || localTime == null)
+                    return false;
+
                 return localTime.compareTo(previousIntervalOpt.get().getTo()) >= 0;
             }, "The start of a shaft must be later then the end of the previous shift.")
                     .bind(Interval::getFrom, Interval::setFrom);
@@ -349,7 +379,8 @@ public class WorkingWeekForm extends Dialog {
             this.binder.forField(toPicker)
                     .withValidator(localTime -> {
                 var currentInterval = this.editor.getItem();
-                return localTime.compareTo(currentInterval.getFrom()) <= 0;
+                if (localTime == null) return false;
+                return localTime.compareTo(currentInterval.getTo()) >= 0;
             }, "The end of a shaft must be later then the start.")
                     .bind(Interval::getTo, Interval::setTo);
             toColumn.setEditorComponent(toPicker);
