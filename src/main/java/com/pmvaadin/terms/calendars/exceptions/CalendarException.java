@@ -10,6 +10,10 @@ import java.util.List;
 
 public interface CalendarException {
 
+    static String getHeaderName() {
+        return "Details for ";
+    }
+
     void nullIdentifyingFields();
 
     List<Interval> getIntervals();

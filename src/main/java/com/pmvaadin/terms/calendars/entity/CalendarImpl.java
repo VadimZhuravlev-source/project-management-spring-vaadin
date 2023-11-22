@@ -5,6 +5,7 @@ import com.pmvaadin.terms.calendars.dayofweeksettings.DefaultDaySetting;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.OperationListenerForCalendar;
 import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.terms.calendars.exceptions.CalendarException;
 import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionImpl;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeekImpl;
@@ -134,6 +135,11 @@ public class CalendarImpl implements Calendar, Serializable {
     @Override
     public WorkingWeek getWorkingWeekInstance() {
         return new WorkingWeekImpl().getInstance(this);
+    }
+
+    @Override
+    public CalendarException getCalendarExceptionInstance() {
+        return CalendarExceptionImpl.getInstance(this);
     }
 
     @Override

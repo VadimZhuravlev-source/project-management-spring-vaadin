@@ -7,9 +7,11 @@ import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
-import com.pmvaadin.terms.calendars.exceptions.views.WorkingWeekForm;
+import com.pmvaadin.terms.calendars.exceptions.CalendarException;
+import com.pmvaadin.terms.calendars.workingweeks.views.WorkingWeekForm;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
+import com.pmvaadin.terms.calendars.exceptions.views.CalendarExceptionForm;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -72,6 +74,9 @@ public class CalendarForm extends Dialog {
 
     // Working week
     private final WorkingWeeks workingWeeks = new WorkingWeeks();
+
+    // Exceptions
+    private final Exceptions exceptions = new Exceptions();
 
     // tabs
     private final Tab exceptionsTab = new Tab("Exceptions");
@@ -202,7 +207,7 @@ public class CalendarForm extends Dialog {
         var mainLayout = new FormLayout();
         mainLayout.addFormItem(name, "Name");
         mainLayout.addFormItem(setting, "Setting");
-        mainLayout.addFormItem(startTime, "Start time");
+        //mainLayout.addFormItem(startTime, "Start time");
 //        mainLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1),
 //                new FormLayout.ResponsiveStep("300px", 3));
 
@@ -228,12 +233,11 @@ public class CalendarForm extends Dialog {
 
         var horizontalLayout = new HorizontalLayout(mainLayout, workingDaysLayout, exceptionDays);
 
-        var verticalLayout = new VerticalLayout();
-
         tabSheet.add(exceptionsTab, new Grid<>());
         tabSheet.add(workWeeksTab, workingWeeks);
 
-        super.add(tabSheet);
+        var verticalLayout = new VerticalLayout(mainLayout, tabSheet);
+        super.add(verticalLayout);
 
     }
 
@@ -424,6 +428,49 @@ public class CalendarForm extends Dialog {
 
     }
 
+    private class Exceptions extends ObjectGrid<CalendarException> {
+
+        Exceptions() {
+            this.addColumns();
+            this.customizeGrid();
+        }
+
+        public void setCalendarExceptions(List<CalendarException> exceptions) {
+            this.grid.setItems(exceptions);
+        }
+
+        public List<CalendarException> getCalendarExceptions() {
+            return this.grid.getListDataView().getItems().collect(Collectors.toList());
+        }
+
+        private void addColumns() {
+
+            grid.addColumn(CalendarException::getName).setHeader("Name");
+            grid.addColumn(CalendarException::getStart).setHeader("Start");
+            grid.addColumn(CalendarException::getFinish).setHeader("Finish");
+
+        }
+
+        private void customizeGrid() {
+            this.setInstantiatable(calendar::getCalendarExceptionInstance);
+            this.setDeletable(true);
+            this.grid.addItemDoubleClickListener(event -> {
+                var exception = event.getItem();
+                if (exception == null) return;
+                var calendarExceptionForm = new CalendarExceptionForm(exception);
+                calendarExceptionForm.addListener(CalendarExceptionForm.SaveEvent.class, this::saveCalendarExceptionListener);
+                calendarExceptionForm.open();
+            });
+        }
+
+        private void saveCalendarExceptionListener(CalendarExceptionForm.SaveEvent event) {
+            var calendarException = event.getCalendarException();
+            if (calendarException == null) return;
+            this.grid.getListDataView().refreshItem(calendarException);
+        }
+
+    }
+
     private class WorkingWeeks extends VerticalLayout {
 
         private final Grid<WorkingWeek> grid = new Grid<>();
@@ -494,7 +541,9 @@ public class CalendarForm extends Dialog {
             var start = this.grid.getListDataView().getItems()
                     .filter(w -> !w.isDefault()).map(WorkingWeek::getFinish)
                     .max(LocalDate::compareTo)
-                    .orElse(LocalDate.now());
+                    .orElse(null);
+            if (start == null) start = LocalDate.now();
+            else start = start.plusDays(1);
             workingWeek.setStart(start);
             workingWeek.setFinish(start);
             this.grid.getListDataView().addItem(workingWeek);

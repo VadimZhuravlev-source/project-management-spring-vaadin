@@ -149,4 +149,12 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
         return new CalendarExceptionInterval();
     }
 
+    public static CalendarException getInstance(CalendarImpl calendar) {
+        var exception = new CalendarExceptionImpl();
+        exception.calendar = calendar;
+        exception.start = LocalDate.now();
+        exception.finish = LocalDate.now();
+        return exception;
+    }
+
 }
