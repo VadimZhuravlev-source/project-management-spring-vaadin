@@ -13,6 +13,7 @@ public interface Validation {
     void validate(Calendar calendar);
     boolean validate(WorkingWeek workingWeek);
     void validateIntervals(DayOfWeek dayOfWeek, List<Interval> intervals);
+    void validateIntervals(List<Interval> intervals);
     void validateDates(WorkingWeek workingWeek, LocalDate start, LocalDate finish);
 
 }

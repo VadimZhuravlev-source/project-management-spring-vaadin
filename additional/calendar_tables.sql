@@ -12,7 +12,8 @@ CREATE TABLE calendar_exceptions(
 	setting_id SMALLINT NOT NULL DEFAULT 0,
 	start DATE,
 	finish DATE,
-	finish_after INT DEFAULT 1,
+	end_by_after_id SMALLINT NOT NULL DEFAULT 0,
+	number_of_occurrence INT DEFAULT 1,
 	sort INT,
 	
 	pattern_id SMALLINT NOT NULL DEFAULT 0,

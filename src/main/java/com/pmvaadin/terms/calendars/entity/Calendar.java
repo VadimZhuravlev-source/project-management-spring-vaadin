@@ -90,6 +90,9 @@ public interface Calendar {
     WorkingWeek getWorkingWeekInstance();
     CalendarException getCalendarExceptionInstance();
 
+    List<CalendarException> getCalendarExceptions();
+    void setCalendarExceptions(List<CalendarException> calendarExceptions);
+
     List<WorkingWeek> getWorkingWeeks();
     void setWorkingWeeks(List<WorkingWeek> workingWeeks);
 

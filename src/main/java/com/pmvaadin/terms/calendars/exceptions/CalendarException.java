@@ -2,6 +2,7 @@ package com.pmvaadin.terms.calendars.exceptions;
 
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -15,8 +16,6 @@ public interface CalendarException {
     }
 
     void nullIdentifyingFields();
-
-    List<Interval> getIntervals();
 
     Integer getId();
 
@@ -44,9 +43,12 @@ public interface CalendarException {
 
     void setFinish(LocalDate finish);
 
-    int getFinishAfter();
+    RecurrenceEnd getEndByAfter();
+    void setEndByAfter(RecurrenceEnd endByAfter);
 
-    void setFinishAfter(int finishAfter);
+    int getNumberOfOccurrence();
+
+    void setNumberOfOccurrence(int numberOfOccurrence);
 
     Integer getSort();
 
@@ -138,6 +140,9 @@ public interface CalendarException {
 
     Interval getIntervalInstance();
 
-    void setIntervals(List<CalendarExceptionInterval> intervals);
+    List<Interval> getDefaultIntervals();
+
+    List<Interval> getIntervals();
+    void setIntervals(List<Interval> intervals);
 
 }

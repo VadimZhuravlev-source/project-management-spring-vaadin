@@ -41,11 +41,15 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
 
     @Setter
     private LocalDate start;
+
+    @Setter
+    @Column(name = "end_by_after_id")
+    private RecurrenceEnd endByAfter = RecurrenceEnd.AFTER;
     @Setter
     private LocalDate finish;
     @Setter
-    @Column(name = "finish_after")
-    private int finishAfter = 1;
+    @Column(name = "number_of_occurrence")
+    private int numberOfOccurrence = 1;
 
     @Setter
     private Integer sort = 0;
@@ -121,8 +125,7 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Setter
     @Column(name = "month_year")
     private Month monthYear;
-    
-    @Setter
+
     @OneToMany(mappedBy = "exception")
     @OrderBy("from ASC")
     private List<CalendarExceptionInterval> intervals = new ArrayList<>();
@@ -147,6 +150,17 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Override
     public Interval getIntervalInstance() {
         return new CalendarExceptionInterval();
+    }
+
+    @Override
+    public List<Interval> getDefaultIntervals() {
+        calendar.getSetting();
+        return new ArrayList<>();
+    }
+
+    @Override
+    public void setIntervals(List<Interval> intervals) {
+        this.intervals = intervals.stream().map(i -> (CalendarExceptionInterval) i).collect(Collectors.toList());
     }
 
     public static CalendarException getInstance(CalendarImpl calendar) {

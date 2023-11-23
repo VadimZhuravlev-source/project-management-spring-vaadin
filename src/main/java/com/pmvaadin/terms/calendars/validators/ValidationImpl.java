@@ -43,6 +43,20 @@ public class ValidationImpl implements Validation {
     }
 
     @Override
+    public void validateIntervals(List<Interval> intervals) {
+
+        LocalTime previousTo = null;
+        for (Interval interval: intervals) {
+            if (interval.getFrom().compareTo(interval.getTo()) >= 0)
+                throw new StandardError("The start of the shift must be later than the end.");
+            if (previousTo != null && previousTo.compareTo(interval.getFrom()) > 0)
+                throw new StandardError("The start of the shift must be later than the end of the previous shift.");
+            previousTo = interval.getTo();
+        }
+
+    }
+
+    @Override
     public void validateDates(WorkingWeek workingWeek, LocalDate start, LocalDate finish) {
 
         if (!workingWeek.isDefault()) {

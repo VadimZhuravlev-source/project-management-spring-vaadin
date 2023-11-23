@@ -143,6 +143,16 @@ public class CalendarImpl implements Calendar, Serializable {
     }
 
     @Override
+    public List<CalendarException> getCalendarExceptions() {
+        return this.exceptions.stream().map(ce -> (CalendarException) ce).collect(Collectors.toList());
+    }
+
+    @Override
+    public void setCalendarExceptions(List<CalendarException> calendarExceptions) {
+        this.exceptions = calendarExceptions.stream().map(ce -> (CalendarExceptionImpl) ce).collect(Collectors.toList());
+    }
+
+    @Override
     public List<WorkingWeek> getWorkingWeeks() {
         if (this.id == null || this.workingWeeks.size() == 0) {
             var defaultWorkingWeek = WorkingWeekImpl.getDefaultInstance(this);

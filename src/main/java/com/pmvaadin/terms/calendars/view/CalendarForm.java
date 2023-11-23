@@ -175,6 +175,8 @@ public class CalendarForm extends Dialog {
         fillExceptions();
         refreshHeader();
         workingWeeks.setWorkingWeeks(calendar.getWorkingWeeks());
+        exceptions.setInstantiatable(this.calendar::getCalendarExceptionInstance);
+        exceptions.setCalendarExceptions(this.calendar.getCalendarExceptions());
 
         if (this.calendar.isNew()) sync.setEnabled(false);
 
@@ -233,7 +235,7 @@ public class CalendarForm extends Dialog {
 
         var horizontalLayout = new HorizontalLayout(mainLayout, workingDaysLayout, exceptionDays);
 
-        tabSheet.add(exceptionsTab, new Grid<>());
+        tabSheet.add(exceptionsTab, exceptions);
         tabSheet.add(workWeeksTab, workingWeeks);
 
         var verticalLayout = new VerticalLayout(mainLayout, tabSheet);
@@ -291,8 +293,9 @@ public class CalendarForm extends Dialog {
     private boolean validateAndSave() {
         try {
             binder.writeBean(this.calendar);
-            this.calendar.setCalendarException(exceptionDays.getItems());
+            //this.calendar.setCalendarException(exceptionDays.getItems());
             this.calendar.setWorkingWeeks(workingWeeks.getWorkingWeeks());
+            this.calendar.setCalendarExceptions(exceptions.getCalendarExceptions());
             calendarService.save(calendar);
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
@@ -445,14 +448,13 @@ public class CalendarForm extends Dialog {
 
         private void addColumns() {
 
-            grid.addColumn(CalendarException::getName).setHeader("Name");
-            grid.addColumn(CalendarException::getStart).setHeader("Start");
-            grid.addColumn(CalendarException::getFinish).setHeader("Finish");
+            this.grid.addColumn(CalendarException::getName).setHeader("Name");
+            this.grid.addColumn(CalendarException::getStart).setHeader("Start");
+            this.grid.addColumn(CalendarException::getFinish).setHeader("Finish");
 
         }
 
         private void customizeGrid() {
-            this.setInstantiatable(calendar::getCalendarExceptionInstance);
             this.setDeletable(true);
             this.grid.addItemDoubleClickListener(event -> {
                 var exception = event.getItem();
