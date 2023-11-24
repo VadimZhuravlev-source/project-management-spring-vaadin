@@ -33,7 +33,7 @@ public class ValidationImpl implements Validation {
 
         LocalTime previousTo = null;
         for (Interval interval: intervals) {
-            if (interval.getFrom().compareTo(interval.getTo()) >= 0)
+            if (interval.getFrom().compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
                 throw new StandardError("The start of the shift must be later than the end in the " + dayOfWeek + ".");
             if (previousTo != null && previousTo.compareTo(interval.getFrom()) > 0)
                 throw new StandardError("The start of the shift must be later than the end of the previous shift in the " + dayOfWeek + ".");
@@ -47,7 +47,7 @@ public class ValidationImpl implements Validation {
 
         LocalTime previousTo = null;
         for (Interval interval: intervals) {
-            if (interval.getFrom().compareTo(interval.getTo()) >= 0)
+            if (interval.getFrom().compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
                 throw new StandardError("The start of the shift must be later than the end.");
             if (previousTo != null && previousTo.compareTo(interval.getFrom()) > 0)
                 throw new StandardError("The start of the shift must be later than the end of the previous shift.");

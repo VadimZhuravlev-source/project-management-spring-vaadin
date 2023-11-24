@@ -3,12 +3,14 @@ package com.pmvaadin.terms.calendars.exceptions;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.Month;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,17 +58,17 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
 
     @Setter
     @Column(name = "pattern_id")
-    private RecurrencePattern pattern;
+    private RecurrencePattern pattern = RecurrencePattern.DAILY;
 
     // Daily pattern
     @Setter
     @Column(name = "number_of_days")
-    private int numberOfDays;
+    private int numberOfDays = 1;
 
     // Weekly pattern
     @Setter
     @Column(name = "number_of_weeks")
-    private int numberOfWeeks;
+    private int numberOfWeeks = 1;
     @Setter
     @Column(name = "every_monday")
     private boolean everyMonday;
@@ -92,13 +94,13 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     // Monthly pattern
     @Setter
     @Column(name = "monthly_pattern_id")
-    private MonthlyPattern monthlyPattern;
+    private MonthlyPattern monthlyPattern = MonthlyPattern.DAY;
     @Setter
     @Column(name = "day_of_month")
-    private byte dayOfMonth;
+    private byte dayOfMonth = 1;
     @Setter
     @Column(name = "number_of_months")
-    private int numberOfMonth;
+    private int numberOfMonth = 1;
     @Setter
     @Column(name = "number_of_weeks_the_id")
     private NumberOfWeek numberOfWeekThe;
@@ -107,15 +109,18 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     private DayOfWeek dayOfWeekThe;
     @Setter
     @Column(name = "number_of_months_the")
-    private int numberOfMonthThe;
+    private int numberOfMonthThe = 1;
 
     // Yearly pattern
     @Setter
     @Column(name = "yearly_pattern_id")
-    private YearlyPattern yearlyPattern;
+    private YearlyPattern yearlyPattern = YearlyPattern.ON;
     @Setter
-    @Column(name = "on_date")
-    private LocalDate onDate;
+    @Column(name = "on_date_day")
+    private byte onDateDay;
+    @Setter
+    @Column(name = "on_date_month")
+    private Month onDateMonth;
     @Setter
     @Column(name = "number_of_week_year_id")
     private NumberOfWeek numberOfWeekYear;
@@ -148,14 +153,35 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     }
 
     @Override
+    public List<Interval> getCopyOfIntervals() {
+        return intervals.stream().map(CalendarExceptionInterval::new).collect(Collectors.toList());
+    }
+
+    @Override
     public Interval getIntervalInstance() {
         return new CalendarExceptionInterval();
     }
 
     @Override
     public List<Interval> getDefaultIntervals() {
-        calendar.getSetting();
-        return new ArrayList<>();
+        if (this.calendar == null || calendar.getSetting() == null)
+            return new ArrayList<>();
+
+        var settings = calendar.getSetting();
+        ArrayList<Interval> list = new ArrayList<>();
+        if (settings == CalendarSettings.STANDARD) {
+            list.add(new CalendarExceptionInterval(this, LocalTime.of(8, 0), LocalTime.of(12, 0)));
+            list.add(new CalendarExceptionInterval(this, LocalTime.of(13, 0), LocalTime.of(17, 0)));
+        } else if (settings == CalendarSettings.NIGHT_SHIFT) {
+            list.add(new CalendarExceptionInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0)));
+            list.add(new CalendarExceptionInterval(this, LocalTime.of(4, 0), LocalTime.of(8, 0)));
+            list.add(new CalendarExceptionInterval(this, LocalTime.of(23, 0), LocalTime.of(0, 0)));
+        } else if (settings == CalendarSettings.FULL_DAY) {
+            list.add(new CalendarExceptionInterval(this, LocalTime.of(0, 0), LocalTime.of(0, 0)));
+        }
+
+        return list;
+
     }
 
     @Override

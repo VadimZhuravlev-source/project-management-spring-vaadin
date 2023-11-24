@@ -92,7 +92,7 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
             list.add(new DayOfWeekInterval(this, LocalTime.of(4, 0), LocalTime.of(8, 0)));
             list.add(new DayOfWeekInterval(this, LocalTime.of(23, 0), LocalTime.of(0, 0)));
         } else if (settings == CalendarSettings.FULL_DAY) {
-            list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(3, 0)));
+            list.add(new DayOfWeekInterval(this, LocalTime.of(0, 0), LocalTime.of(0, 0)));
         }
 
         return list;
@@ -109,20 +109,14 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
     @Override
     public List<Interval> getCopyOfIntervals() {
 
-        List<Interval> list = new ArrayList<>(intervals.size());
-
-        for (DayOfWeekInterval interval: intervals) {
-            var newInterval = new DayOfWeekInterval(interval);
-            list.add(newInterval);
-        }
-        return list;
+        return intervals.stream().map(DayOfWeekInterval::new).collect(Collectors.toList());
 
     }
 
     public void fillIntervalsByDefault() {
         this.intervals.clear();
         var newIntervals = getDefaultIntervals(this.dayOfWeek, this.workingWeek.getCalendar().getSetting());
-        var newInterval2 = newIntervals.stream().map(i -> (DayOfWeekInterval) i).collect(Collectors.toList());
+        var newInterval2 = newIntervals.stream().map(i -> (DayOfWeekInterval) i).toList();
         this.intervals.addAll(newInterval2);
     }
 

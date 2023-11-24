@@ -122,9 +122,13 @@ public interface CalendarException {
 
     void setYearlyPattern(YearlyPattern yearlyPattern);
 
-    LocalDate getOnDate();
+    byte getOnDateDay();
 
-    void setOnDate(LocalDate onDate);
+    void setOnDateDay(byte day);
+
+    Month getOnDateMonth();
+
+    void setOnDateMonth(Month month);
 
     NumberOfWeek getNumberOfWeekYear();
 
@@ -143,6 +147,7 @@ public interface CalendarException {
     List<Interval> getDefaultIntervals();
 
     List<Interval> getIntervals();
+    List<Interval> getCopyOfIntervals();
     void setIntervals(List<Interval> intervals);
 
 }

@@ -23,10 +23,10 @@ public enum NumberOfWeek {
     }
 
     public static NumberOfWeek of(short code) {
-        if (code >= 0 && code <= 1) {
+        if (code >= 0 && code <= 4) {
             return ENUMS[code];
         } else {
-            throw new NoSuchElementException("Invalid value for number of week code: " + code);
+            throw new NoSuchElementException("Invalid value for NumberOfWeek code: " + code);
         }
     }
 

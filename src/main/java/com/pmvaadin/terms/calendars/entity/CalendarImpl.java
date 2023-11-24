@@ -64,10 +64,6 @@ public class CalendarImpl implements Calendar, Serializable {
     private boolean isPredefined;
 
     @Setter
-    @Transient
-    private String settingString;
-
-    @Setter
     @OneToMany(mappedBy = "calendar",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE})//, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dayOfWeek ASC")
@@ -92,14 +88,6 @@ public class CalendarImpl implements Calendar, Serializable {
 
     public CalendarImpl(String name) {
         this.name = name;
-    }
-
-    public static String getHeaderName() {
-        return "Name";
-    }
-
-    public static String getSettingName() {
-        return "Setting";
     }
 
     @Override
