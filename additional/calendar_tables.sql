@@ -18,9 +18,9 @@ CREATE TABLE calendar_exceptions(
 	
 	pattern_id SMALLINT NOT NULL DEFAULT 0,
 	
-	number_of_days INT DEFAULT 1,
+	every_number_of_days INT DEFAULT 1,
 	
-	number_of_weeks INT DEFAULT 1,
+	every_number_of_weeks INT DEFAULT 1,
 	every_monday BOOLEAN NOT NULL DEFAULT FALSE,
 	every_tuesday BOOLEAN NOT NULL DEFAULT FALSE,
 	every_wednesday BOOLEAN NOT NULL DEFAULT FALSE,
@@ -31,13 +31,14 @@ CREATE TABLE calendar_exceptions(
 	
 	monthly_pattern_id SMALLINT NOT NULL DEFAULT 0,
 	day_of_month SMALLINT NOT NULL DEFAULT 0,
-	number_of_months INT DEFAULT 1,
+	every_number_of_months INT DEFAULT 1,
 	number_of_weeks_the_id SMALLINT NOT NULL DEFAULT 0,
 	day_of_week_the SMALLINT NOT NULL DEFAULT 1,
-	number_of_months_the INT DEFAULT 1,
+	every_number_of_months_the INT DEFAULT 1,
 	
 	yearly_pattern_id SMALLINT NOT NULL DEFAULT 0,
-	on_date DATE,
+	on_date_day SMALLINT NOT NULL DEFAULT 1,
+	on_date_month SMALLINT NOT NULL DEFAULT 1,
 	number_of_week_year_id SMALLINT NOT NULL DEFAULT 0,
 	day_of_week_year SMALLINT NOT NULL DEFAULT 1,
 	month_year SMALLINT NOT NULL DEFAULT 1,

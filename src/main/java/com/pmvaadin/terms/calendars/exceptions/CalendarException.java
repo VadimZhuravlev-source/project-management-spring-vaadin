@@ -58,13 +58,13 @@ public interface CalendarException {
 
     void setPattern(RecurrencePattern pattern);
 
-    int getNumberOfDays();
+    int getEveryNumberOfDays();
 
-    void setNumberOfDays(int numberOfDays);
+    void setEveryNumberOfDays(int everyNumberOfDays);
 
-    int getNumberOfWeeks();
+    int getEveryNumberOfWeeks();
 
-    void setNumberOfWeeks(int numberOfWeeks);
+    void setEveryNumberOfWeeks(int everyNumberOfWeeks);
 
     boolean isEveryMonday();
 
@@ -102,9 +102,9 @@ public interface CalendarException {
 
     void setDayOfMonth(byte dayOfMonth);
 
-    int getNumberOfMonth();
+    int getEveryNumberOfMonths();
 
-    void setNumberOfMonth(int numberOfMonth);
+    void setEveryNumberOfMonths(int everyNumberOfMonths);
 
     NumberOfWeek getNumberOfWeekThe();
 
@@ -114,9 +114,9 @@ public interface CalendarException {
 
     void setDayOfWeekThe(DayOfWeek dayOfWeekThe);
 
-    int getNumberOfMonthThe();
+    int getEveryNumberOfMonthsThe();
 
-    void setNumberOfMonthThe(int numberOfMonthThe);
+    void setEveryNumberOfMonthsThe(int everyNumberOfMonthsThe);
 
     YearlyPattern getYearlyPattern();
 

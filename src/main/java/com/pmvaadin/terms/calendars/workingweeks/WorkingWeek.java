@@ -31,6 +31,7 @@ public interface WorkingWeek {
     void setSort(int sort);
 
     List<WorkingTime> getWorkingTimes();
+    void fillDefaultWorkingTimes();
 
     WorkingWeek getInstance(Calendar calendar);
 

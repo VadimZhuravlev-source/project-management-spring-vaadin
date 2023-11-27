@@ -12,6 +12,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.datepicker.DatePickerVariant;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -22,6 +23,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.select.SelectVariant;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
@@ -37,6 +39,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.Comparator;
 
@@ -52,23 +55,23 @@ public class CalendarExceptionForm extends Dialog {
     private final RadioButtonGroup<RecurrencePattern> recurrencePattern = new RadioButtonGroup<>();
     private final HorizontalLayout recurrencePatternContent = new HorizontalLayout();
 
-    private final NumberField numberOfDays = getCustomizedNumberField();
-    private final NumberField numberOfWeeks = getCustomizedNumberField();
-    private final Checkbox everyMonday = new Checkbox("Monday");
-    private final Checkbox everyTuesday = new Checkbox("Tuesday");
-    private final Checkbox everyWednesday = new Checkbox("Wednesday");
-    private final Checkbox everyThursday = new Checkbox("Thursday");
-    private final Checkbox everyFriday = new Checkbox("Friday");
-    private final Checkbox everySaturday = new Checkbox("Saturday");
-    private final Checkbox everySunday = new Checkbox("Sunday");
+    private final NumberField everyNumberOfDays = getCustomizedNumberField();
+    private final NumberField everyNumberOfWeeks = getCustomizedNumberField();
+    private final Checkbox everyMonday = new Checkbox("Monday", this::calculateNumberOfOccurrence);
+    private final Checkbox everyTuesday = new Checkbox("Tuesday", this::calculateNumberOfOccurrence);
+    private final Checkbox everyWednesday = new Checkbox("Wednesday", this::calculateNumberOfOccurrence);
+    private final Checkbox everyThursday = new Checkbox("Thursday", this::calculateNumberOfOccurrence);
+    private final Checkbox everyFriday = new Checkbox("Friday", this::calculateNumberOfOccurrence);
+    private final Checkbox everySaturday = new Checkbox("Saturday", this::calculateNumberOfOccurrence);
+    private final Checkbox everySunday = new Checkbox("Sunday", this::calculateNumberOfOccurrence);
 
     private final RadioButtonGroup<MonthlyPattern> monthlyPattern = new RadioButtonGroup<>();
 
     private final NumberField dayOfMonth = getCustomizedNumberField();
-    private final NumberField numberOfMonth = getCustomizedNumberField();
+    private final NumberField everyNumberOfMonths = getCustomizedNumberField();
     private final Select<NumberOfWeek> numberOfWeekThe = new Select<>();
     private final Select<DayOfWeek> dayOfWeekThe = new Select<>();
-    private final NumberField numberOfMonthThe = getCustomizedNumberField();
+    private final NumberField everyNumberOfMonthsThe = getCustomizedNumberField();
 
     private final RadioButtonGroup<YearlyPattern> yearlyPattern = new RadioButtonGroup<>();
     private final NumberField onDateDay = getCustomizedNumberField();
@@ -85,6 +88,8 @@ public class CalendarExceptionForm extends Dialog {
     private final DatePicker finish = new DatePicker();
 
     private final Validation validation = new ValidationImpl();
+    private boolean isFirstInit = true;
+    private boolean refreshNumberOfOccurrence = false;
 
     public CalendarExceptionForm(CalendarException calendarException) {
         this.calendarException = calendarException;
@@ -103,16 +108,16 @@ public class CalendarExceptionForm extends Dialog {
         binder.forField(recurrencePattern).bind(CalendarException::getPattern, CalendarException::setPattern);
         binder.forField(endByAfter).bind(CalendarException::getEndByAfter, CalendarException::setEndByAfter);
         binder.forField(monthlyPattern).bind(CalendarException::getMonthlyPattern, CalendarException::setMonthlyPattern);
-        binder.forField(numberOfDays).withConverter(new IntegerToDoubleConverter())
-                .bind(CalendarException::getNumberOfDays, CalendarException::setNumberOfDays);
-        binder.forField(numberOfWeeks).withConverter(new IntegerToDoubleConverter())
-                .bind(CalendarException::getNumberOfWeeks, CalendarException::setNumberOfWeeks);
+        binder.forField(everyNumberOfDays).withConverter(new IntegerToDoubleConverter())
+                .bind(CalendarException::getEveryNumberOfDays, CalendarException::setEveryNumberOfDays);
+        binder.forField(everyNumberOfWeeks).withConverter(new IntegerToDoubleConverter())
+                .bind(CalendarException::getEveryNumberOfWeeks, CalendarException::setEveryNumberOfWeeks);
         binder.forField(dayOfMonth).withConverter(new ByteToDoubleConverter())
                 .bind(CalendarException::getDayOfMonth, CalendarException::setDayOfMonth);
-        binder.forField(numberOfMonth).withConverter(new IntegerToDoubleConverter())
-                .bind(CalendarException::getNumberOfMonth, CalendarException::setNumberOfMonth);
-        binder.forField(numberOfMonthThe).withConverter(new IntegerToDoubleConverter())
-                .bind(CalendarException::getNumberOfMonthThe, CalendarException::setNumberOfMonthThe);
+        binder.forField(everyNumberOfMonths).withConverter(new IntegerToDoubleConverter())
+                .bind(CalendarException::getEveryNumberOfMonths, CalendarException::setEveryNumberOfMonths);
+        binder.forField(everyNumberOfMonthsThe).withConverter(new IntegerToDoubleConverter())
+                .bind(CalendarException::getEveryNumberOfMonthsThe, CalendarException::setEveryNumberOfMonthsThe);
         binder.forField(numberOfOccurrence).withConverter(new IntegerToDoubleConverter())
                 .bind(CalendarException::getNumberOfOccurrence, CalendarException::setNumberOfOccurrence);
         binder.forField(onDateDay).withConverter(new ByteToDoubleConverter())
@@ -126,11 +131,13 @@ public class CalendarExceptionForm extends Dialog {
         numberField.setStepButtonsVisible(true);
         numberField.setStep(1);
         numberField.setMin(1);
+        numberField.addValueChangeListener(this::calculateNumberOfOccurrence);
         return numberField;
     }
 
     private void customizeForm() {
 
+        setWidth("55%");
         setDraggable(true);
         setResizable(true);
         addClassName("calendar_exception-form");
@@ -141,15 +148,16 @@ public class CalendarExceptionForm extends Dialog {
         var mainLayout = new FormLayout();
         mainLayout.addFormItem(name, "Name");
 
-        var intervalSetting = new VerticalLayout(settingRadioButton, intervals);
+        var textWorkingTimes = new Text("Set working times for this exceptions");
+        var intervalSetting = new VerticalLayout(textWorkingTimes, settingRadioButton, intervals);
         intervalSetting.setWidthFull();
-        var intervalSettingLayout = new FormLayout();
-        intervalSettingLayout.addFormItem(intervalSetting, "Set working times for this exceptions");
+        intervalSetting.setSpacing(false);
 
         var recurrencePatternLayout = new HorizontalLayout(recurrencePattern, recurrencePatternContent);
         recurrencePatternLayout.setWidthFull();
-        var recurrencePatternFormLayout = new FormLayout();
-        recurrencePatternFormLayout.addFormItem(recurrencePatternLayout, "Recurrence pattern");
+        recurrencePatternLayout.setSpacing(false);
+        var recurrencePatternFormLayout = new VerticalLayout(new Text("Recurrence pattern"), recurrencePatternLayout);
+        recurrencePatternFormLayout.setSpacing(false);
 
         // range of occurrences fields
         var rangeOfRecurrenceLayout = new HorizontalLayout();
@@ -159,10 +167,9 @@ public class CalendarExceptionForm extends Dialog {
 
         rangeOfRecurrenceLayout.add(endByAfter);
 
-        var rangeOfRecurrenceFormLayout = new FormLayout();
-        rangeOfRecurrenceFormLayout.addFormItem(rangeOfRecurrenceLayout, "Range of recurrence");
-
-        var verticalLayout = new VerticalLayout(mainLayout, intervalSettingLayout,
+        var rangeOfRecurrenceFormLayout = new VerticalLayout(new Text("Range of recurrence"), rangeOfRecurrenceLayout);
+        rangeOfRecurrenceFormLayout.setSpacing(false);
+        var verticalLayout = new VerticalLayout(mainLayout, intervalSetting,
                 recurrencePatternFormLayout, rangeOfRecurrenceFormLayout);
         verticalLayout.setWidthFull();
 
@@ -173,13 +180,13 @@ public class CalendarExceptionForm extends Dialog {
     private Component getDailyContent() {
         Text every = new Text("Every");
         Text days = new Text("days");
-        return new HorizontalLayout(every, numberOfDays, days);
+        return new HorizontalLayout(every, everyNumberOfDays, days);
     }
 
     private Component getWeeklyContent() {
         Text every = new Text("Recur every");
         Text weeks = new Text(" week(s) on:");
-        var horizontalLayout =  new HorizontalLayout(every, numberOfWeeks, weeks);
+        var horizontalLayout =  new HorizontalLayout(every, everyNumberOfWeeks, weeks);
         var formLayout = new FormLayout(everyMonday, everyTuesday, everyWednesday, everyThursday, everyFriday,
                 everySaturday, everySunday);
         formLayout.setResponsiveSteps(new FormLayout.ResponsiveStep("0", 1),
@@ -190,16 +197,34 @@ public class CalendarExceptionForm extends Dialog {
     private void customizeElements() {
 
         dayOfMonth.setMax(31);
+        dayOfMonth.addValueChangeListener(this::calculateNumberOfOccurrence);
         recurrencePatternContent.setSizeFull();
         start.addValueChangeListener(this::startValueChangeListener);
+        start.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         onDateDay.setMax(31);
+        onDateDay.addValueChangeListener(this::calculateNumberOfOccurrence);
         onDateMonth.addValueChangeListener(this::onDateMonthChangeListener);
         onDateMonth.setItems(Month.values());
+        onDateMonth.addThemeVariants(SelectVariant.LUMO_SMALL);
         numberOfWeekThe.setItems(NumberOfWeek.values());
+        numberOfWeekThe.addThemeVariants(SelectVariant.LUMO_SMALL);
+        numberOfWeekThe.addValueChangeListener(this::calculateNumberOfOccurrence);
         dayOfWeekThe.setItems(DayOfWeek.values());
+        dayOfWeekThe.addThemeVariants(SelectVariant.LUMO_SMALL);
+        dayOfWeekThe.addValueChangeListener(this::calculateNumberOfOccurrence);
         numberOfWeekYear.setItems(NumberOfWeek.values());
+        numberOfWeekYear.addThemeVariants(SelectVariant.LUMO_SMALL);
+        numberOfWeekYear.addValueChangeListener(this::calculateNumberOfOccurrence);
         dayOfWeekYear.setItems(DayOfWeek.values());
+        dayOfWeekYear.addThemeVariants(SelectVariant.LUMO_SMALL);
+        dayOfWeekYear.addValueChangeListener(this::calculateNumberOfOccurrence);
         monthYear.setItems(Month.values());
+        monthYear.addThemeVariants(SelectVariant.LUMO_SMALL);
+        monthYear.addValueChangeListener(this::calculateNumberOfOccurrence);
+        intervals.setWidth("35%");
+        finish.addValueChangeListener(this::finishValueChangeListener);
+        finish.addThemeVariants(DatePickerVariant.LUMO_SMALL);
+        finish.addValueChangeListener(this::calculateNumberOfOccurrence);
 
         settingRadioButton.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         settingRadioButton.setItems(CalendarExceptionSetting.values());
@@ -233,11 +258,11 @@ public class CalendarExceptionForm extends Dialog {
             var item = new HorizontalLayout(text);
             if (monthlyPattern == MonthlyPattern.DAY) {
                 var months = new Text("month(s)");
-                item.add(dayOfMonth, ofEvery, numberOfMonth, months);
+                item.add(dayOfMonth, ofEvery, everyNumberOfMonths, months);
             }
             else {
                 var months = new Text("months");
-                item.add(numberOfWeekThe, dayOfWeekThe, ofEvery, numberOfMonthThe, months);
+                item.add(numberOfWeekThe, dayOfWeekThe, ofEvery, everyNumberOfMonthsThe, months);
             }
             return item;
         }));
@@ -259,13 +284,193 @@ public class CalendarExceptionForm extends Dialog {
         }));
     }
 
+    private void finishValueChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
+        var selectedDate = event.getValue();
+        if (selectedDate == null) return;
+        if (selectedDate.compareTo(start.getValue()) < 0) {
+            var confirmDialog = new ConfirmDialog();
+            confirmDialog.setText("The end must be later than the start");
+            finish.setValue(event.getOldValue());
+            return;
+        }
+
+        calculateNumberOfOccurrence(event);
+
+    }
+
+    private void calculateNumberOfOccurrence(AbstractField.ComponentValueChangeEvent<?, ?> event) {
+
+        if (!refreshNumberOfOccurrence) return;
+
+        if (endByAfter.getValue() == RecurrenceEnd.AFTER) return;
+
+        if (finish.getValue().compareTo(start.getValue()) < 0) {
+            var confirmDialog = new ConfirmDialog();
+            confirmDialog.setText("The end must be later than the start");
+            finish.setValue(start.getValue());
+        }
+
+        if (recurrencePattern.getValue() == RecurrencePattern.DAILY)
+            recalculateNumberOfOccurrenceForDaily();
+        else if (recurrencePattern.getValue() == RecurrencePattern.WEEKLY)
+            recalculateNumberOfOccurrenceForWeekly();
+        else if (recurrencePattern.getValue() == RecurrencePattern.MONTHLY)
+            recalculateNumberOfOccurrenceForMonthly();
+        else if (recurrencePattern.getValue() == RecurrencePattern.YEARLY)
+            recalculateNumberOfOccurrenceForYearly();
+
+    }
+
+    private void recalculateNumberOfOccurrenceForDaily() {
+
+        var newNumberOfOccurrence = 0;
+        var amountOfDay = ChronoUnit.DAYS.between(start.getValue(), finish.getValue());
+        var currentNumberOfOccurrence = (int) (amountOfDay / everyNumberOfDays.getValue());
+        if (currentNumberOfOccurrence > 1) newNumberOfOccurrence = currentNumberOfOccurrence;
+        numberOfOccurrence.setValue((double) newNumberOfOccurrence);
+
+    }
+
+    private void recalculateNumberOfOccurrenceForWeekly() {
+
+        var newNumberOfOccurrence = 0;
+        var amountOfDay = ChronoUnit.DAYS.between(start.getValue(), finish.getValue());
+        var dayOfWeek = start.getValue().getDayOfWeek();
+        for (int i = 0; i <= amountOfDay; i++) {
+            if (everyMonday.getValue() && dayOfWeek == DayOfWeek.MONDAY) newNumberOfOccurrence++;
+            if (everyTuesday.getValue() && dayOfWeek == DayOfWeek.TUESDAY) newNumberOfOccurrence++;
+            if (everyWednesday.getValue() && dayOfWeek == DayOfWeek.WEDNESDAY) newNumberOfOccurrence++;
+            if (everyThursday.getValue() && dayOfWeek == DayOfWeek.THURSDAY) newNumberOfOccurrence++;
+            if (everyFriday.getValue() && dayOfWeek == DayOfWeek.FRIDAY) newNumberOfOccurrence++;
+            if (everySaturday.getValue() && dayOfWeek == DayOfWeek.SATURDAY) newNumberOfOccurrence++;
+            if (everySunday.getValue() && dayOfWeek == DayOfWeek.SUNDAY) newNumberOfOccurrence++;
+            dayOfWeek = dayOfWeek.plus(1);
+        }
+        numberOfOccurrence.setValue((double) newNumberOfOccurrence);
+
+    }
+
+    private void recalculateNumberOfOccurrenceForMonthly() {
+
+        var newNumberOfOccurrence = 0;
+        var startDay = start.getValue();
+        if (monthlyPattern.getValue() == MonthlyPattern.DAY) {
+            var amountOfMonth = ChronoUnit.MONTHS.between(startDay, finish.getValue());
+            newNumberOfOccurrence = (int) (amountOfMonth / everyNumberOfMonths.getValue());
+            if (startDay.getDayOfMonth() <= dayOfMonth.getValue()) newNumberOfOccurrence++;
+        } else {
+            var starOfMonth = LocalDate.of(startDay.getYear(), startDay.getMonth(),1);
+            while (starOfMonth.getDayOfWeek() != dayOfWeekThe.getValue())
+                starOfMonth = starOfMonth.plusDays(1);
+            var numberOfSuccessiveWeek = NumberOfWeek.FIRST.getCode();
+            var numberOfDays = 0;
+            var previousMonth = starOfMonth.getMonth();
+            while (starOfMonth.compareTo(startDay) >= 0 && starOfMonth.compareTo(finish.getValue()) <= 0) {
+                if (numberOfSuccessiveWeek.equals(numberOfWeekThe.getValue().getCode())) {
+                    numberOfDays++;
+                }
+                starOfMonth = starOfMonth.plusWeeks(1);
+                numberOfSuccessiveWeek++;
+                if (starOfMonth.getMonth() != previousMonth) {
+                    if (numberOfWeekThe.getValue() == NumberOfWeek.LAST && numberOfSuccessiveWeek.equals(NumberOfWeek.FOURTH.getCode())) {
+                        numberOfDays++;
+                    }
+                    numberOfSuccessiveWeek = NumberOfWeek.FIRST.getCode();
+                    previousMonth = starOfMonth.getMonth();
+
+                }
+            }
+
+            newNumberOfOccurrence = (int) (numberOfDays / everyNumberOfMonthsThe.getValue());
+            if (numberOfDays != 0 && newNumberOfOccurrence == 0) newNumberOfOccurrence = 1;
+        }
+
+        numberOfOccurrence.setValue((double) newNumberOfOccurrence);
+
+    }
+
+    private void recalculateNumberOfOccurrenceForYearly() {
+
+        var newNumberOfOccurrence = 0;
+
+        var startDate = start.getValue();
+        if (yearlyPattern.getValue() == YearlyPattern.ON) {
+
+            var day = onDateDay.getValue().intValue();
+            var month = onDateMonth.getValue();
+            var daysOfFebruaryOfLeapYear = 29;
+
+            var checkedDate = startDate;
+            if (!checkedDate.isLeapYear() && day == daysOfFebruaryOfLeapYear && month == Month.FEBRUARY) {
+                while (!checkedDate.isLeapYear())
+                    checkedDate = checkedDate.plusYears(1);
+            }
+            checkedDate = LocalDate.of(checkedDate.getYear(), month, day);
+
+            while (checkedDate.compareTo(startDate) >= 0
+                    && checkedDate.compareTo(finish.getValue()) <= 0) {
+
+                if (checkedDate.isLeapYear() || day != daysOfFebruaryOfLeapYear || month != Month.FEBRUARY) {
+                    newNumberOfOccurrence++;
+                }
+
+                checkedDate = checkedDate.plusYears(1);
+                if (checkedDate.isLeapYear() && day == daysOfFebruaryOfLeapYear && month == Month.FEBRUARY)
+                    checkedDate = LocalDate.of(checkedDate.getYear(), month, day);
+
+            }
+
+        } else if (yearlyPattern.getValue() == YearlyPattern.THE) {
+
+            var numberOfWeek = numberOfWeekYear.getValue();
+            var dayOfWeek = dayOfWeekYear.getValue();
+            var monthOfYear = monthYear.getValue();
+
+            var iteratedDate = LocalDate.of(startDate.getYear(), monthOfYear, 1);
+            var checkedDate = getDateOfMonth(iteratedDate, dayOfWeek, numberOfWeek);
+
+            while (checkedDate.compareTo(startDate) >= 0 && checkedDate.compareTo(finish.getValue()) <= 0) {
+                newNumberOfOccurrence++;
+                iteratedDate = iteratedDate.plusYears(1);
+                checkedDate = getDateOfMonth(iteratedDate, dayOfWeek, numberOfWeek);
+            }
+
+        }
+
+        numberOfOccurrence.setValue((double) newNumberOfOccurrence);
+
+    }
+
+    private LocalDate getDateOfMonth(LocalDate initDate, DayOfWeek dayOfWeek, NumberOfWeek numberOfWeek) {
+
+        var monthOfYear = initDate.getMonth();
+        var checkedDate = LocalDate.of(initDate.getYear(), monthOfYear, 1);
+        while (dayOfWeek != checkedDate.getDayOfWeek())
+            checkedDate = checkedDate.plusDays(1);
+        var currentNumberOfWeek = NumberOfWeek.FIRST.getCode();
+        while (checkedDate.getMonth() == monthOfYear
+                && !currentNumberOfWeek.equals(numberOfWeek.getCode())) {
+            currentNumberOfWeek++;
+            checkedDate = checkedDate.plusWeeks(1);
+        }
+        if (numberOfWeek == NumberOfWeek.LAST && currentNumberOfWeek.equals(NumberOfWeek.FOURTH.getCode())) {
+            checkedDate = checkedDate.minusWeeks(1);
+        }
+        return checkedDate;
+    }
+
     private void onDateMonthChangeListener(AbstractField.ComponentValueChangeEvent<Select<Month>, Month> event) {
         var month = event.getValue();
-        onDateDay.setMax(month.length(true));
+        var daysOfMonth = month.length(true);
+        if (onDateDay.getValue().intValue() > daysOfMonth)
+            onDateDay.setValue((double) daysOfMonth);
+        onDateDay.setMax(daysOfMonth);
+        calculateNumberOfOccurrence(event);
     }
 
     private void startValueChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
 
+        refreshNumberOfOccurrence = false;
         var newDate = event.getValue();
         if (recurrencePattern.getValue() == RecurrencePattern.MONTHLY) {
             if (monthlyPattern.getValue() == MonthlyPattern.DAY) {
@@ -310,6 +515,9 @@ public class CalendarExceptionForm extends Dialog {
             monthYear.setValue(newDate.getMonth());
         }
 
+        refreshNumberOfOccurrence = true;
+        calculateNumberOfOccurrence(event);
+
     }
 
     private void yearlyPatternChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<YearlyPattern>, YearlyPattern> event) {
@@ -319,26 +527,30 @@ public class CalendarExceptionForm extends Dialog {
         numberOfWeekYear.setEnabled(!enable);
         dayOfWeekYear.setEnabled(!enable);
         monthYear.setEnabled(!enable);
+        calculateNumberOfOccurrence(event);
     }
 
     private void monthlyPatternChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<MonthlyPattern>, MonthlyPattern> event) {
         var enable = event.getValue() == MonthlyPattern.DAY;
         dayOfMonth.setEnabled(enable);
-        numberOfMonth.setEnabled(enable);
+        everyNumberOfMonths.setEnabled(enable);
         numberOfWeekThe.setEnabled(!enable);
         dayOfWeekThe.setEnabled(!enable);
-        numberOfMonthThe.setEnabled(!enable);
+        everyNumberOfMonthsThe.setEnabled(!enable);
+        calculateNumberOfOccurrence(event);
     }
 
     private void endByAfterChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<RecurrenceEnd>, RecurrenceEnd> event) {
         numberOfOccurrence.setEnabled(event.getValue() == RecurrenceEnd.AFTER);
         finish.setEnabled(event.getValue() == RecurrenceEnd.BY);
+        calculateNumberOfOccurrence(event);
     }
 
     private void settingRadioButtonChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<CalendarExceptionSetting>, CalendarExceptionSetting> event) {
         intervals.setEnabled(event.getValue() == CalendarExceptionSetting.WORKING_TIMES);
         if (event.getValue() == CalendarExceptionSetting.NONWORKING) intervals.clear();
-        else intervals.setItems(this.calendarException.getDefaultIntervals());
+        else if (!isFirstInit) intervals.setItems(this.calendarException.getDefaultIntervals());
+        isFirstInit = false;
     }
 
     private void recurrencePatternChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<RecurrencePattern>, RecurrencePattern> event) {
@@ -358,6 +570,7 @@ public class CalendarExceptionForm extends Dialog {
 
         recurrencePatternContent.removeAll();
         recurrencePatternContent.add(content);
+        calculateNumberOfOccurrence(event);
 
     }
 
@@ -418,6 +631,8 @@ public class CalendarExceptionForm extends Dialog {
     }
 
     private boolean validate() {
+        if (numberOfOccurrence.getValue() == 0) throw
+                new StandardError("The recurrence as presently configured will not have any occurrences.");
         validation.validateIntervals(intervals.getItems());
         return true;
     }

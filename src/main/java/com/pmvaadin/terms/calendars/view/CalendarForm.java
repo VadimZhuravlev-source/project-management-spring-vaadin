@@ -119,6 +119,8 @@ public class CalendarForm extends Dialog {
 
     private void customizeElements() {
 
+        tabSheet.setSizeFull();
+
         this.setting.setItems(CalendarSettings.values());
 
         startTime.addValueChangeListener(event -> {

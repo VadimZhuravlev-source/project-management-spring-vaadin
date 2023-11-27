@@ -34,10 +34,7 @@ import lombok.Data;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class WorkingWeekForm extends Dialog {
 
@@ -169,7 +166,10 @@ public class WorkingWeekForm extends Dialog {
 
         selectedDays.forEach(dayOfWeek -> {
             var workingDaysSetting = mapIntervalChanges.get(dayOfWeek);
-            if (workingDaysSetting == null) return;
+            if (workingDaysSetting == null) {
+                workingDaysSetting = new WorkingDaysSetting(IntervalSetting.CUSTOM, new ArrayList<>());
+                mapIntervalChanges.put(dayOfWeek, workingDaysSetting);
+            }
             workingDaysSetting.setIntervalSetting(selectedSetting);
             if (selectedSetting == IntervalSetting.CUSTOM) {
                 intervals.setItems(workingDaysSetting.getIntervals());
@@ -248,6 +248,8 @@ public class WorkingWeekForm extends Dialog {
         this.workingWeek.setStart(start.getValue());
         this.workingWeek.setFinish(finish.getValue());
 
+        if (this.workingWeek.getWorkingTimes().size() != DayOfWeek.values().length)
+            this.workingWeek.fillDefaultWorkingTimes();
         this.workingWeek.getWorkingTimes().forEach(workingTime -> {
             var changes = mapIntervalChanges.get(workingTime.getDayOfWeek());
             if (changes == null)

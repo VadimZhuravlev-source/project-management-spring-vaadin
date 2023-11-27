@@ -5,6 +5,8 @@ import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.time.DayOfWeek;
@@ -49,8 +51,9 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
     private boolean isDefault = false;
 
     @Setter
-    @OneToMany(mappedBy = "workingWeek")
+    @OneToMany(mappedBy = "workingWeek", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @OrderBy("dayOfWeek ASC")
+    @LazyCollection(LazyCollectionOption.FALSE)
     private List<WorkingTimeImpl> workingTimes = new ArrayList<>();
 
     public static WorkingWeekImpl getDefaultInstance(Calendar calendar) {
@@ -60,6 +63,12 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
         defaultWeek.calendar = (CalendarImpl) calendar;
         fillWorkingTimes(defaultWeek);
         return defaultWeek;
+    }
+
+    @Override
+    public void fillDefaultWorkingTimes() {
+        this.workingTimes.clear();
+        fillWorkingTimes(this);
     }
 
     @Override

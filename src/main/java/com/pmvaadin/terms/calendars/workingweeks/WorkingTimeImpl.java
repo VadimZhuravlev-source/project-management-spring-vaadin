@@ -5,6 +5,8 @@ import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.time.DayOfWeek;
@@ -39,8 +41,9 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
     @Column(name = "interval_setting_id")
     private IntervalSetting intervalSetting = IntervalSetting.DEFAULT;
 
-    @OneToMany(mappedBy = "workingTime")
+    @OneToMany(mappedBy = "workingTime", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @OrderBy("from ASC")
+    @LazyCollection(LazyCollectionOption.FALSE)
     private List<DayOfWeekInterval> intervals = new ArrayList<>();
 
     @Override

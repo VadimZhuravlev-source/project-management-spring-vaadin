@@ -6,6 +6,8 @@ import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.time.DayOfWeek;
@@ -62,13 +64,13 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
 
     // Daily pattern
     @Setter
-    @Column(name = "number_of_days")
-    private int numberOfDays = 1;
+    @Column(name = "every_number_of_days")
+    private int everyNumberOfDays = 1;
 
     // Weekly pattern
     @Setter
-    @Column(name = "number_of_weeks")
-    private int numberOfWeeks = 1;
+    @Column(name = "every_number_of_weeks")
+    private int everyNumberOfWeeks = 1;
     @Setter
     @Column(name = "every_monday")
     private boolean everyMonday;
@@ -99,8 +101,8 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Column(name = "day_of_month")
     private byte dayOfMonth = 1;
     @Setter
-    @Column(name = "number_of_months")
-    private int numberOfMonth = 1;
+    @Column(name = "every_number_of_months")
+    private int everyNumberOfMonths = 1;
     @Setter
     @Column(name = "number_of_weeks_the_id")
     private NumberOfWeek numberOfWeekThe;
@@ -108,8 +110,8 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Column(name = "day_of_week_the")
     private DayOfWeek dayOfWeekThe;
     @Setter
-    @Column(name = "number_of_months_the")
-    private int numberOfMonthThe = 1;
+    @Column(name = "every_number_of_months_the")
+    private int everyNumberOfMonthsThe = 1;
 
     // Yearly pattern
     @Setter
@@ -131,8 +133,9 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Column(name = "month_year")
     private Month monthYear;
 
-    @OneToMany(mappedBy = "exception")
+    @OneToMany(mappedBy = "exception", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @OrderBy("from ASC")
+    @LazyCollection(LazyCollectionOption.FALSE)
     private List<CalendarExceptionInterval> intervals = new ArrayList<>();
 
     @Override
@@ -159,7 +162,9 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
 
     @Override
     public Interval getIntervalInstance() {
-        return new CalendarExceptionInterval();
+        var newInterval = new CalendarExceptionInterval();
+        newInterval.setException(this);
+        return newInterval;
     }
 
     @Override
