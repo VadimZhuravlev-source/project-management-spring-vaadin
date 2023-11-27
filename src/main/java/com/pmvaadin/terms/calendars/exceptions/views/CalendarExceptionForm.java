@@ -346,6 +346,8 @@ public class CalendarExceptionForm extends Dialog {
             if (everySunday.getValue() && dayOfWeek == DayOfWeek.SUNDAY) newNumberOfOccurrence++;
             dayOfWeek = dayOfWeek.plus(1);
         }
+        newNumberOfOccurrence = (int) (newNumberOfOccurrence / everyNumberOfWeeks.getValue());
+
         numberOfOccurrence.setValue((double) newNumberOfOccurrence);
 
     }
@@ -360,8 +362,7 @@ public class CalendarExceptionForm extends Dialog {
             if (startDay.getDayOfMonth() <= dayOfMonth.getValue()) newNumberOfOccurrence++;
         } else {
             var starOfMonth = LocalDate.of(startDay.getYear(), startDay.getMonth(),1);
-            while (starOfMonth.getDayOfWeek() != dayOfWeekThe.getValue())
-                starOfMonth = starOfMonth.plusDays(1);
+            starOfMonth = getDateOfMonth(starOfMonth, dayOfWeekThe.getValue(), numberOfWeekThe.getValue());
             var numberOfSuccessiveWeek = NumberOfWeek.FIRST.getCode();
             var numberOfDays = 0;
             var previousMonth = starOfMonth.getMonth();
@@ -453,7 +454,7 @@ public class CalendarExceptionForm extends Dialog {
             currentNumberOfWeek++;
             checkedDate = checkedDate.plusWeeks(1);
         }
-        if (numberOfWeek == NumberOfWeek.LAST && currentNumberOfWeek.equals(NumberOfWeek.FOURTH.getCode())) {
+        if (checkedDate.getMonth() != monthOfYear) {
             checkedDate = checkedDate.minusWeeks(1);
         }
         return checkedDate;
