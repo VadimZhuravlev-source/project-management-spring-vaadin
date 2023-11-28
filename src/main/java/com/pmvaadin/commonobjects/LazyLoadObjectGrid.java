@@ -168,7 +168,7 @@ public class LazyLoadObjectGrid<T> extends ObjectGrid<T> {
     }
 
     private void initializeObjectGrid() {
-        toolBar.add(addButton, copyButton, deleteButton);
+        //toolBar.add(addButton, copyButton, deleteButton);
         add(toolBar, grid);
         customizeButtons();
     }

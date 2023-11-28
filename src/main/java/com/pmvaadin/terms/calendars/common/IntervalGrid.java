@@ -2,6 +2,7 @@ package com.pmvaadin.terms.calendars.common;
 
 import com.pmvaadin.commonobjects.ObjectGrid;
 import com.vaadin.flow.component.timepicker.TimePicker;
+import com.vaadin.flow.component.timepicker.TimePickerVariant;
 
 public class IntervalGrid extends ObjectGrid<Interval> {
 
@@ -16,6 +17,7 @@ public class IntervalGrid extends ObjectGrid<Interval> {
         var fromColumn = addColumn(Interval::getFrom).
                 setHeader("From");
         var fromPicker = new TimePicker();
+        fromPicker.addThemeVariants(TimePickerVariant.LUMO_SMALL);
         fromPicker.setWidthFull();
         addCloseHandler(fromPicker, this.editor);
         this.binder.forField(fromPicker)
@@ -33,6 +35,7 @@ public class IntervalGrid extends ObjectGrid<Interval> {
         var toColumn = addColumn(Interval::getTo).
                 setHeader("To");
         var toPicker = new TimePicker();
+        toPicker.addThemeVariants(TimePickerVariant.LUMO_SMALL);
         toPicker.setWidthFull();
         addCloseHandler(toPicker, this.editor);
         this.binder.forField(toPicker)
