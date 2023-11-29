@@ -62,6 +62,9 @@ public interface CalendarException {
 
     void setEveryNumberOfDays(int everyNumberOfDays);
 
+    DayOfWeek getEndOfWeek();
+    void setEndOfWeek(DayOfWeek dayOfWeek);
+
     int getEveryNumberOfWeeks();
 
     void setEveryNumberOfWeeks(int everyNumberOfWeeks);

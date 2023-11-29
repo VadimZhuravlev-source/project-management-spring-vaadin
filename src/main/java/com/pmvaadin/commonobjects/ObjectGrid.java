@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 
 public class ObjectGrid<T> extends VerticalLayout {
 
-    //protected final HorizontalLayout toolBar = new HorizontalLayout();
-    protected final MenuBar toolBar = new MenuBar();
+    protected final HorizontalLayout toolBar = new HorizontalLayout();
+//    protected final MenuBar toolBar = new MenuBar();
     protected final Grid<T> grid;
 
     protected Binder<T> binder;
@@ -39,12 +39,12 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     protected Predicate<T> constraintForDeletion;
 
-    //protected Button addButton = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
-//    protected Button deleteButton = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));
-//    protected Button copyButton = new Button(new Icon(VaadinIcon.COPY));
-    protected MenuItem addButton = toolBar.addItem(new Icon(VaadinIcon.PLUS_CIRCLE));
-    protected MenuItem deleteButton = toolBar.addItem(new Icon(VaadinIcon.CLOSE_CIRCLE));
-    protected MenuItem copyButton = toolBar.addItem(new Icon(VaadinIcon.COPY));
+    protected Button addButton = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
+    protected Button deleteButton = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));
+    protected Button copyButton = new Button(new Icon(VaadinIcon.COPY));
+//    protected MenuItem addButton = toolBar.addItem(new Icon(VaadinIcon.PLUS_CIRCLE));
+//    protected MenuItem deleteButton = toolBar.addItem(new Icon(VaadinIcon.CLOSE_CIRCLE));
+//    protected MenuItem copyButton = toolBar.addItem(new Icon(VaadinIcon.COPY));
 
     public ObjectGrid() {
         grid = new Grid<>();
@@ -121,11 +121,11 @@ public class ObjectGrid<T> extends VerticalLayout {
     }
 
     public void addToolbarSmallThemeVariant() {
-//        toolBar.getChildren().forEach(c -> {
-//            if (! (c instanceof Button button)) return;
-//            button.addThemeVariants(ButtonVariant.LUMO_SMALL);
-//        });
-        toolBar.addThemeVariants(MenuBarVariant.LUMO_SMALL);
+        toolBar.getChildren().forEach(c -> {
+            if (! (c instanceof Button button)) return;
+            button.addThemeVariants(ButtonVariant.LUMO_SMALL);
+        });
+//        toolBar.addThemeVariants(MenuBarVariant.LUMO_SMALL);
     }
 
     protected void addCloseHandler(Component component, Editor<T> editor) {
@@ -141,8 +141,6 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     private void initialSettings() {
         add(toolBar, grid);
-//        var vertical = new VerticalLayout(toolBar, grid);
-//        add(new Div(vertical));
         initializeObjectGrid();
         customizeGrid();
         setPadding(true);
@@ -163,21 +161,20 @@ public class ObjectGrid<T> extends VerticalLayout {
     }
 
     private void initializeObjectGrid() {
-//        toolBar.setPadding(false);
-//        toolBar.add(addButton, copyButton, deleteButton);
-        add(toolBar, grid);
+        toolBar.add(addButton, copyButton, deleteButton);
+        //add(toolBar, grid);
         customizeButtons();
     }
 
     private void customizeButtons() {
 
 
-        //addButton.setTooltipText("Add");
-//        deleteButton.setTooltipText("Delete");
-//        copyButton.setTooltipText("Copy");
-        Tooltip.forComponent(addButton).setText("Add");
-        Tooltip.forComponent(deleteButton).setText("Delete");
-        Tooltip.forComponent(copyButton).setText("Copy");
+        addButton.setTooltipText("Add");
+        deleteButton.setTooltipText("Delete");
+        copyButton.setTooltipText("Copy");
+//        Tooltip.forComponent(addButton).setText("Add");
+//        Tooltip.forComponent(deleteButton).setText("Delete");
+//        Tooltip.forComponent(copyButton).setText("Copy");
 
         customizeAddButton();
         customizeCopyButton();

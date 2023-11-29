@@ -72,6 +72,9 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Column(name = "every_number_of_weeks")
     private int everyNumberOfWeeks = 1;
     @Setter
+    @Column(name = "end_of_week")
+    private DayOfWeek endOfWeek = DayOfWeek.SUNDAY;
+    @Setter
     @Column(name = "every_monday")
     private boolean everyMonday;
     @Setter
