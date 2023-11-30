@@ -14,8 +14,11 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Getter
@@ -203,6 +206,129 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
         exception.start = LocalDate.now();
         exception.finish = LocalDate.now();
         return exception;
+    }
+
+    @Override
+    public Map<LocalDate, ExceptionLength> getExceptionAsDayConstraint() {
+
+        if (this.start == null
+                || this.numberOfOccurrence == 0
+                || this.setting == null)
+            return new HashMap<>(0);
+
+        Map<LocalDate, ExceptionLength> map;
+        if (this.pattern == RecurrencePattern.DAILY)
+            map = getExceptionAsDayConstraintDaily();
+        else if (this.pattern == RecurrencePattern.WEEKLY)
+            map = getExceptionAsDayConstraintWeekly();
+        else if (this.pattern == RecurrencePattern.MONTHLY)
+            map = getExceptionAsDayConstraintMonthly();
+        else if (this.pattern == RecurrencePattern.YEARLY)
+            map = getExceptionAsDayConstraintYearly();
+        else
+            map = new HashMap<>(0);
+
+        return map;
+
+    }
+
+    private ExceptionLength getExceptionLength() {
+        var duration = 0;
+        var durationDay = 24 * 3600;
+        if (this.setting == CalendarExceptionSetting.WORKING_TIMES) {
+            for (Interval interval: intervals) {
+
+                if (interval.getTo().equals(interval.getFrom())
+                        && interval.getTo().equals(LocalTime.MIN)) {
+                    duration = durationDay;
+                    break;
+                }
+
+                var secondOfDayOfTo = 0;
+                var to = interval.getTo();
+                if (to.equals(LocalTime.MIN))
+                    secondOfDayOfTo = durationDay;
+                else
+                    secondOfDayOfTo = to.toSecondOfDay();
+
+                duration = duration + secondOfDayOfTo - interval.getFrom().toSecondOfDay();
+
+            }
+        }
+
+        if (duration >= durationDay) duration = durationDay;
+
+        return new ExceptionLengthImpl(duration, this.getIntervals());
+
+    }
+
+    private Map<LocalDate, ExceptionLength> getExceptionAsDayConstraintDaily() {
+
+        var exceptionLength = getExceptionLength();
+        var map = new HashMap<LocalDate, ExceptionLength>(numberOfOccurrence);
+        var startPoint = this.start;
+
+        for(int iterator = 1; iterator <= numberOfOccurrence; iterator++) {
+            map.put(startPoint, exceptionLength);
+            startPoint = startPoint.plusDays(everyNumberOfDays);
+        }
+
+        return map;
+
+    }
+
+    private Map<LocalDate, ExceptionLength> getExceptionAsDayConstraintWeekly() {
+
+        if (!everyMonday && !everyTuesday && !everyWednesday && !everyThursday
+                && !everyFriday && !everySaturday && !everySunday)
+            return new HashMap<>();
+
+        var exceptionLength = getExceptionLength();
+        var map = new HashMap<LocalDate, ExceptionLength>(numberOfOccurrence);
+        var startPoint = this.start;
+
+        var currentNumberOfOccurrence = 1;
+        while (currentNumberOfOccurrence <= numberOfOccurrence) {
+            var dayOfWeek = startPoint.getDayOfWeek();
+            if (everyMonday && dayOfWeek == DayOfWeek.MONDAY
+                || everyTuesday && dayOfWeek == DayOfWeek.TUESDAY
+                || everyWednesday && dayOfWeek == DayOfWeek.WEDNESDAY
+                || everyThursday && dayOfWeek == DayOfWeek.THURSDAY
+                || everyFriday && dayOfWeek == DayOfWeek.FRIDAY
+                || everySaturday && dayOfWeek == DayOfWeek.SATURDAY
+                || everySunday && dayOfWeek == DayOfWeek.SUNDAY) {
+                map.put(startPoint, exceptionLength);
+                currentNumberOfOccurrence++;
+            }
+
+            if (dayOfWeek == endOfWeek) {
+                startPoint = startPoint.plusWeeks(everyNumberOfWeeks);
+            }
+            startPoint = startPoint.plusDays(1);
+        }
+
+        return map;
+
+    }
+
+    private Map<LocalDate, ExceptionLength> getExceptionAsDayConstraintMonthly() {
+
+    }
+
+    private Map<LocalDate, ExceptionLength> getExceptionAsDayConstraintYearly() {
+
+    }
+
+    private record ExceptionLengthImpl(int duration, List<Interval> intervals)
+            implements ExceptionLength {
+        @Override
+        public List<Interval> getIntervals() {
+            return intervals;
+        }
+        @Override
+        public int getDuration() {
+            return duration;
+        }
     }
 
 }

@@ -2,12 +2,12 @@ package com.pmvaadin.terms.calendars.exceptions;
 
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
-import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.List;
+import java.util.Map;
 
 public interface CalendarException {
 
@@ -152,5 +152,7 @@ public interface CalendarException {
     List<Interval> getIntervals();
     List<Interval> getCopyOfIntervals();
     void setIntervals(List<Interval> intervals);
+
+    Map<LocalDate, ExceptionLength> getExceptionAsDayConstraint();
 
 }

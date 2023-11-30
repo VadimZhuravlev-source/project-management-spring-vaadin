@@ -4,6 +4,8 @@ import com.pmvaadin.commonobjects.ObjectGrid;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.timepicker.TimePickerVariant;
 
+import java.time.LocalTime;
+
 public class IntervalGrid extends ObjectGrid<Interval> {
 
     public IntervalGrid() {
@@ -25,7 +27,7 @@ public class IntervalGrid extends ObjectGrid<Interval> {
                     var currentInterval = this.editor.getItem();
                     var previousIntervalOpt = grid.getListDataView().getPreviousItem(currentInterval);
                     if (previousIntervalOpt.isEmpty() || localTime == null)
-                        return false;
+                        return true;
 
                     return localTime.compareTo(previousIntervalOpt.get().getTo()) >= 0;
                 }, "The start of a shaft must be later then the end of the previous shift.")
@@ -41,7 +43,7 @@ public class IntervalGrid extends ObjectGrid<Interval> {
         this.binder.forField(toPicker)
                 .withValidator(localTime -> {
                     var currentInterval = this.editor.getItem();
-                    if (localTime == null) return false;
+                    if (localTime == null || localTime.equals(LocalTime.MIN)) return true;
                     return localTime.compareTo(currentInterval.getTo()) >= 0;
                 }, "The end of a shaft must be later then the start.")
                 .bind(Interval::getTo, Interval::setTo);

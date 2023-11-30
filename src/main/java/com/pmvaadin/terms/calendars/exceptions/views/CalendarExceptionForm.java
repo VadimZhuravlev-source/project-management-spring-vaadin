@@ -281,9 +281,10 @@ public class CalendarExceptionForm extends Dialog {
         endByAfter.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         endByAfter.setItems(RecurrenceEnd.values());
         endByAfter.addValueChangeListener(this::endByAfterChangeListener);
-        endByAfter.setRenderer(new ComponentRenderer<>(recurrenceEnd -> {
+//        endByAfter.setHeight();
+//        endByAfter.setRenderer(new ComponentRenderer<>(recurrenceEnd -> {
 //            Text text = new Text(recurrenceEnd.toString());
-            return new Text(recurrenceEnd.toString());
+//            return new Text(recurrenceEnd.toString());
 //            var item = new HorizontalLayout(text);
 //            if (recurrenceEnd == RecurrenceEnd.AFTER) {
 //                var occurrences = new Text(" occurrences");
@@ -292,7 +293,7 @@ public class CalendarExceptionForm extends Dialog {
 //            else
 //                item.add(finish);
 //            return item;
-        }));
+//        }));
 
         monthlyPattern.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         monthlyPattern.setItems(MonthlyPattern.values());
@@ -487,7 +488,7 @@ public class CalendarExceptionForm extends Dialog {
             while (checkedDate.compareTo(finish.getValue()) <= 0) {
 
                 if (checkedDate.compareTo(startDate) >= 0
-                        && (!checkedDate.isLeapYear() || day != daysOfFebruaryOfLeapYear || month != Month.FEBRUARY)) {
+                        && !(!checkedDate.isLeapYear() && day == daysOfFebruaryOfLeapYear && month == Month.FEBRUARY)) {
                     newNumberOfOccurrence++;
                 }
 
@@ -773,7 +774,7 @@ public class CalendarExceptionForm extends Dialog {
             setDeletable(true);
             grid.addThemeVariants(GridVariant.LUMO_COMPACT);
             this.addToolbarSmallThemeVariant();
-            //grid.setSizeFull();
+            grid.setHeight("200px");
         }
 
         public void clear() {
