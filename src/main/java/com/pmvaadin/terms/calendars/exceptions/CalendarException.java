@@ -15,6 +15,25 @@ public interface CalendarException {
         return "Details for ";
     }
 
+    static LocalDate getDayOfMonth(LocalDate initDate, DayOfWeek dayOfWeek, NumberOfWeek numberOfWeek) {
+
+        var monthOfYear = initDate.getMonth();
+        var checkedDate = LocalDate.of(initDate.getYear(), monthOfYear, 1);
+        while (dayOfWeek != checkedDate.getDayOfWeek())
+            checkedDate = checkedDate.plusDays(1);
+        var currentNumberOfWeek = NumberOfWeek.FIRST.getCode();
+        while (checkedDate.getMonth() == monthOfYear
+                && !currentNumberOfWeek.equals(numberOfWeek.getCode())) {
+            currentNumberOfWeek++;
+            checkedDate = checkedDate.plusWeeks(1);
+        }
+        if (checkedDate.getMonth() != monthOfYear) {
+            checkedDate = checkedDate.minusWeeks(1);
+        }
+        return checkedDate;
+
+    }
+
     void nullIdentifyingFields();
 
     Integer getId();

@@ -14,11 +14,11 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Getter
@@ -236,7 +236,7 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
         var duration = 0;
         var durationDay = 24 * 3600;
         if (this.setting == CalendarExceptionSetting.WORKING_TIMES) {
-            for (Interval interval: intervals) {
+            for (Interval interval: this.intervals) {
 
                 if (interval.getTo().equals(interval.getFrom())
                         && interval.getTo().equals(LocalTime.MIN)) {
@@ -265,12 +265,12 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     private Map<LocalDate, ExceptionLength> getExceptionAsDayConstraintDaily() {
 
         var exceptionLength = getExceptionLength();
-        var map = new HashMap<LocalDate, ExceptionLength>(numberOfOccurrence);
+        var map = new HashMap<LocalDate, ExceptionLength>(this.numberOfOccurrence);
         var startPoint = this.start;
 
-        for(int iterator = 1; iterator <= numberOfOccurrence; iterator++) {
+        for (int iterator = 1; iterator <= this.numberOfOccurrence; iterator++) {
             map.put(startPoint, exceptionLength);
-            startPoint = startPoint.plusDays(everyNumberOfDays);
+            startPoint = startPoint.plusDays(this.everyNumberOfDays);
         }
 
         return map;
@@ -279,30 +279,30 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
 
     private Map<LocalDate, ExceptionLength> getExceptionAsDayConstraintWeekly() {
 
-        if (!everyMonday && !everyTuesday && !everyWednesday && !everyThursday
-                && !everyFriday && !everySaturday && !everySunday)
+        if (!this.everyMonday && !this.everyTuesday && !this.everyWednesday && !this.everyThursday
+                && !this.everyFriday && !this.everySaturday && !this.everySunday)
             return new HashMap<>();
 
         var exceptionLength = getExceptionLength();
-        var map = new HashMap<LocalDate, ExceptionLength>(numberOfOccurrence);
+        var map = new HashMap<LocalDate, ExceptionLength>(this.numberOfOccurrence);
         var startPoint = this.start;
 
         var currentNumberOfOccurrence = 1;
-        while (currentNumberOfOccurrence <= numberOfOccurrence) {
+        while (currentNumberOfOccurrence <= this.numberOfOccurrence) {
             var dayOfWeek = startPoint.getDayOfWeek();
-            if (everyMonday && dayOfWeek == DayOfWeek.MONDAY
-                || everyTuesday && dayOfWeek == DayOfWeek.TUESDAY
-                || everyWednesday && dayOfWeek == DayOfWeek.WEDNESDAY
-                || everyThursday && dayOfWeek == DayOfWeek.THURSDAY
-                || everyFriday && dayOfWeek == DayOfWeek.FRIDAY
-                || everySaturday && dayOfWeek == DayOfWeek.SATURDAY
-                || everySunday && dayOfWeek == DayOfWeek.SUNDAY) {
+            if (this.everyMonday && dayOfWeek == DayOfWeek.MONDAY
+                || this.everyTuesday && dayOfWeek == DayOfWeek.TUESDAY
+                || this.everyWednesday && dayOfWeek == DayOfWeek.WEDNESDAY
+                || this.everyThursday && dayOfWeek == DayOfWeek.THURSDAY
+                || this.everyFriday && dayOfWeek == DayOfWeek.FRIDAY
+                || this.everySaturday && dayOfWeek == DayOfWeek.SATURDAY
+                || this.everySunday && dayOfWeek == DayOfWeek.SUNDAY) {
                 map.put(startPoint, exceptionLength);
                 currentNumberOfOccurrence++;
             }
 
-            if (dayOfWeek == endOfWeek) {
-                startPoint = startPoint.plusWeeks(everyNumberOfWeeks);
+            if (dayOfWeek == this.endOfWeek && this.everyNumberOfWeeks > 1) {
+                startPoint = startPoint.plusWeeks(this.everyNumberOfWeeks - 1);
             }
             startPoint = startPoint.plusDays(1);
         }
@@ -313,9 +313,17 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
 
     private Map<LocalDate, ExceptionLength> getExceptionAsDayConstraintMonthly() {
 
+        var exceptionLength = getExceptionLength();
+        var calculation = new CalculationMonthlyExceptionDays(exceptionLength);
+        return calculation.calculate();
+
     }
 
     private Map<LocalDate, ExceptionLength> getExceptionAsDayConstraintYearly() {
+
+        var exceptionLength = getExceptionLength();
+        var calculation = new CalculationYearlyExceptionDays(exceptionLength);
+        return calculation.calculate();
 
     }
 
@@ -329,6 +337,155 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
         public int getDuration() {
             return duration;
         }
+    }
+
+    private class CalculationMonthlyExceptionDays {
+
+        private int currentNumberOfOccurrence = 1;
+        private LocalDate startPoint;
+        private final Map<LocalDate, ExceptionLength> map = new HashMap<>(numberOfOccurrence);
+        private final ExceptionLength exceptionLength;
+
+        CalculationMonthlyExceptionDays(ExceptionLength exceptionLength) {
+            this.exceptionLength = exceptionLength;
+        }
+
+        public Map<LocalDate, ExceptionLength> calculate() {
+
+            Supplier<Byte> consumer;
+            Supplier<Byte> monthAugmenter;
+            if (monthlyPattern == MonthlyPattern.DAY) {
+                startPoint = LocalDate.of(start.getYear(), start.getMonth(), dayOfMonth);
+                consumer = this::increase;
+                monthAugmenter = this::increaseMonth;
+
+            } else if (monthlyPattern == MonthlyPattern.THE) {
+                startPoint = CalendarException.getDayOfMonth(start, dayOfWeekThe, numberOfWeekThe);
+                consumer = this::increaseThe;
+                monthAugmenter = this::increaseMonthThe;
+            }
+            else return map;
+
+            if (startPoint.compareTo(start) < 0) {
+                monthAugmenter.get();
+            }
+            while (currentNumberOfOccurrence <= numberOfOccurrence) {
+                consumer.get();
+            }
+
+            return map;
+
+        }
+
+        private void addToMap() {
+            currentNumberOfOccurrence++;
+            map.put(startPoint, exceptionLength);
+        }
+
+        private byte increase() {
+            addToMap();
+            increaseMonth();
+            return 0;
+        }
+
+        private byte increaseThe() {
+            addToMap();
+            increaseMonthThe();
+            return 0;
+        }
+
+        private byte increaseMonth() {
+            startPoint = startPoint.plusMonths(everyNumberOfMonths);
+            return 0;
+        }
+
+        private byte increaseMonthThe() {
+            startPoint = startPoint.plusMonths(everyNumberOfMonthsThe);
+            startPoint = CalendarException.getDayOfMonth(startPoint, dayOfWeekThe, numberOfWeekThe);
+            return 0;
+        }
+
+    }
+
+    private class CalculationYearlyExceptionDays {
+
+        private int currentNumberOfOccurrence = 1;
+        private LocalDate startPoint = start;
+        private final Map<LocalDate, ExceptionLength> map = new HashMap<>(numberOfOccurrence);
+        private final ExceptionLength exceptionLength;
+        private LocalDate iteratedDate;
+        private final int daysOfFebruaryOfLeapYear = 29;
+
+        CalculationYearlyExceptionDays(ExceptionLength exceptionLength) {
+            this.exceptionLength = exceptionLength;
+        }
+
+        public Map<LocalDate, ExceptionLength> calculate() {
+
+            Supplier<Byte> consumer;
+            Supplier<Byte> yearAugmenter;
+
+            if (yearlyPattern == YearlyPattern.ON) {
+
+                if (!startPoint.isLeapYear() && onDateDay == daysOfFebruaryOfLeapYear && onDateMonth == Month.FEBRUARY) {
+                    while (!startPoint.isLeapYear())
+                        startPoint = startPoint.plusYears(1);
+                }
+                startPoint = LocalDate.of(startPoint.getYear(), onDateMonth, onDateDay);
+                consumer = this::increase;
+                yearAugmenter = this::increaseYear;
+
+            } else if (yearlyPattern == YearlyPattern.THE) {
+                iteratedDate = LocalDate.of(start.getYear(), monthYear, 1);
+                startPoint = CalendarException.getDayOfMonth(iteratedDate, dayOfWeekYear, numberOfWeekYear);
+                consumer = this::increaseThe;
+                yearAugmenter = this::increaseYearThe;
+            }
+            else return map;
+
+            if (startPoint.compareTo(start) < 0) {
+                yearAugmenter.get();
+            }
+            while (currentNumberOfOccurrence <= numberOfOccurrence) {
+                consumer.get();
+            }
+
+            return map;
+
+        }
+
+        private void addToMap() {
+            currentNumberOfOccurrence++;
+            map.put(startPoint, exceptionLength);
+        }
+
+        private byte increase() {
+            if (!(!startPoint.isLeapYear() && onDateDay == daysOfFebruaryOfLeapYear && onDateMonth == Month.FEBRUARY)) {
+                addToMap();
+            }
+            increaseYear();
+            return 0;
+        }
+
+        private byte increaseThe() {
+            addToMap();
+            increaseYearThe();
+            return 0;
+        }
+
+        private byte increaseYear() {
+            startPoint = startPoint.plusYears(1);
+            if (startPoint.isLeapYear() && onDateDay == daysOfFebruaryOfLeapYear && onDateMonth == Month.FEBRUARY)
+                startPoint = LocalDate.of(startPoint.getYear(), onDateMonth, onDateDay);
+            return 0;
+        }
+
+        private byte increaseYearThe() {
+            iteratedDate = iteratedDate.plusYears(1);
+            startPoint = CalendarException.getDayOfMonth(iteratedDate, dayOfWeekYear, numberOfWeekYear);
+            return 0;
+        }
+
     }
 
 }

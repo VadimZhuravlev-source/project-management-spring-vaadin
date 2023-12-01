@@ -61,13 +61,13 @@ public class CalendarExceptionForm extends Dialog {
     private final NumberField everyNumberOfDays = getCustomizedNumberField();
     private final NumberField everyNumberOfWeeks = getCustomizedNumberField();
     private final Select<DayOfWeek> endOfWeek = new Select<>();
-    private final Checkbox everyMonday = new Checkbox("Monday", this::calculateNumberOfOccurrence);
-    private final Checkbox everyTuesday = new Checkbox("Tuesday", this::calculateNumberOfOccurrence);
-    private final Checkbox everyWednesday = new Checkbox("Wednesday", this::calculateNumberOfOccurrence);
-    private final Checkbox everyThursday = new Checkbox("Thursday", this::calculateNumberOfOccurrence);
-    private final Checkbox everyFriday = new Checkbox("Friday", this::calculateNumberOfOccurrence);
-    private final Checkbox everySaturday = new Checkbox("Saturday", this::calculateNumberOfOccurrence);
-    private final Checkbox everySunday = new Checkbox("Sunday", this::calculateNumberOfOccurrence);
+    private final Checkbox everyMonday = new Checkbox("Monday", this::calculateEndByAfter);
+    private final Checkbox everyTuesday = new Checkbox("Tuesday", this::calculateEndByAfter);
+    private final Checkbox everyWednesday = new Checkbox("Wednesday", this::calculateEndByAfter);
+    private final Checkbox everyThursday = new Checkbox("Thursday", this::calculateEndByAfter);
+    private final Checkbox everyFriday = new Checkbox("Friday", this::calculateEndByAfter);
+    private final Checkbox everySaturday = new Checkbox("Saturday", this::calculateEndByAfter);
+    private final Checkbox everySunday = new Checkbox("Sunday", this::calculateEndByAfter);
 
     private final RadioButtonGroup<MonthlyPattern> monthlyPattern = new RadioButtonGroup<>();
 
@@ -156,9 +156,7 @@ public class CalendarExceptionForm extends Dialog {
             return;
         }
 
-        if (field == numberOfOccurrence)
-            return;
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
 
     }
 
@@ -197,7 +195,7 @@ public class CalendarExceptionForm extends Dialog {
 
         var verticalLayout = new VerticalLayout(mainLayout, intervalSetting,
                 recurrencePatternFormLayout, rangeOfRecurrenceFormLayout);
-        verticalLayout.setWidthFull();
+        verticalLayout.setSpacing(false);
 
         add(verticalLayout);
 
@@ -231,39 +229,39 @@ public class CalendarExceptionForm extends Dialog {
     private void customizeElements() {
 
         dayOfMonth.setMax(31);
-        dayOfMonth.addValueChangeListener(this::calculateNumberOfOccurrence);
+        dayOfMonth.addValueChangeListener(this::calculateEndByAfter);
         recurrencePatternContent.setSizeFull();
         start.addValueChangeListener(this::startValueChangeListener);
         start.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         onDateDay.setMax(31);
-        onDateDay.addValueChangeListener(this::calculateNumberOfOccurrence);
+        onDateDay.addValueChangeListener(this::calculateEndByAfter);
         onDateMonth.addValueChangeListener(this::onDateMonthChangeListener);
         onDateMonth.setItems(Month.values());
         onDateMonth.addThemeVariants(SelectVariant.LUMO_SMALL);
         onDateMonth.setRenderer(new ComponentRenderer<>(this::getMonthDisplayName));
         numberOfWeekThe.setItems(NumberOfWeek.values());
         numberOfWeekThe.addThemeVariants(SelectVariant.LUMO_SMALL);
-        numberOfWeekThe.addValueChangeListener(this::calculateNumberOfOccurrence);
+        numberOfWeekThe.addValueChangeListener(this::calculateEndByAfter);
         dayOfWeekThe.setItems(DayOfWeek.values());
         dayOfWeekThe.addThemeVariants(SelectVariant.LUMO_SMALL);
-        dayOfWeekThe.addValueChangeListener(this::calculateNumberOfOccurrence);
+        dayOfWeekThe.addValueChangeListener(this::calculateEndByAfter);
         dayOfWeekThe.setRenderer(new ComponentRenderer<>(this::getDayOfWeekDisplayName));
         numberOfWeekYear.setItems(NumberOfWeek.values());
         numberOfWeekYear.addThemeVariants(SelectVariant.LUMO_SMALL);
-        numberOfWeekYear.addValueChangeListener(this::calculateNumberOfOccurrence);
+        numberOfWeekYear.addValueChangeListener(this::calculateEndByAfter);
         dayOfWeekYear.setItems(DayOfWeek.values());
         dayOfWeekYear.addThemeVariants(SelectVariant.LUMO_SMALL);
-        dayOfWeekYear.addValueChangeListener(this::calculateNumberOfOccurrence);
+        dayOfWeekYear.addValueChangeListener(this::calculateEndByAfter);
         dayOfWeekYear.setRenderer(new ComponentRenderer<>(this::getDayOfWeekDisplayName));
         monthYear.setItems(Month.values());
         monthYear.addThemeVariants(SelectVariant.LUMO_SMALL);
-        monthYear.addValueChangeListener(this::calculateNumberOfOccurrence);
+        monthYear.addValueChangeListener(this::calculateEndByAfter);
         monthYear.setRenderer(new ComponentRenderer<>(this::getMonthDisplayName));
         intervals.setWidth("35%");
         intervals.setHeight("25%");
         finish.addValueChangeListener(this::finishValueChangeListener);
         finish.addThemeVariants(DatePickerVariant.LUMO_SMALL);
-        finish.addValueChangeListener(this::calculateNumberOfOccurrence);
+        finish.addValueChangeListener(this::calculateEndByAfter);
         numberOfOccurrence.setMin(0);
         endOfWeek.setItems(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
         endOfWeek.addThemeVariants(SelectVariant.LUMO_SMALL);
@@ -281,19 +279,6 @@ public class CalendarExceptionForm extends Dialog {
         endByAfter.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         endByAfter.setItems(RecurrenceEnd.values());
         endByAfter.addValueChangeListener(this::endByAfterChangeListener);
-//        endByAfter.setHeight();
-//        endByAfter.setRenderer(new ComponentRenderer<>(recurrenceEnd -> {
-//            Text text = new Text(recurrenceEnd.toString());
-//            return new Text(recurrenceEnd.toString());
-//            var item = new HorizontalLayout(text);
-//            if (recurrenceEnd == RecurrenceEnd.AFTER) {
-//                var occurrences = new Text(" occurrences");
-//                item.add(numberOfOccurrence, occurrences);
-//            }
-//            else
-//                item.add(finish);
-//            return item;
-//        }));
 
         monthlyPattern.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
         monthlyPattern.setItems(MonthlyPattern.values());
@@ -347,7 +332,7 @@ public class CalendarExceptionForm extends Dialog {
         recurrencePatternContent.removeAll();
         recurrencePatternContent.add(content);
 
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
 
     }
 
@@ -361,21 +346,28 @@ public class CalendarExceptionForm extends Dialog {
             return;
         }
 
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
 
     }
 
-    private void calculateNumberOfOccurrence(AbstractField.ComponentValueChangeEvent<?, ?> event) {
+    private void calculateEndByAfter(AbstractField.ComponentValueChangeEvent<?, ?> event) {
 
         if (!refreshNumberOfOccurrence || isFirstInit) return;
-
-        if (endByAfter.getValue() == RecurrenceEnd.AFTER) return;
 
         if (finish.getValue().compareTo(start.getValue()) < 0) {
             var confirmDialog = new ConfirmDialog();
             confirmDialog.setText("The end must be later than the start");
             finish.setValue(start.getValue());
         }
+
+        if (endByAfter.getValue() == RecurrenceEnd.BY)
+            refreshNumberOfOccurrence();
+        else if (endByAfter.getValue() == RecurrenceEnd.AFTER)
+            refreshFinish();
+
+    }
+
+    private void refreshNumberOfOccurrence() {
 
         if (recurrencePattern.getValue() == RecurrencePattern.DAILY)
             recalculateNumberOfOccurrenceForDaily();
@@ -388,11 +380,32 @@ public class CalendarExceptionForm extends Dialog {
 
     }
 
+    private void refreshFinish() {
+
+        var newInstance = calendarException.getCalendar().getCalendarExceptionInstance();
+        try {
+            binder.writeBean(newInstance);
+        } catch (ValidationException e) {
+            var confirmDialog = new ConfirmDialog();
+            confirmDialog.setText(e.getValidationErrors().toString());
+            confirmDialog.open();
+            return;
+        }
+
+        var map = newInstance.getExceptionAsDayConstraint();
+        if (map == null) return;
+        var finish = map.keySet().stream().max(Comparator.naturalOrder()).orElse(this.start.getValue());
+        this.finish.setValue(finish);
+
+    }
+
     private void recalculateNumberOfOccurrenceForDaily() {
 
         var amountOfDay = ChronoUnit.DAYS.between(start.getValue(), finish.getValue());
         var newValue = getNumberOfOccurrence((int) ++amountOfDay, everyNumberOfDays.getValue());
+        refreshNumberOfOccurrence = false;
         numberOfOccurrence.setValue(newValue);
+        refreshNumberOfOccurrence = true;
 
     }
 
@@ -426,7 +439,9 @@ public class CalendarExceptionForm extends Dialog {
 
         }
 
+        refreshNumberOfOccurrence = false;
         numberOfOccurrence.setValue((double) newNumberOfOccurrence);
+        refreshNumberOfOccurrence = true;
 
     }
 
@@ -448,7 +463,7 @@ public class CalendarExceptionForm extends Dialog {
 
         } else {
             var checkedDayOfMonth = LocalDate.of(startDay.getYear(), startDay.getMonth(),1);
-            checkedDayOfMonth = getDateOfMonth(checkedDayOfMonth, dayOfWeekThe.getValue(), numberOfWeekThe.getValue());
+            checkedDayOfMonth = getDayOfMonth(checkedDayOfMonth, dayOfWeekThe.getValue(), numberOfWeekThe.getValue());
             if (everyNumberOfMonthsThe.getValue().intValue() != 0) {
 
                 var everyNumberOfMonth = everyNumberOfMonthsThe.getValue().intValue();
@@ -457,13 +472,15 @@ public class CalendarExceptionForm extends Dialog {
                     if (checkedDayOfMonth.compareTo(startDay) >= 0)
                         newNumberOfOccurrence++;
                     checkedDayOfMonth = checkedDayOfMonth.plusMonths(everyNumberOfMonth);
-                    checkedDayOfMonth = getDateOfMonth(checkedDayOfMonth, dayOfWeekThe.getValue(), numberOfWeekThe.getValue());
+                    checkedDayOfMonth = getDayOfMonth(checkedDayOfMonth, dayOfWeekThe.getValue(), numberOfWeekThe.getValue());
                 }
             }
 
         }
 
+        refreshNumberOfOccurrence = false;
         numberOfOccurrence.setValue(newNumberOfOccurrence);
+        refreshNumberOfOccurrence = true;
 
     }
 
@@ -505,18 +522,20 @@ public class CalendarExceptionForm extends Dialog {
             var monthOfYear = monthYear.getValue();
 
             var iteratedDate = LocalDate.of(startDate.getYear(), monthOfYear, 1);
-            var checkedDate = getDateOfMonth(iteratedDate, dayOfWeek, numberOfWeek);
+            var checkedDate = getDayOfMonth(iteratedDate, dayOfWeek, numberOfWeek);
 
             while (checkedDate.compareTo(finish.getValue()) <= 0) {
                 if (checkedDate.compareTo(startDate) >= 0)
                     newNumberOfOccurrence++;
                 iteratedDate = iteratedDate.plusYears(1);
-                checkedDate = getDateOfMonth(iteratedDate, dayOfWeek, numberOfWeek);
+                checkedDate = getDayOfMonth(iteratedDate, dayOfWeek, numberOfWeek);
             }
 
         }
 
+        refreshNumberOfOccurrence = false;
         numberOfOccurrence.setValue(newNumberOfOccurrence);
+        refreshNumberOfOccurrence = true;
 
     }
 
@@ -528,22 +547,8 @@ public class CalendarExceptionForm extends Dialog {
         return newValueInt;
     }
 
-    private LocalDate getDateOfMonth(LocalDate initDate, DayOfWeek dayOfWeek, NumberOfWeek numberOfWeek) {
-
-        var monthOfYear = initDate.getMonth();
-        var checkedDate = LocalDate.of(initDate.getYear(), monthOfYear, 1);
-        while (dayOfWeek != checkedDate.getDayOfWeek())
-            checkedDate = checkedDate.plusDays(1);
-        var currentNumberOfWeek = NumberOfWeek.FIRST.getCode();
-        while (checkedDate.getMonth() == monthOfYear
-                && !currentNumberOfWeek.equals(numberOfWeek.getCode())) {
-            currentNumberOfWeek++;
-            checkedDate = checkedDate.plusWeeks(1);
-        }
-        if (checkedDate.getMonth() != monthOfYear) {
-            checkedDate = checkedDate.minusWeeks(1);
-        }
-        return checkedDate;
+    private LocalDate getDayOfMonth(LocalDate initDate, DayOfWeek dayOfWeek, NumberOfWeek numberOfWeek) {
+        return CalendarException.getDayOfMonth(initDate, dayOfWeek, numberOfWeek);
     }
 
     private void onDateMonthChangeListener(AbstractField.ComponentValueChangeEvent<Select<Month>, Month> event) {
@@ -552,7 +557,7 @@ public class CalendarExceptionForm extends Dialog {
         if (onDateDay.getValue().intValue() > daysOfMonth)
             onDateDay.setValue((double) daysOfMonth);
         onDateDay.setMax(daysOfMonth);
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
     }
 
     private void startValueChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
@@ -603,7 +608,7 @@ public class CalendarExceptionForm extends Dialog {
         }
 
         refreshNumberOfOccurrence = true;
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
 
     }
 
@@ -614,7 +619,7 @@ public class CalendarExceptionForm extends Dialog {
         numberOfWeekYear.setEnabled(!enable);
         dayOfWeekYear.setEnabled(!enable);
         monthYear.setEnabled(!enable);
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
     }
 
     private void monthlyPatternChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<MonthlyPattern>, MonthlyPattern> event) {
@@ -624,13 +629,13 @@ public class CalendarExceptionForm extends Dialog {
         numberOfWeekThe.setEnabled(!enable);
         dayOfWeekThe.setEnabled(!enable);
         everyNumberOfMonthsThe.setEnabled(!enable);
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
     }
 
     private void endByAfterChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<RecurrenceEnd>, RecurrenceEnd> event) {
         numberOfOccurrence.setEnabled(event.getValue() == RecurrenceEnd.AFTER);
         finish.setEnabled(event.getValue() == RecurrenceEnd.BY);
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
     }
 
     private void settingRadioButtonChangeListener(AbstractField.ComponentValueChangeEvent<RadioButtonGroup<CalendarExceptionSetting>, CalendarExceptionSetting> event) {
@@ -656,7 +661,7 @@ public class CalendarExceptionForm extends Dialog {
 
         recurrencePatternContent.removeAll();
         recurrencePatternContent.add(content);
-        calculateNumberOfOccurrence(event);
+        calculateEndByAfter(event);
 
     }
 
@@ -726,6 +731,11 @@ public class CalendarExceptionForm extends Dialog {
     private void writeChanges() throws ValidationException {
         binder.writeBean(this.calendarException);
         this.calendarException.setIntervals(intervals.getItems());
+        var map = this.calendarException.getExceptionAsDayConstraint();
+        var finish = map.keySet().stream().max(Comparator.naturalOrder()).orElse(this.calendarException.getStart());
+        if (finish == null) return;
+        this.calendarException.setEndByAfter(RecurrenceEnd.AFTER);
+        this.calendarException.setFinish(finish);
     }
 
     private void refreshHeader() {
