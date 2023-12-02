@@ -1,5 +1,6 @@
 package com.pmvaadin.terms.calendars.entity;
 
+import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.dayofweeksettings.DefaultDaySetting;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
@@ -7,6 +8,8 @@ import com.pmvaadin.terms.calendars.OperationListenerForCalendar;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.exceptions.CalendarException;
 import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionImpl;
+import com.pmvaadin.terms.calendars.exceptions.ExceptionLength;
+import com.pmvaadin.terms.calendars.workingweeks.IntervalSetting;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeekImpl;
 import lombok.Getter;
@@ -17,13 +20,12 @@ import org.hibernate.annotations.LazyCollectionOption;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Entity
@@ -64,6 +66,10 @@ public class CalendarImpl implements Calendar, Serializable {
     private boolean isPredefined;
 
     @Setter
+    @Column(name = "end_of_week")
+    private DayOfWeek endOfWeek = DayOfWeek.SUNDAY;
+
+    @Setter
     @OneToMany(mappedBy = "calendar",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE})//, cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("dayOfWeek ASC")
@@ -85,6 +91,12 @@ public class CalendarImpl implements Calendar, Serializable {
 
     @Transient
     private CalendarData calendarData;
+
+    @Transient
+    private Map<LocalDate, ExceptionLength> exceptionDays;
+
+    @Transient
+    private WorkingWeek defaultWorkingWeek;
 
     public CalendarImpl(String name) {
         this.name = name;
@@ -267,6 +279,17 @@ public class CalendarImpl implements Calendar, Serializable {
     @Override
     public void initiateCacheData() {
 
+        Map<LocalDate, ExceptionLength> map = new HashMap<>();
+        exceptions.forEach(e -> map.putAll(e.getExceptionAsDayConstraint()));
+        exceptionDays = map;
+        defaultWorkingWeek = workingWeeks.stream().filter(WorkingWeekImpl::isDefault)
+                .findFirst().orElse(WorkingWeekImpl.getDefaultInstance(this));
+        workingWeeks.stream().forEach(workingWeek ->
+                workingWeek.getWorkingTimes().stream().forEach(workingTime ->
+                        workingTime.getIntervals().stream().forEach(Interval::fillDuration)));
+
+        // old
+
         List<ExceptionDay> exceptionDayList = this.getCalendarException();
 
         List<DefaultDaySetting> settingList;
@@ -336,6 +359,151 @@ public class CalendarImpl implements Calendar, Serializable {
     // Classes
 
     private record CalendarData(int startTime, List<DefaultDaySetting> amountOfHourInDay, Map<LocalDate, Integer> exceptionDays) {}
+
+    private class DateComputationVersion2 {
+
+        private static int fullDay = Calendar.FULL_DAY_SECONDS;
+        private LocalDate day;
+        private LocalTime time;
+        private long remainedDuration;
+        private WorkingWeek currentWorkingWeek;
+        private Function<List<Interval>, Boolean> intervalCalculation;
+
+        private LocalDateTime increaseDateByDuration(LocalDateTime date, long duration) {
+            remainedDuration = duration;
+            day = date.toLocalDate();
+            time = date.toLocalTime();
+            intervalCalculation = this::calculateIntervalsAscendOrder;
+            return calculateDate();
+        }
+
+        private LocalDateTime calculateDate() {
+
+
+            while (remainedDuration > 0) {
+
+                var exception = exceptionDays.get(day);
+                if (exception != null) {
+
+                    if (exception.getDuration() != 0) {
+                        var returnDate = intervalCalculation.apply(exception.getIntervals());
+                        if (returnDate) return LocalDateTime.of(day, time);
+                    }
+                    day = day.plusDays(1);
+                    time = LocalTime.MIN;
+                    continue;
+                }
+
+                if (currentWorkingWeek == null ||
+                        day.compareTo(currentWorkingWeek.getStart()) < 0
+                                || day.compareTo(currentWorkingWeek.getFinish()) > 0) {
+
+                    currentWorkingWeek = workingWeeks.stream().filter(workingWeek ->
+                        day.compareTo(workingWeek.getStart()) >= 0 && day.compareTo(workingWeek.getFinish()) <= 0
+                    )   .findFirst().orElse(null);
+
+                }
+
+                var workingWeek = currentWorkingWeek;
+                if (workingWeek == null)
+                    workingWeek = defaultWorkingWeek;
+
+
+                var workingTimeOpt = workingWeek.getWorkingTimes().stream()
+                        .filter(workingTime -> workingTime.getDayOfWeek() == day.getDayOfWeek())
+                        .findFirst();
+
+                if (workingTimeOpt.isEmpty() || workingTimeOpt.get().getIntervalSetting() == IntervalSetting.NONWORKING) {
+                    day = day.plusDays(1);
+                    time = LocalTime.MIN;
+                    continue;
+                }
+
+                var returnDate = intervalCalculation.apply(workingTimeOpt.get().getIntervals());
+                if (returnDate) return LocalDateTime.of(day, time);
+            }
+
+            return LocalDateTime.of(day, time);
+
+        }
+
+        private boolean calculateIntervalsAscendOrder(List<Interval> intervals) {
+
+            for (Interval interval : intervals) {
+                if (time.compareTo(interval.getFrom()) <= 0) {
+                    if (interval.getDuration() < remainedDuration) {
+                        remainedDuration = remainedDuration - interval.getDuration();
+                        time = interval.getTo();
+                        if (time.equals(LocalTime.MIN))
+                            break;
+                        continue;
+                    } else {
+                        time = interval.getFrom().plusSeconds(remainedDuration);
+                        return true;
+                    }
+                } else if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
+                    continue;
+
+                var secondsOfDayTo = interval.getTo().toSecondOfDay();
+                if (interval.getTo().equals(LocalTime.MIN)) secondsOfDayTo = fullDay;
+                var intervalDuration = secondsOfDayTo - time.toSecondOfDay();
+                if (intervalDuration >= remainedDuration) {
+                    time = time.plusSeconds(remainedDuration);
+                    return true;
+                } else {
+                    remainedDuration = remainedDuration - intervalDuration;
+                    time = interval.getTo();
+                    if (time.equals(LocalTime.MIN))
+                        break;
+                }
+            }
+            return false;
+        }
+
+        private LocalDateTime decreaseDateByDuration(LocalDateTime date, long duration) {
+            remainedDuration = duration;
+            day = date.toLocalDate();
+            time = date.toLocalTime();
+            intervalCalculation = this::calculateIntervalsAscendOrder;
+            return calculateDate();
+        }
+
+        private boolean calculateIntervalsDescendOrder(List<Interval> intervals) {
+
+            var iterator = intervals.listIterator();
+            while (iterator.hasPrevious()) {
+                var interval = iterator.previous();
+                if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN)) {
+                    if (interval.getDuration() < remainedDuration) {
+                        remainedDuration = remainedDuration - interval.getDuration();
+                        time = interval.getFrom();
+                        if (time.equals(LocalTime.MIN))
+                            break;
+                        continue;
+                    } else {
+                        time = interval.getFrom().plusSeconds(remainedDuration);
+                        return true;
+                    }
+                } else if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
+                    continue;
+
+                var secondsOfDayTo = interval.getTo().toSecondOfDay();
+                if (interval.getTo().equals(LocalTime.MIN)) secondsOfDayTo = fullDay;
+                var intervalDuration = secondsOfDayTo - time.toSecondOfDay();
+                if (intervalDuration >= remainedDuration) {
+                    time = time.plusSeconds(remainedDuration);
+                    return true;
+                } else {
+                    remainedDuration = remainedDuration - intervalDuration;
+                    time = interval.getTo();
+                    if (time.equals(LocalTime.MIN))
+                        break;
+                }
+            }
+            return false;
+        }
+
+    }
 
     private class DateComputation {
 

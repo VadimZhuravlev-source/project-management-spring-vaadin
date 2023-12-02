@@ -2,6 +2,7 @@ package com.pmvaadin.terms.calendars.exceptions;
 
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
+import com.pmvaadin.terms.calendars.entity.Calendar;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,6 +37,10 @@ public class CalendarExceptionInterval implements Interval, HasIdentifyingFields
     @Column(name = "to_time")
     private LocalTime to;
 
+    @Setter
+    @Transient
+    private int duration = 0;
+
     public CalendarExceptionInterval(CalendarExceptionImpl exception, LocalTime from, LocalTime to){
         this.exception = exception;
         this.from = from;
@@ -61,6 +66,18 @@ public class CalendarExceptionInterval implements Interval, HasIdentifyingFields
     @Override
     public Interval getInstance() {
         return new CalendarExceptionInterval();
+    }
+
+    @Override
+    public int getDuration() {
+        return this.duration;
+    }
+
+    @Override
+    public void fillDuration() {
+        var to = this.to.toSecondOfDay();
+        if (this.to.equals(LocalTime.MIN)) to = Calendar.FULL_DAY_SECONDS;
+        this.duration = to - this.from.toSecondOfDay();
     }
 
 }

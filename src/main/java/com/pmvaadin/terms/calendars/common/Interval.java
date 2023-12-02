@@ -17,4 +17,7 @@ public interface Interval {
 
     Interval getInstance();
 
+    int getDuration();
+    void fillDuration();
+
 }

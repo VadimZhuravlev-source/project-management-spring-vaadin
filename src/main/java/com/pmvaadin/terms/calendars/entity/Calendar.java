@@ -2,6 +2,7 @@ package com.pmvaadin.terms.calendars.entity;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -17,6 +18,7 @@ public interface Calendar {
     static long DAY_DURATION_SECONDS = 8 * 3600;
 
     static int NUMBER_OF_SECONDS_IN_AN_HOUR = 3600;
+    static int FULL_DAY_SECONDS = 24 * 3600;
 
     static String getHeaderName() {
         return "Name";
@@ -84,6 +86,9 @@ public interface Calendar {
 
     boolean isPredefined();
     void setPredefined(boolean isPredefined);
+
+    DayOfWeek getEndOfWeek();
+    void setEndOfWeek(DayOfWeek dayOfWeek);
 
     boolean isNew();
 

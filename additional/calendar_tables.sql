@@ -21,6 +21,7 @@ CREATE TABLE calendar_exceptions(
 	every_number_of_days INT DEFAULT 1,
 	
 	every_number_of_weeks INT DEFAULT 1,
+	end_of_week SMALLINT NOT NULL DEFAULT 7, -- end of week Sunday
 	every_monday BOOLEAN NOT NULL DEFAULT FALSE,
 	every_tuesday BOOLEAN NOT NULL DEFAULT FALSE,
 	every_wednesday BOOLEAN NOT NULL DEFAULT FALSE,
@@ -105,3 +106,10 @@ CREATE TABLE working_time_intervals(
 		REFERENCES working_times(id)
 		ON DELETE CASCADE
 );
+
+ALTER TABLE calendars
+DROP COLUMN IF EXISTS end_of_week;
+
+ALTER TABLE calendars
+ADD end_of_week SMALLINT NOT NULL DEFAULT 7;
+

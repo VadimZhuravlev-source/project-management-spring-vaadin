@@ -3,11 +3,13 @@ package com.pmvaadin.terms.calendars.validators;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.Calendar;
+import com.pmvaadin.terms.calendars.exceptions.CalendarException;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
 
 public class ValidationImpl implements Validation {
@@ -19,6 +21,7 @@ public class ValidationImpl implements Validation {
     public void validate(Calendar calendar) {
         this.calendar = calendar;
         this.calendar.getWorkingWeeks().forEach(this::validateWorkingWeekTerms);
+        validateExceptions();
     }
 
     @Override
@@ -70,6 +73,7 @@ public class ValidationImpl implements Validation {
 
     private void validateWorkingWeekTerms(WorkingWeek workingWeek) {
 
+        // TODO null validation for the principal fields
         var foundedWeekOpt = this.calendar.getWorkingWeeks().stream()
                 .filter(ww -> !(ww == workingWeek || ww.isDefault()))
                 .filter(ww ->
@@ -94,5 +98,21 @@ public class ValidationImpl implements Validation {
 
     }
 
+    private void validateExceptions() {
+        var exceptions = this.calendar.getCalendarExceptions();
+        var mapDaysException = new HashMap<LocalDate, CalendarException>();
+        for (CalendarException exception: exceptions) {
+            // TODO null validation for the principal fields
+            var map = exception.getExceptionAsDayConstraint();
+            map.forEach((localDate, exceptionLength) -> {
+                var previousException = mapDaysException.get(localDate);
+                if (previousException != null)
+                    throw new StandardError(exception + " overlap " + previousException);
+                mapDaysException.put(localDate, exception);
+            });
+
+        }
+
+    }
 
 }

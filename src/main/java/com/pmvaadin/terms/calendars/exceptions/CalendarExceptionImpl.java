@@ -145,6 +145,11 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     private List<CalendarExceptionInterval> intervals = new ArrayList<>();
 
     @Override
+    public String toString() {
+        return "Exception " + this.name + " with start: " + this.start + " and finish: " + this.finish;
+    }
+
+    @Override
     public void nullIdentifyingFields() {
 
         this.id = null;
@@ -205,6 +210,7 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
         exception.calendar = calendar;
         exception.start = LocalDate.now();
         exception.finish = LocalDate.now();
+        exception.endOfWeek = calendar.getEndOfWeek();
         return exception;
     }
 
@@ -236,6 +242,9 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
         var duration = 0;
         var durationDay = 24 * 3600;
         if (this.setting == CalendarExceptionSetting.WORKING_TIMES) {
+
+            this.intervals.forEach(interval -> interval.setDuration(interval.getTo().toSecondOfDay() - interval.getFrom().toSecondOfDay()));
+
             for (Interval interval: this.intervals) {
 
                 if (interval.getTo().equals(interval.getFrom())
@@ -301,7 +310,7 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
                 currentNumberOfOccurrence++;
             }
 
-            if (dayOfWeek == this.endOfWeek && this.everyNumberOfWeeks > 1) {
+            if (dayOfWeek == this.endOfWeek) {
                 startPoint = startPoint.plusWeeks(this.everyNumberOfWeeks - 1);
             }
             startPoint = startPoint.plusDays(1);

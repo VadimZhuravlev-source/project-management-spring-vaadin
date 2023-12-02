@@ -8,14 +8,13 @@ import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.exceptions.CalendarException;
+import com.pmvaadin.terms.calendars.validators.Validation;
+import com.pmvaadin.terms.calendars.validators.ValidationImpl;
 import com.pmvaadin.terms.calendars.workingweeks.views.WorkingWeekForm;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 import com.pmvaadin.terms.calendars.exceptions.views.CalendarExceptionForm;
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -28,6 +27,8 @@ import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.select.SelectVariant;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.NumberField;
@@ -36,11 +37,13 @@ import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -49,6 +52,7 @@ public class CalendarForm extends Dialog {
 
     private Calendar calendar;
     private final CalendarService calendarService;
+    private final Validation validation = new ValidationImpl();
 
     private final TextField name = new TextField();
     private final ComboBox<CalendarSettings> setting = new ComboBox<>();
@@ -71,6 +75,8 @@ public class CalendarForm extends Dialog {
     private final Button sync = new Button("Refresh", new Icon("lumo", "reload"));
 
     private final Map<DayOfWeek, NumberField> dayOfWeekMap = new LinkedHashMap<>(7);
+
+    private final Select<DayOfWeek> endOfWeek = new Select<>();
 
     // Working week
     private final WorkingWeeks workingWeeks = new WorkingWeeks();
@@ -118,6 +124,10 @@ public class CalendarForm extends Dialog {
     }
 
     private void customizeElements() {
+
+        endOfWeek.setItems(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
+        endOfWeek.addThemeVariants(SelectVariant.LUMO_SMALL);
+        endOfWeek.setRenderer(new ComponentRenderer<>(dayOfWeek -> new Text(dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()))));
 
         tabSheet.setSizeFull();
 
@@ -235,9 +245,11 @@ public class CalendarForm extends Dialog {
                 new FormLayout.ResponsiveStep("0px", 1)
                 );
 
-        var horizontalLayout = new HorizontalLayout(mainLayout, workingDaysLayout, exceptionDays);
+//        var horizontalLayout = new HorizontalLayout(mainLayout, workingDaysLayout, exceptionDays);
 
-        tabSheet.add(exceptionsTab, exceptions);
+        var vertLayout = new VerticalLayout(endOfWeek, exceptions);
+
+        tabSheet.add(exceptionsTab, vertLayout);
         tabSheet.add(workWeeksTab, workingWeeks);
 
         var verticalLayout = new VerticalLayout(mainLayout, tabSheet);
@@ -285,7 +297,10 @@ public class CalendarForm extends Dialog {
         close.addClickListener(event -> fireEvent(new CloseEvent(this)));
 
         Button save = new Button("Save");
-        save.addClickListener(event -> validateAndSave());
+        save.addClickListener(event -> {
+            validateAndSave();
+            read();
+        });
         binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
 
         getFooter().add(saveAndClose, save, sync, close);
@@ -295,10 +310,11 @@ public class CalendarForm extends Dialog {
     private boolean validateAndSave() {
         try {
             binder.writeBean(this.calendar);
+            validation.validate(this.calendar);
             //this.calendar.setCalendarException(exceptionDays.getItems());
             this.calendar.setWorkingWeeks(workingWeeks.getWorkingWeeks());
             this.calendar.setCalendarExceptions(exceptions.getCalendarExceptions());
-            calendarService.save(calendar);
+            calendarService.save(this.calendar);
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
             return false;
