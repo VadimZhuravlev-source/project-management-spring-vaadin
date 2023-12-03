@@ -3,15 +3,18 @@ package com.pmvaadin.calendars.entity;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
+import com.pmvaadin.terms.calendars.exceptions.CalendarException;
 import org.junit.jupiter.api.Test;
+
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CalendarImplTest {
 
@@ -25,18 +28,30 @@ class CalendarImplTest {
 
     private CalendarImpl calendar = new CalendarImpl();
     private CalendarImpl calendarWithExceptions = new CalendarImpl();
-    private CalendarImpl calendar12 = new CalendarImpl();
+    private CalendarImpl calendarNightShift = new CalendarImpl();
     private CalendarImpl calendar24 = new CalendarImpl();
 
     {
-        //calendar12 = new CalendarImpl();
-        calendar12.setSetting(CalendarSettings.NIGHT_SHIFT);
-        //calendar24 = new CalendarImpl();
+
+        calendar.setWorkingWeeks(calendar.getWorkingWeeks());
+
+        calendarNightShift.setSetting(CalendarSettings.NIGHT_SHIFT);
+        calendarNightShift.setWorkingWeeks(calendarNightShift.getWorkingWeeks());
+
         calendar24.setSetting(CalendarSettings.FULL_DAY);
+        calendar24.setWorkingWeeks(calendar24.getWorkingWeeks());
 
         List<ExceptionDay> exceptions = calendarWithExceptions.getCalendarException();
         exceptions.addAll(getExceptions());
 
+    }
+
+    private void fillExceptions(CalendarImpl calendar) {
+        CalendarException exception = calendar.getCalendarExceptionInstance();
+        exception.setStart(LocalDate.of(2022, 1, 3));
+        exception.setNumberOfOccurrence(8);
+        var finish = exception.getExceptionAsDayConstraint().keySet().stream().max(Comparator.naturalOrder());
+        exception.setFinish(finish.get());
     }
 
     private List<ExceptionDay> getExceptions() {
@@ -346,7 +361,7 @@ class CalendarImplTest {
         LocalDateTime date = LocalDateTime.of(2022, 1, 13, 10, 0);
         LocalDateTime backDate = date.plusDays(2 * 365);
 
-        LocalDateTime newDate = calendar12.getDateByDuration(date, duration);
+        LocalDateTime newDate = calendarNightShift.getDateByDuration(date, duration);
         assertEquals(backDate, newDate);
 
     }

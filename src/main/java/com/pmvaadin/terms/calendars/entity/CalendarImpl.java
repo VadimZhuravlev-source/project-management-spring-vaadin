@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Entity
@@ -196,8 +197,8 @@ public class CalendarImpl implements Calendar, Serializable {
 
         if (start.compareTo(finish) > 0) throw new StandardError("Illegal argument exception");
 
-        LocalDate startDay = LocalDate.ofEpochDay(start.toLocalDate().toEpochDay());
-        LocalTime startTime = LocalTime.ofSecondOfDay(start.toLocalTime().toSecondOfDay());
+        LocalDate startDay = start.toLocalDate();
+        LocalTime startTime = start.toLocalTime();
 
         if (calendarData == null) initiateCacheData();
 
@@ -255,20 +256,28 @@ public class CalendarImpl implements Calendar, Serializable {
     @Override
     public LocalDateTime getDateByDurationWithoutInitiateCache(LocalDateTime date, long duration) {
 
-        if (duration == 0L) return LocalDateTime.of(
-                LocalDate.ofEpochDay(date.toLocalDate().toEpochDay()),
-                LocalTime.ofSecondOfDay(date.toLocalTime().toSecondOfDay())
-        );
+        if (duration == 0L) return date;
 
         boolean isAscend = duration > 0L;
 
-        DateComputation dateComputation = new DateComputation();
-        if (calendarData == null) initiateCacheData();
+//        DateComputation dateComputation = new DateComputation();
+//        if (calendarData == null) initiateCacheData();
+//
+//        LocalDateTime startDate;
+//        if (isAscend) {
+//            startDate = dateComputation.increaseDateByDuration(date, duration);
+//        } else {
+//            startDate = dateComputation.decreaseDateByDuration(date, duration);
+//        }
+
+        DateComputationVersion2 dateComputation = new DateComputationVersion2();
+        if (exceptionDays == null) initiateCacheData();
 
         LocalDateTime startDate;
         if (isAscend) {
             startDate = dateComputation.increaseDateByDuration(date, duration);
         } else {
+            duration = -duration;
             startDate = dateComputation.decreaseDateByDuration(date, duration);
         }
 
@@ -284,9 +293,9 @@ public class CalendarImpl implements Calendar, Serializable {
         exceptionDays = map;
         defaultWorkingWeek = workingWeeks.stream().filter(WorkingWeekImpl::isDefault)
                 .findFirst().orElse(WorkingWeekImpl.getDefaultInstance(this));
-        workingWeeks.stream().forEach(workingWeek ->
-                workingWeek.getWorkingTimes().stream().forEach(workingTime ->
-                        workingTime.getIntervals().stream().forEach(Interval::fillDuration)));
+        workingWeeks.forEach(workingWeek ->
+                workingWeek.getWorkingTimes().forEach(workingTime ->
+                        workingTime.getIntervals().forEach(Interval::fillDuration)));
 
         // old
 
@@ -368,17 +377,16 @@ public class CalendarImpl implements Calendar, Serializable {
         private long remainedDuration;
         private WorkingWeek currentWorkingWeek;
         private Function<List<Interval>, Boolean> intervalCalculation;
+        private Supplier<LocalDate> dayChanger;
 
         private LocalDateTime increaseDateByDuration(LocalDateTime date, long duration) {
-            remainedDuration = duration;
-            day = date.toLocalDate();
-            time = date.toLocalTime();
+            init(date, duration);
             intervalCalculation = this::calculateIntervalsAscendOrder;
+            dayChanger = this::plusDay;
             return calculateDate();
         }
 
         private LocalDateTime calculateDate() {
-
 
             while (remainedDuration > 0) {
 
@@ -389,7 +397,8 @@ public class CalendarImpl implements Calendar, Serializable {
                         var returnDate = intervalCalculation.apply(exception.getIntervals());
                         if (returnDate) return LocalDateTime.of(day, time);
                     }
-                    day = day.plusDays(1);
+                    //day = day.plusDays(1);
+                    dayChanger.get();
                     time = LocalTime.MIN;
                     continue;
                 }
@@ -398,7 +407,8 @@ public class CalendarImpl implements Calendar, Serializable {
                         day.compareTo(currentWorkingWeek.getStart()) < 0
                                 || day.compareTo(currentWorkingWeek.getFinish()) > 0) {
 
-                    currentWorkingWeek = workingWeeks.stream().filter(workingWeek ->
+                    currentWorkingWeek = workingWeeks.stream().filter(ww -> !ww.isDefault())
+                            .filter(workingWeek ->
                         day.compareTo(workingWeek.getStart()) >= 0 && day.compareTo(workingWeek.getFinish()) <= 0
                     )   .findFirst().orElse(null);
 
@@ -414,13 +424,16 @@ public class CalendarImpl implements Calendar, Serializable {
                         .findFirst();
 
                 if (workingTimeOpt.isEmpty() || workingTimeOpt.get().getIntervalSetting() == IntervalSetting.NONWORKING) {
-                    day = day.plusDays(1);
+                    //day = day.plusDays(1);
+                    dayChanger.get();
                     time = LocalTime.MIN;
                     continue;
                 }
 
                 var returnDate = intervalCalculation.apply(workingTimeOpt.get().getIntervals());
                 if (returnDate) return LocalDateTime.of(day, time);
+                dayChanger.get();
+                time = LocalTime.MIN;
             }
 
             return LocalDateTime.of(day, time);
@@ -460,11 +473,21 @@ public class CalendarImpl implements Calendar, Serializable {
             return false;
         }
 
-        private LocalDateTime decreaseDateByDuration(LocalDateTime date, long duration) {
+        private LocalDate plusDay() {
+            day = day.plusDays(1);
+            return day;
+        }
+
+        private void init(LocalDateTime date, long duration) {
             remainedDuration = duration;
             day = date.toLocalDate();
             time = date.toLocalTime();
-            intervalCalculation = this::calculateIntervalsAscendOrder;
+        }
+
+        private LocalDateTime decreaseDateByDuration(LocalDateTime date, long duration) {
+            init(date, duration);
+            intervalCalculation = this::calculateIntervalsDescendOrder;
+            dayChanger = this::minusDay;
             return calculateDate();
         }
 
@@ -473,7 +496,8 @@ public class CalendarImpl implements Calendar, Serializable {
             var iterator = intervals.listIterator();
             while (iterator.hasPrevious()) {
                 var interval = iterator.previous();
-                if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN)) {
+                if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN)
+                        || interval.getTo().equals(LocalTime.MIN) && time.equals(LocalTime.MIN)) {
                     if (interval.getDuration() < remainedDuration) {
                         remainedDuration = remainedDuration - interval.getDuration();
                         time = interval.getFrom();
@@ -481,26 +505,32 @@ public class CalendarImpl implements Calendar, Serializable {
                             break;
                         continue;
                     } else {
-                        time = interval.getFrom().plusSeconds(remainedDuration);
+                        time = interval.getTo().minusSeconds(remainedDuration);
                         return true;
                     }
-                } else if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
+                } else if (time.compareTo(interval.getFrom()) <= 0)
                     continue;
 
-                var secondsOfDayTo = interval.getTo().toSecondOfDay();
-                if (interval.getTo().equals(LocalTime.MIN)) secondsOfDayTo = fullDay;
-                var intervalDuration = secondsOfDayTo - time.toSecondOfDay();
+                var secondsOfDayFrom = interval.getFrom().toSecondOfDay();
+                //if (interval.getTo().equals(LocalTime.MIN)) secondsOfDayFrom = fullDay;
+                var intervalDuration = secondsOfDayFrom - time.toSecondOfDay();
+                intervalDuration = - intervalDuration;
                 if (intervalDuration >= remainedDuration) {
-                    time = time.plusSeconds(remainedDuration);
+                    time = time.minusSeconds(remainedDuration);
                     return true;
                 } else {
                     remainedDuration = remainedDuration - intervalDuration;
-                    time = interval.getTo();
+                    time = interval.getFrom();
                     if (time.equals(LocalTime.MIN))
                         break;
                 }
             }
             return false;
+        }
+
+        private LocalDate minusDay() {
+            day = day.minusDays(1);
+            return day;
         }
 
     }
