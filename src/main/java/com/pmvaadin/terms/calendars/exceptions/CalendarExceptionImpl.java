@@ -1,5 +1,7 @@
 package com.pmvaadin.terms.calendars.exceptions;
 
+import com.pmvaadin.terms.calendars.common.ExceptionLength;
+import com.pmvaadin.terms.calendars.common.ExceptionLengthImpl;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
@@ -239,35 +241,14 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     }
 
     private ExceptionLength getExceptionLength() {
-        var duration = 0;
-        var durationDay = 24 * 3600;
+
+        ExceptionLength exceptionLength;
         if (this.setting == CalendarExceptionSetting.WORKING_TIMES) {
+            exceptionLength = Interval.getExceptionLength(this.getIntervals());
+        } else
+            exceptionLength = new ExceptionLengthImpl(0, new ArrayList<>(0));
 
-            this.intervals.forEach(interval -> interval.setDuration(interval.getTo().toSecondOfDay() - interval.getFrom().toSecondOfDay()));
-
-            for (Interval interval: this.intervals) {
-
-                if (interval.getTo().equals(interval.getFrom())
-                        && interval.getTo().equals(LocalTime.MIN)) {
-                    duration = durationDay;
-                    break;
-                }
-
-                var secondOfDayOfTo = 0;
-                var to = interval.getTo();
-                if (to.equals(LocalTime.MIN))
-                    secondOfDayOfTo = durationDay;
-                else
-                    secondOfDayOfTo = to.toSecondOfDay();
-
-                duration = duration + secondOfDayOfTo - interval.getFrom().toSecondOfDay();
-
-            }
-        }
-
-        if (duration >= durationDay) duration = durationDay;
-
-        return new ExceptionLengthImpl(duration, this.getIntervals());
+        return exceptionLength;
 
     }
 
@@ -334,18 +315,6 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
         var calculation = new CalculationYearlyExceptionDays(exceptionLength);
         return calculation.calculate();
 
-    }
-
-    private record ExceptionLengthImpl(int duration, List<Interval> intervals)
-            implements ExceptionLength {
-        @Override
-        public List<Interval> getIntervals() {
-            return intervals;
-        }
-        @Override
-        public int getDuration() {
-            return duration;
-        }
     }
 
     private class CalculationMonthlyExceptionDays {

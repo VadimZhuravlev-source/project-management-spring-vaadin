@@ -1,5 +1,6 @@
 package com.pmvaadin.terms.calendars.exceptions;
 
+import com.pmvaadin.terms.calendars.common.ExceptionLength;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 

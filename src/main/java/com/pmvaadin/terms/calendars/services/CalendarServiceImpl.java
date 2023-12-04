@@ -4,6 +4,7 @@ import com.pmvaadin.commonobjects.services.ListService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.CheckAccuracyOfData;
 import com.pmvaadin.terms.calendars.common.CheckAccuracyOfDataImpl;
+import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.entity.*;
 import com.pmvaadin.terms.calendars.repositories.CalendarRepository;
 import com.pmvaadin.terms.calculation.TermCalculationData;
@@ -75,14 +76,9 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
         }
 
+        calendar.fillWorkingWeekSort();
+        calendar.fillExceptionSort();
         // TODO to define alterations of the DaysOfWeekSettings and the CalendarException and to find tasks that used this calendar
-        calendar.getDaysOfWeekSettings().forEach(dayOfWeekSettings ->
-            dayOfWeekSettings.setCalendar((CalendarImpl) calendar)
-                );
-
-        calendar.getCalendarException().forEach(exceptionDays ->
-            exceptionDays.setCalendar((CalendarImpl) calendar)
-        );
 
         calendarRepository.save(calendar);
 
@@ -146,15 +142,17 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     public Calendar copy(CalendarRepresentation calRep) {
 
         Calendar calendar = calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
-        calendar.setId(null);
-        calendar.setVersion(null);
-        calendar.setPredefined(false);
-        calendar.getDaysOfWeekSettings().forEach(dayOfWeekSettings ->
-            dayOfWeekSettings.setId(null)
-        );
-        calendar.getCalendarException().forEach(exceptionDay ->
-            exceptionDay.setId(null)
-        );
+        if (calendar instanceof HasIdentifyingFields)
+            ((HasIdentifyingFields) calendar).nullIdentifyingFields();
+//        calendar.setId(null);
+//        calendar.setVersion(null);
+//        calendar.setPredefined(false);
+//        calendar.getDaysOfWeekSettings().forEach(dayOfWeekSettings ->
+//            dayOfWeekSettings.setId(null)
+//        );
+//        calendar.getCalendarException().forEach(exceptionDay ->
+//            exceptionDay.setId(null)
+//        );
 
         return calendar;
 

@@ -1,10 +1,9 @@
-package com.pmvaadin.terms.calendars.exceptions;
-
-import com.pmvaadin.terms.calendars.common.Interval;
+package com.pmvaadin.terms.calendars.common;
 
 import java.util.List;
 
 public interface ExceptionLength {
+
     List<Interval> getIntervals();
     int getDuration();
 }

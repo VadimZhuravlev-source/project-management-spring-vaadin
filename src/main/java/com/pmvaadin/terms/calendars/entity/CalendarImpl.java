@@ -1,5 +1,6 @@
 package com.pmvaadin.terms.calendars.entity;
 
+import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.dayofweeksettings.DefaultDaySetting;
@@ -8,10 +9,9 @@ import com.pmvaadin.terms.calendars.OperationListenerForCalendar;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.exceptions.CalendarException;
 import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionImpl;
-import com.pmvaadin.terms.calendars.exceptions.ExceptionLength;
-import com.pmvaadin.terms.calendars.workingweeks.IntervalSetting;
-import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
-import com.pmvaadin.terms.calendars.workingweeks.WorkingWeekImpl;
+import com.pmvaadin.terms.calendars.common.ExceptionLength;
+import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionInterval;
+import com.pmvaadin.terms.calendars.workingweeks.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 @Getter
 @NoArgsConstructor
 @Table(name = "calendars")
-public class CalendarImpl implements Calendar, Serializable {
+public class CalendarImpl implements Calendar, Serializable, HasIdentifyingFields {
 
     @Id
     @Setter
@@ -97,7 +97,7 @@ public class CalendarImpl implements Calendar, Serializable {
     private Map<LocalDate, ExceptionLength> exceptionDays;
 
     @Transient
-    private WorkingWeek defaultWorkingWeek;
+    private Map<DayOfWeek, ExceptionLength> workingTimesOfDefaultWorkingWeek;
 
     public CalendarImpl(String name) {
         this.name = name;
@@ -131,6 +131,18 @@ public class CalendarImpl implements Calendar, Serializable {
     @Override
     public boolean isNew() {
         return id == null;
+    }
+
+    @Override
+    public void nullIdentifyingFields() {
+
+        this.id = null;
+        this.version = null;
+        this.isPredefined = false;
+
+        workingWeeks.forEach(WorkingWeekImpl::nullIdentifyingFields);
+        exceptions.forEach(CalendarExceptionImpl::nullIdentifyingFields);
+
     }
 
     @Override
@@ -174,6 +186,21 @@ public class CalendarImpl implements Calendar, Serializable {
         calendar.setSetting(CalendarSettings.STANDARD);
         return calendar;
 
+    }
+
+    @Override
+    public void fillWorkingWeekSort() {
+        var sort = 0;
+        for (WorkingWeek workingWeek: workingWeeks) {
+            workingWeek.setSort(sort++);
+        }
+    }
+    @Override
+    public void fillExceptionSort() {
+        var sort = 0;
+        for (CalendarException calendarException1: exceptions) {
+            calendarException1.setSort(sort++);
+        }
     }
 
     @Override
@@ -271,7 +298,7 @@ public class CalendarImpl implements Calendar, Serializable {
 //        }
 
         DateComputationVersion2 dateComputation = new DateComputationVersion2();
-        if (exceptionDays == null) initiateCacheData();
+        if (exceptionDays == null || workingTimesOfDefaultWorkingWeek == null) initiateCacheData();
 
         LocalDateTime startDate;
         if (isAscend) {
@@ -289,13 +316,18 @@ public class CalendarImpl implements Calendar, Serializable {
     public void initiateCacheData() {
 
         Map<LocalDate, ExceptionLength> map = new HashMap<>();
+        workingWeeks.forEach(w -> map.putAll(w.getExceptionAsDayConstraint()));
         exceptions.forEach(e -> map.putAll(e.getExceptionAsDayConstraint()));
         exceptionDays = map;
-        defaultWorkingWeek = workingWeeks.stream().filter(WorkingWeekImpl::isDefault)
+        var defaultWorkingWeek = workingWeeks.stream().filter(WorkingWeekImpl::isDefault)
                 .findFirst().orElse(WorkingWeekImpl.getDefaultInstance(this));
-        workingWeeks.forEach(workingWeek ->
-                workingWeek.getWorkingTimes().forEach(workingTime ->
-                        workingTime.getIntervals().forEach(Interval::fillDuration)));
+        workingTimesOfDefaultWorkingWeek = new HashMap<>(DayOfWeek.values().length);
+        defaultWorkingWeek.getWorkingTimes().forEach(workingTime -> {
+            workingTime.getIntervals().forEach(Interval::fillDuration);
+            workingTimesOfDefaultWorkingWeek.put(workingTime.getDayOfWeek(), workingTime.getExceptionLength());
+        });
+
+
 
         // old
 
@@ -317,6 +349,12 @@ public class CalendarImpl implements Calendar, Serializable {
 
         calendarData = new CalendarData(secondFromBeggingOfDay, settingList, mapExceptions);
 
+    }
+
+    @Override
+    public void clearCache() {
+        this.exceptionDays = null;
+        this.workingTimesOfDefaultWorkingWeek = null;
     }
 
     @Override
@@ -371,13 +409,12 @@ public class CalendarImpl implements Calendar, Serializable {
 
     private class DateComputationVersion2 {
 
-        private static int fullDay = Calendar.FULL_DAY_SECONDS;
+        private final static int fullDay = Calendar.FULL_DAY_SECONDS;
         private LocalDate day;
         private LocalTime time;
         private long remainedDuration;
-        private WorkingWeek currentWorkingWeek;
         private Function<List<Interval>, Boolean> intervalCalculation;
-        private Supplier<LocalDate> dayChanger;
+        private DayChanger dayChanger;
 
         private LocalDateTime increaseDateByDuration(LocalDateTime date, long duration) {
             init(date, duration);
@@ -391,49 +428,20 @@ public class CalendarImpl implements Calendar, Serializable {
             while (remainedDuration > 0) {
 
                 var exception = exceptionDays.get(day);
-                if (exception != null) {
-
-                    if (exception.getDuration() != 0) {
+                if (exception == null) {
+                    exception = workingTimesOfDefaultWorkingWeek.get(day.getDayOfWeek());
+                }
+                if (exception.getDuration() != 0) {
+                    if (time.equals(LocalTime.MIN) && exception.getDuration() < remainedDuration)
+                        remainedDuration = remainedDuration - exception.getDuration();
+                    else {
                         var returnDate = intervalCalculation.apply(exception.getIntervals());
                         if (returnDate) return LocalDateTime.of(day, time);
                     }
-                    //day = day.plusDays(1);
-                    dayChanger.get();
-                    time = LocalTime.MIN;
-                    continue;
                 }
-
-                if (currentWorkingWeek == null ||
-                        day.compareTo(currentWorkingWeek.getStart()) < 0
-                                || day.compareTo(currentWorkingWeek.getFinish()) > 0) {
-
-                    currentWorkingWeek = workingWeeks.stream().filter(ww -> !ww.isDefault())
-                            .filter(workingWeek ->
-                        day.compareTo(workingWeek.getStart()) >= 0 && day.compareTo(workingWeek.getFinish()) <= 0
-                    )   .findFirst().orElse(null);
-
-                }
-
-                var workingWeek = currentWorkingWeek;
-                if (workingWeek == null)
-                    workingWeek = defaultWorkingWeek;
-
-
-                var workingTimeOpt = workingWeek.getWorkingTimes().stream()
-                        .filter(workingTime -> workingTime.getDayOfWeek() == day.getDayOfWeek())
-                        .findFirst();
-
-                if (workingTimeOpt.isEmpty() || workingTimeOpt.get().getIntervalSetting() == IntervalSetting.NONWORKING) {
-                    //day = day.plusDays(1);
-                    dayChanger.get();
-                    time = LocalTime.MIN;
-                    continue;
-                }
-
-                var returnDate = intervalCalculation.apply(workingTimeOpt.get().getIntervals());
-                if (returnDate) return LocalDateTime.of(day, time);
-                dayChanger.get();
+                dayChanger.change();
                 time = LocalTime.MIN;
+
             }
 
             return LocalDateTime.of(day, time);
@@ -473,9 +481,8 @@ public class CalendarImpl implements Calendar, Serializable {
             return false;
         }
 
-        private LocalDate plusDay() {
+        private void plusDay() {
             day = day.plusDays(1);
-            return day;
         }
 
         private void init(LocalDateTime date, long duration) {
@@ -493,7 +500,7 @@ public class CalendarImpl implements Calendar, Serializable {
 
         private boolean calculateIntervalsDescendOrder(List<Interval> intervals) {
 
-            var iterator = intervals.listIterator();
+            var iterator = intervals.listIterator(intervals.size());
             while (iterator.hasPrevious()) {
                 var interval = iterator.previous();
                 if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN)
@@ -512,7 +519,6 @@ public class CalendarImpl implements Calendar, Serializable {
                     continue;
 
                 var secondsOfDayFrom = interval.getFrom().toSecondOfDay();
-                //if (interval.getTo().equals(LocalTime.MIN)) secondsOfDayFrom = fullDay;
                 var intervalDuration = secondsOfDayFrom - time.toSecondOfDay();
                 intervalDuration = - intervalDuration;
                 if (intervalDuration >= remainedDuration) {
@@ -528,9 +534,13 @@ public class CalendarImpl implements Calendar, Serializable {
             return false;
         }
 
-        private LocalDate minusDay() {
+        private void minusDay() {
             day = day.minusDays(1);
-            return day;
+        }
+
+        @FunctionalInterface
+        interface DayChanger {
+            void change();
         }
 
     }

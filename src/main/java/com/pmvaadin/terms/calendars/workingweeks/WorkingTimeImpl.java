@@ -1,5 +1,7 @@
 package com.pmvaadin.terms.calendars.workingweeks;
 
+import com.pmvaadin.terms.calendars.common.ExceptionLength;
+import com.pmvaadin.terms.calendars.common.ExceptionLengthImpl;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
@@ -45,6 +47,9 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
     @OrderBy("from ASC")
     @LazyCollection(LazyCollectionOption.FALSE)
     private List<DayOfWeekInterval> intervals = new ArrayList<>();
+
+    @Transient
+    private int duration = 0;
 
     @Override
     public void nullIdentifyingFields() {
@@ -113,6 +118,28 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
     public List<Interval> getCopyOfIntervals() {
 
         return intervals.stream().map(DayOfWeekInterval::new).collect(Collectors.toList());
+
+    }
+
+    @Override
+    public void fillDuration() {
+        if (this.intervalSetting == IntervalSetting.NONWORKING)
+            this.duration = 0;
+        else
+            this.duration = Interval.getExceptionLength(this.getIntervals()).getDuration();
+    }
+
+    @Override
+    public ExceptionLength getExceptionLength() {
+
+        ExceptionLength exceptionLength;
+        if (this.intervalSetting == IntervalSetting.NONWORKING)
+            exceptionLength = new ExceptionLengthImpl(0, new ArrayList<>(0));
+        else
+            exceptionLength = Interval.getExceptionLength(this.getIntervals());
+
+
+        return exceptionLength;
 
     }
 

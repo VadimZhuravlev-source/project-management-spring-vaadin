@@ -75,6 +75,7 @@ public interface Calendar {
     LocalDateTime getDateByDurationWithoutInitiateCache(LocalDateTime date, long duration);
 
     void initiateCacheData();
+    void clearCache();
 
     LocalDateTime getClosestWorkingDay(LocalDateTime date);
 
@@ -100,5 +101,8 @@ public interface Calendar {
 
     List<WorkingWeek> getWorkingWeeks();
     void setWorkingWeeks(List<WorkingWeek> workingWeeks);
+
+    void fillWorkingWeekSort();
+    void fillExceptionSort();
 
 }

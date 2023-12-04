@@ -1,9 +1,11 @@
 package com.pmvaadin.terms.calendars.workingweeks;
 
+import com.pmvaadin.terms.calendars.common.ExceptionLength;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface WorkingWeek {
 
@@ -39,5 +41,7 @@ public interface WorkingWeek {
     void setDefault(boolean isDefault);
 
     WorkingTime getWorkingTimeInstance();
+
+    Map<LocalDate, ExceptionLength> getExceptionAsDayConstraint();
 
 }

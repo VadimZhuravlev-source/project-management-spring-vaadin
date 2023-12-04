@@ -1,5 +1,6 @@
 package com.pmvaadin.terms.calendars.workingweeks;
 
+import com.pmvaadin.terms.calendars.common.ExceptionLength;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 
@@ -28,5 +29,9 @@ public interface WorkingTime {
     Interval getIntervalInstance();
 
     List<Interval> getDefaultIntervals(DayOfWeek dayOfWeek, CalendarSettings settings);
+
+    void fillDuration();
+    int getDuration();
+    ExceptionLength getExceptionLength();
 
 }

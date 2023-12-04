@@ -3,6 +3,7 @@ package com.pmvaadin.terms.calendars.workingweeks;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
+import com.pmvaadin.terms.calendars.common.ExceptionLength;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.LazyCollection;
@@ -11,9 +12,8 @@ import org.hibernate.annotations.LazyCollectionOption;
 import javax.persistence.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Entity
@@ -101,6 +101,36 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
         var time = new WorkingTimeImpl();
         time.setWorkingWeek(this);
         return time;
+    }
+
+    @Override
+    public Map<LocalDate, ExceptionLength> getExceptionAsDayConstraint() {
+
+        if (this.start == null
+                || this.finish == null
+                || this.workingTimes == null
+                || this.workingTimes.isEmpty())
+            return new HashMap<>(0);
+
+        var capacity = (int) ChronoUnit.DAYS.between(this.start, this.finish);
+        capacity++;
+        Map<LocalDate, ExceptionLength> map = new HashMap<>(capacity);
+
+        var startPoint = this.start;
+        var mapExceptionLength = new HashMap<DayOfWeek, ExceptionLength>(7);
+
+        workingTimes.forEach(workingTime -> mapExceptionLength.put(workingTime.getDayOfWeek(), workingTime.getExceptionLength()));
+
+        while (startPoint.compareTo(this.finish) <= 0) {
+            var dayOfWeek= startPoint.getDayOfWeek();
+            var exception = mapExceptionLength.get(dayOfWeek);
+            if (exception != null)
+                map.put(startPoint, exception);
+            startPoint = startPoint.plusDays(1);
+        }
+
+        return map;
+
     }
 
     private static void fillWorkingTimes(WorkingWeekImpl workingWeek) {
