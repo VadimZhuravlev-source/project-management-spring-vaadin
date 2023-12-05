@@ -223,58 +223,67 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
     public long getDurationWithoutInitiateCache(LocalDateTime start, LocalDateTime finish) {
 
         if (start.compareTo(finish) > 0) throw new StandardError("Illegal argument exception");
+        if (start.equals(finish)) return 0;
 
-        LocalDate startDay = start.toLocalDate();
-        LocalTime startTime = start.toLocalTime();
+        var startDay = start.toLocalDate();
+        var startTime = start.toLocalTime();
 
-        if (calendarData == null) initiateCacheData();
+        if (exceptionDays == null || workingTimesOfDefaultWorkingWeek == null) initiateCacheData();
 
-        int startTimeCalendar = calendarData.startTime();
-        ComputingDataOfWorkingDay computingDataOfWorkingDay =
-                new ComputingDataOfWorkingDay(startDay, startTimeCalendar);
+        var duration = 0L;
+        var finishDay = finish.toLocalDate();
+        var finishTime = finish.toLocalTime();
+        // increase days
+        while (startDay.compareTo(finishDay) < 0) {
 
-        int finishTimeCalendar = computingDataOfWorkingDay.getFinishTimeSeconds();
+            var exception = exceptionDays.get(startDay);
+            if (exception == null) {
+                exception = workingTimesOfDefaultWorkingWeek.get(startDay.getDayOfWeek());
+            }
 
-        ////////////////////////
+            if (startTime.equals(LocalTime.MIN)) {
+                duration = duration + exception.getDuration();
+            } else {
+                for (Interval interval : exception.getIntervals()) {
+                    if (startTime.compareTo(interval.getFrom()) < 0) {
+                        startTime = interval.getFrom();
+                    }
+                    if (startTime.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
+                        continue;
+                    var secondOfDayTo = interval.getTo().toSecondOfDay();
+                    if (interval.getTo().equals(LocalTime.MIN))
+                        secondOfDayTo = Calendar.FULL_DAY_SECONDS;
+                    duration = duration + secondOfDayTo - startTime.toSecondOfDay();
+                }
+            }
 
-        if (startDay.equals(finish.toLocalDate())) {
-
-            int startTimeSeconds = startTime.toSecondOfDay();
-            if (startTimeSeconds < startTimeCalendar) startTimeSeconds = startTimeCalendar;
-            if (startTimeSeconds > finishTimeCalendar) startTimeSeconds = finishTimeCalendar;
-
-            int finishDateTimeSeconds = finish.toLocalTime().toSecondOfDay();
-            if (finishDateTimeSeconds < startTimeCalendar) finishDateTimeSeconds = startTimeCalendar;
-            if (finishDateTimeSeconds > finishTimeCalendar) finishDateTimeSeconds = finishTimeCalendar;
-
-            return finishDateTimeSeconds - startTimeSeconds;
+            startDay = startDay.plusDays(1);
+            startTime = LocalTime.MIN;
 
         }
 
-        /////////////////////////////
-
-        int startTimeSeconds = startTime.toSecondOfDay();
-        if (startTimeSeconds < startTimeCalendar) startTimeSeconds = startTimeCalendar;
-        if (startTimeSeconds > finishTimeCalendar) {
-            startTimeSeconds = finishTimeCalendar;
+        var exception = exceptionDays.get(startDay);
+        if (exception == null) {
+            exception = workingTimesOfDefaultWorkingWeek.get(startDay.getDayOfWeek());
         }
-        computingDataOfWorkingDay.increaseDay();
-        long duration = finishTimeCalendar - startTimeSeconds;
-
-        LocalDate finishDay = finish.toLocalDate();
-        while (computingDataOfWorkingDay.getDay().compareTo(finishDay) < 0) {
-            duration = duration + computingDataOfWorkingDay.getNumberOfSecondsInWorkingTime();
-            computingDataOfWorkingDay.increaseDay();
+        if (exception.getDuration() == 0) {
+            return duration;
         }
 
-        // finishDate duration
-        int finishDateTimeSeconds = finish.toLocalTime().toSecondOfDay();
-        if (finishDateTimeSeconds < startTimeCalendar) finishDateTimeSeconds = startTimeCalendar;
-        finishTimeCalendar = computingDataOfWorkingDay.getFinishTimeSeconds();
-        if (finishDateTimeSeconds > finishTimeCalendar) finishDateTimeSeconds = finishTimeCalendar;
-        int durationFinishDay = finishDateTimeSeconds - startTimeCalendar;
+        for (Interval interval : exception.getIntervals()) {
+            if (startTime.compareTo(interval.getFrom()) < 0)
+                startTime = interval.getFrom();
 
-        duration = duration + durationFinishDay;
+            if (startTime.compareTo(finishTime) >= 0)
+                break;
+            if (interval.getTo().equals(LocalTime.MIN) || finishTime.compareTo(interval.getTo()) <= 0) {
+                duration = duration + finishTime.toSecondOfDay() - startTime.toSecondOfDay();
+                break;
+            }
+
+            duration = duration + interval.getTo().toSecondOfDay() - startTime.toSecondOfDay();
+
+        }
 
         return duration;
 
@@ -316,6 +325,7 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
     public void initiateCacheData() {
 
         Map<LocalDate, ExceptionLength> map = new HashMap<>();
+        //w.getExceptionAsDayConstraint().forEach((d, e) -> map.put(d, e))
         workingWeeks.forEach(w -> map.putAll(w.getExceptionAsDayConstraint()));
         exceptions.forEach(e -> map.putAll(e.getExceptionAsDayConstraint()));
         exceptionDays = map;
@@ -365,6 +375,12 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
 
     @Override
     public LocalDateTime getClosestWorkingDayWithoutInitiateCache(LocalDateTime date) {
+
+        if (exceptionDays == null || workingTimesOfDefaultWorkingWeek == null) initiateCacheData();
+
+
+
+
 
         if (calendarData == null) initiateCacheData();
         LocalDate day = date.toLocalDate();
@@ -503,8 +519,7 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
             var iterator = intervals.listIterator(intervals.size());
             while (iterator.hasPrevious()) {
                 var interval = iterator.previous();
-                if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN)
-                        || interval.getTo().equals(LocalTime.MIN) && time.equals(LocalTime.MIN)) {
+                if (time.equals(LocalTime.MIN) || time.compareTo(interval.getTo()) >= 0) {
                     if (interval.getDuration() < remainedDuration) {
                         remainedDuration = remainedDuration - interval.getDuration();
                         time = interval.getFrom();
