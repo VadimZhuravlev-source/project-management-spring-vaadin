@@ -8,9 +8,9 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.List;
 
-public interface Validation {
+public interface CalendarValidation {
 
-    void validate(Calendar calendar);
+    boolean validate(Calendar calendar);
     boolean validate(WorkingWeek workingWeek);
     void validateIntervals(DayOfWeek dayOfWeek, List<Interval> intervals);
     void validateIntervals(List<Interval> intervals);

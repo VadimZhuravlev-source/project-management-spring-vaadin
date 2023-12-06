@@ -1,25 +1,8 @@
 package com.pmvaadin.terms.calendars.entity;
 
-import java.time.LocalTime;
 import java.util.Objects;
 
-public record CalendarRepresentationDTO(Integer id, String name, CalendarSettings setting, LocalTime startTime, boolean isPredefined) implements CalendarRepresentation{
-//@AllArgsConstructor
-//public class CalendarRepresentationDTO implements CalendarRepresentation {
-
-//    private final Integer id;
-//    private final String name;
-//    private final CalendarSettings setting;
-//    private final LocalTime startTime;
-//    private final boolean isPredefined;
-//
-//    public CalendarRepresentationDTO(Integer id, String name, Integer setting_id, LocalTime startTime, boolean isPredefined) {
-//        this.id = id;
-//        this.name = name;
-//        this.setting = new CalendarSettingsConverter().convertToEntityAttribute(setting_id);
-//        this.startTime = startTime;
-//        this.isPredefined = isPredefined;
-//    }
+public record CalendarRepresentationDTO(Integer id, String name, CalendarSettings setting, boolean isPredefined) implements CalendarRepresentation{
 
     @Override
     public Integer getId() {
@@ -37,11 +20,6 @@ public record CalendarRepresentationDTO(Integer id, String name, CalendarSetting
     }
 
     @Override
-    public LocalTime getStartTime() {
-        return startTime;
-    }
-
-    @Override
     public boolean isPredefined() {
         return isPredefined;
     }
@@ -53,11 +31,5 @@ public record CalendarRepresentationDTO(Integer id, String name, CalendarSetting
         if (getId() == null && that.getId() == null) return false;
         return Objects.equals(getId(), that.getId());
     }
-
-//    @Override
-//    public int hashCode() {
-//        if (getId() == null) return super.hashCode();
-//        return Objects.hash(getId());
-//    }
 
 }

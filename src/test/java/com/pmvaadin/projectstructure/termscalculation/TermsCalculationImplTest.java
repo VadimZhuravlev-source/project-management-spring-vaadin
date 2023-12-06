@@ -4,6 +4,7 @@ import com.pmvaadin.terms.calculation.TermCalculationData;
 import com.pmvaadin.terms.calculation.TermCalculationDataImpl;
 import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.terms.calculation.TermsCalculationImpl;
+import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
@@ -13,11 +14,16 @@ import com.pmvaadin.projecttasks.entity.ScheduleMode;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.entities.LinkImpl;
 import com.pmvaadin.projecttasks.links.entities.LinkType;
+import com.pmvaadin.terms.calendars.exceptions.CalendarException;
+import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionImpl;
+import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionSetting;
 import org.junit.Test;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,8 +67,7 @@ class TermsCalculationImplTest {
         List<Calendar> calendars = new ArrayList<>(1);
         CalendarImpl calendar = new CalendarImpl();
         calendar.setId(1);
-        List<ExceptionDay> exceptions = calendar.getCalendarException();
-        exceptions.addAll(getExceptions());
+        fillExceptions(calendar);
         calendars.add(calendar);
 
         List<ProjectTask> projectTasks = new ArrayList<>();
@@ -153,6 +158,38 @@ class TermsCalculationImplTest {
 
     }
 
+    private void fillExceptions(Calendar calendar) {
+        var exceptions = new ArrayList<CalendarException>();
+
+        var exception = (CalendarExceptionImpl) calendar.getCalendarExceptionInstance();
+        exception.setStart(LocalDate.of(2022, 1, 3));
+        exception.setNumberOfOccurrence(8);
+        var finish = exception.getExceptionAsDayConstraint().keySet().stream().max(Comparator.naturalOrder());
+        exception.setFinish(finish.get());
+        exceptions.add(exception);
+
+        exception = (CalendarExceptionImpl) calendar.getCalendarExceptionInstance();
+        exception.setStart(LocalDate.of(2021, 12, 31));
+        exception.setSetting(CalendarExceptionSetting.WORKING_TIMES);
+        var intervals = new ArrayList<Interval>(2);
+        var interval = exception.getIntervalInstance();
+        interval.setFrom(LocalTime.of(8, 0));
+        interval.setTo(LocalTime.of(12, 0));
+        intervals.add(interval);
+        interval = exception.getIntervalInstance();
+        interval.setFrom(LocalTime.of(13, 0));
+        interval.setTo(LocalTime.of(16, 0));
+        intervals.add(interval);
+        exception.setIntervals(intervals);
+        exception.setNumberOfOccurrence(1);
+        finish = exception.getExceptionAsDayConstraint().keySet().stream().max(Comparator.naturalOrder());
+        exception.setFinish(finish.get());
+        exceptions.add(exception);
+
+        calendar.setCalendarExceptions(exceptions);
+
+    }
+
     private Link getInstanceOfLink(Integer id, Integer prId, Integer lPrId, LinkType linkType, long lag) {
 
         Link link = new LinkImpl();
@@ -179,23 +216,6 @@ class TermsCalculationImplTest {
         projectTask.setScheduleMode(mode);
         projectTask.setCalendarId(calendarId);
         return projectTask;
-    }
-
-    private List<ExceptionDay> getExceptions() {
-
-        List<ExceptionDay> exceptions = new ArrayList<>(7);
-
-        // Big new year holidays
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 10), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 7), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 6), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 5), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 4), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 3), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2021, 12, 31), 7 * secondInHour));
-
-        return exceptions;
-
     }
 
 }

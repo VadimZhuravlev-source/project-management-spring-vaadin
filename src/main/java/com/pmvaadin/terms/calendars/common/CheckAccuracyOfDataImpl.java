@@ -19,12 +19,12 @@ public class CheckAccuracyOfDataImpl implements CheckAccuracyOfData {
     @Override
     public boolean check(Calendar calendar) {
 
-        this.calendar = calendar;
-        var startTime = calendar.getStartTime();
-        this.availableNumberOfSeconds = Calendar.NUMBER_OF_SECONDS_IN_AN_HOUR * 24 - startTime.getSecond();
-
-        checkDayOfWeek();
-        checkExceptions();
+//        this.calendar = calendar;
+//        var startTime = calendar.getStartTime();
+//        this.availableNumberOfSeconds = Calendar.NUMBER_OF_SECONDS_IN_AN_HOUR * 24 - startTime.getSecond();
+//
+//        checkDayOfWeek();
+//        checkExceptions();
 
         return true;
 
@@ -53,26 +53,26 @@ public class CheckAccuracyOfDataImpl implements CheckAccuracyOfData {
 
     }
 
-    private void checkExceptions() {
-
-        var calendarExceptions = this.calendar.getCalendarException();
-        if (calendarExceptions == null) return;
-
-        Set<LocalDate> days = new HashSet<>(calendarExceptions.size());
-        for (ExceptionDay exceptionDay: calendarExceptions) {
-
-            var day = exceptionDay.getDate();
-            if (days.contains(day)) throw new StandardError("");
-            days.add(day);
-
-            if (exceptionDay.getDuration() <= this.availableNumberOfSeconds) continue;
-            var text = getTextMessageExceedingWorkingDay();
-            text = text.replace(":day", day.toString());
-            throw new StandardError(text);
-
-        }
-
-    }
+//    private void checkExceptions() {
+//
+//        var calendarExceptions = this.calendar.getCalendarException();
+//        if (calendarExceptions == null) return;
+//
+//        Set<LocalDate> days = new HashSet<>(calendarExceptions.size());
+//        for (ExceptionDay exceptionDay: calendarExceptions) {
+//
+//            var day = exceptionDay.getDate();
+//            if (days.contains(day)) throw new StandardError("");
+//            days.add(day);
+//
+//            if (exceptionDay.getDuration() <= this.availableNumberOfSeconds) continue;
+//            var text = getTextMessageExceedingWorkingDay();
+//            text = text.replace(":day", day.toString());
+//            throw new StandardError(text);
+//
+//        }
+//
+//    }
 
     private String getTextMessageExceedingWorkingDay() {
         return

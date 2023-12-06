@@ -233,7 +233,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         List<ProjectTask> savedTasks = projectTaskRepository.saveAll(respond.getChangedTasks());
 
-        //TODO async recalculating of changed projects respond.getRecalculatedProjects()
         var projectRecalculation = context.getBean(ProjectRecalculation.class);
         projectRecalculation.recalculate(respond.getRecalculatedProjects());
 

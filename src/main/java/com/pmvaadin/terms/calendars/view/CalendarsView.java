@@ -47,7 +47,6 @@ public class CalendarsView extends VerticalLayout {
 
             this.grid.addColumn(CalendarRepresentation::getName).setHeader("Name");
             this.grid.addColumn(CalendarRepresentation::getSettings).setHeader("Setting");
-            this.grid.addColumn(CalendarRepresentation::getStartTime).setHeader("Start time");
             this.addPredefinedColumn(CalendarRepresentation::isPredefined);
             onMouseDoubleClick(this::openNewCalendar);
 

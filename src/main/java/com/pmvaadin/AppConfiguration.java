@@ -8,6 +8,8 @@ import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.terms.calculation.TermsCalculationImpl;
 import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversion;
 import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversionWrapper;
+import com.pmvaadin.terms.calendars.validators.CalendarValidation;
+import com.pmvaadin.terms.calendars.validators.CalendarValidationImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -32,6 +34,11 @@ public class AppConfiguration {
     @Bean
     public TermsCalculation termsCalculation() {
         return new TermsCalculationImpl();
+    }
+
+    @Bean
+    public CalendarValidation calendarValidation() {
+        return new CalendarValidationImpl();
     }
 
     @Bean

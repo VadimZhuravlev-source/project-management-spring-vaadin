@@ -4,8 +4,8 @@ import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.common.IntervalGrid;
 import com.pmvaadin.terms.calendars.exceptions.*;
-import com.pmvaadin.terms.calendars.validators.Validation;
-import com.pmvaadin.terms.calendars.validators.ValidationImpl;
+import com.pmvaadin.terms.calendars.validators.CalendarValidation;
+import com.pmvaadin.terms.calendars.validators.CalendarValidationImpl;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -91,7 +91,7 @@ public class CalendarExceptionForm extends Dialog {
     private final NumberField numberOfOccurrence = getCustomizedNumberField();
     private final DatePicker finish = new DatePicker();
 
-    private final Validation validation = new ValidationImpl();
+    private final CalendarValidation calendarValidation = new CalendarValidationImpl();
     private boolean isFirstInit = true;
     private boolean refreshNumberOfOccurrence = false;
 
@@ -724,7 +724,7 @@ public class CalendarExceptionForm extends Dialog {
     private boolean validate() {
         if (numberOfOccurrence.getValue() == 0) throw
                 new StandardError("The recurrence as presently configured will not have any occurrences.");
-        validation.validateIntervals(intervals.getItems());
+        calendarValidation.validateIntervals(intervals.getItems());
         return true;
     }
 

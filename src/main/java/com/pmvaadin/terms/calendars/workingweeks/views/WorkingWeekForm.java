@@ -3,8 +3,8 @@ package com.pmvaadin.terms.calendars.workingweeks.views;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.common.IntervalGrid;
-import com.pmvaadin.terms.calendars.validators.Validation;
-import com.pmvaadin.terms.calendars.validators.ValidationImpl;
+import com.pmvaadin.terms.calendars.validators.CalendarValidation;
+import com.pmvaadin.terms.calendars.validators.CalendarValidationImpl;
 import com.pmvaadin.terms.calendars.workingweeks.IntervalSetting;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingTime;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
@@ -51,7 +51,7 @@ public class WorkingWeekForm extends Dialog {
     private final RadioButtonGroup<IntervalSetting> radioGroup = new RadioButtonGroup<>();
     private final Map<DayOfWeek, WorkingDaysSetting> mapIntervalChanges = new HashMap<>();
 
-    private final Validation validation = new ValidationImpl();
+    private final CalendarValidation calendarValidation = new CalendarValidationImpl();
 
     public WorkingWeekForm(WorkingWeek workingWeek) {
         this.workingWeek = workingWeek;
@@ -234,9 +234,9 @@ public class WorkingWeekForm extends Dialog {
 
     private boolean validate() {
 
-        validation.validateDates(this.workingWeek, this.start.getValue(), this.finish.getValue());
+        calendarValidation.validateDates(this.workingWeek, this.start.getValue(), this.finish.getValue());
         mapIntervalChanges.forEach((dayOfWeek, workingDaysSetting) ->
-                validation.validateIntervals(dayOfWeek, workingDaysSetting.getIntervals()));
+                calendarValidation.validateIntervals(dayOfWeek, workingDaysSetting.getIntervals()));
 
         return true;
 

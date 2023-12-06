@@ -2,7 +2,6 @@ package com.pmvaadin.terms.calendars.view;
 
 import com.pmvaadin.commonobjects.services.ItemService;
 import com.pmvaadin.commonobjects.vaadin.SearchableGrid;
-import com.pmvaadin.projecttasks.views.ProjectTaskForm;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.services.CalendarService;
@@ -85,7 +84,6 @@ public class CalendarSelectionForm extends Dialog {
             super(itemService);
             this.grid.addColumn(CalendarRepresentation::getName).setHeader("Name");
             this.grid.addColumn(CalendarRepresentation::getSettings).setHeader("Setting");
-            this.grid.addColumn(CalendarRepresentation::getStartTime).setHeader("Start time");
             this.addPredefinedColumn(CalendarRepresentation::isPredefined);
             this.grid.addItemDoubleClickListener(event -> {
                 if (event == null) return;

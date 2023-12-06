@@ -12,16 +12,17 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 
-public class ValidationImpl implements Validation {
+public class CalendarValidationImpl implements CalendarValidation {
 
     private Calendar calendar;
     private WorkingWeek week;
 
     @Override
-    public void validate(Calendar calendar) {
+    public boolean validate(Calendar calendar) {
         this.calendar = calendar;
         this.calendar.getWorkingWeeks().forEach(this::validateWorkingWeekTerms);
         validateExceptions();
+        return true;
     }
 
     @Override

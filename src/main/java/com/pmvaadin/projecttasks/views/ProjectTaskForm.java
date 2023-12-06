@@ -236,7 +236,7 @@ public class ProjectTaskForm extends Dialog {
         if (projectTaskData.getProjectStartDate().toLocalDate().equals(selectedDate))
             newStartDate = projectTaskData.getProjectStartDate();
         else
-            newStartDate = calendar.getClosestWorkingDay(LocalDateTime.of(selectedDate, calendar.getStartTime()));
+            newStartDate = calendar.getClosestWorkingDay(LocalDateTime.of(selectedDate, LocalTime.MIN));
         if (!newStartDate.toLocalDate().equals(selectedDate)) startDate.setValue(newStartDate.toLocalDate());
 
         projectTaskData.getProjectTask().setStartDate(newStartDate);
@@ -256,10 +256,10 @@ public class ProjectTaskForm extends Dialog {
 
         Calendar calendar = calendarField.getValue();
         LocalDateTime newFinishDate = calendar.getEndOfWorkingDay(selectedDate);
-        if (newFinishDate.toLocalTime().equals(calendar.getStartTime())) {
-            newFinishDate = calendar.getClosestWorkingDay(newFinishDate);
-            newFinishDate = calendar.getEndOfWorkingDay(newFinishDate.toLocalDate());
-        }
+//        if (newFinishDate.toLocalTime().equals(calendar.getStartTime())) {
+//        newFinishDate = calendar.getClosestWorkingDay(newFinishDate);
+//        newFinishDate = calendar.getEndOfWorkingDay(newFinishDate);
+//        }
 
         if (newFinishDate.compareTo(projectTask.getStartDate()) <= 0) {
             String message = "The selected date can not be less than the start date of the task";

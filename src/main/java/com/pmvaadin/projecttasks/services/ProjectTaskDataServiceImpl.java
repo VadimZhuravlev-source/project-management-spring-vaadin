@@ -19,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -163,7 +165,9 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         if (defaultStartDate == null) {
             LocalDateTime nowDate = LocalDateTime.now();
-            defaultStartDate = LocalDateTime.of(nowDate.toLocalDate(), calendar.getStartTime());
+            var date = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+            defaultStartDate = calendar.getClosestWorkingDay(date);
+            //defaultStartDate = LocalDateTime.of(nowDate.toLocalDate(), calendar.getStartTime());
         }
 
         Integer timeUnitId = projectTask.getTimeUnitId();

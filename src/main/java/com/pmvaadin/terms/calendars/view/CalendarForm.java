@@ -1,15 +1,12 @@
 package com.pmvaadin.terms.calendars.view;
 
-import com.pmvaadin.commonobjects.ConfirmDialog;
 import com.pmvaadin.commonobjects.ObjectGrid;
 import com.pmvaadin.projectstructure.NotificationDialogs;
-import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.exceptions.CalendarException;
-import com.pmvaadin.terms.calendars.validators.Validation;
-import com.pmvaadin.terms.calendars.validators.ValidationImpl;
+import com.pmvaadin.terms.calendars.validators.CalendarValidation;
+import com.pmvaadin.terms.calendars.validators.CalendarValidationImpl;
 import com.pmvaadin.terms.calendars.workingweeks.views.WorkingWeekForm;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
@@ -18,7 +15,6 @@ import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -31,10 +27,7 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.select.SelectVariant;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.component.textfield.TextFieldVariant;
-import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -52,29 +45,29 @@ public class CalendarForm extends Dialog {
 
     private Calendar calendar;
     private final CalendarService calendarService;
-    private final Validation validation = new ValidationImpl();
+    private final CalendarValidation calendarValidation = new CalendarValidationImpl();
 
     private final TextField name = new TextField();
     private final ComboBox<CalendarSettings> setting = new ComboBox<>();
-    private final TimePicker startTime = new TimePicker();
-
-    private final NumberField monday = new NumberField();
-    private final NumberField tuesday = new NumberField();
-    private final NumberField wednesday = new NumberField();
-    private final NumberField thursday = new NumberField();
-    private final NumberField friday = new NumberField();
-    private final NumberField saturday = new NumberField();
-    private final NumberField sunday = new NumberField();
-
-    private final FormLayout workingDaysLayout = new FormLayout();
-
-    private final ExceptionDays exceptionDays = new ExceptionDays();
+//    private final TimePicker startTime = new TimePicker();
+//
+//    private final NumberField monday = new NumberField();
+//    private final NumberField tuesday = new NumberField();
+//    private final NumberField wednesday = new NumberField();
+//    private final NumberField thursday = new NumberField();
+//    private final NumberField friday = new NumberField();
+//    private final NumberField saturday = new NumberField();
+//    private final NumberField sunday = new NumberField();
+//
+//    private final FormLayout workingDaysLayout = new FormLayout();
+//
+//    private final ExceptionDays exceptionDays = new ExceptionDays();
 
     private final Binder<Calendar> binder = new BeanValidationBinder<>(Calendar.class);
 
     private final Button sync = new Button("Refresh", new Icon("lumo", "reload"));
 
-    private final Map<DayOfWeek, NumberField> dayOfWeekMap = new LinkedHashMap<>(7);
+//    private final Map<DayOfWeek, NumberField> dayOfWeekMap = new LinkedHashMap<>(7);
 
     private final Select<DayOfWeek> endOfWeek = new Select<>();
 
@@ -92,7 +85,7 @@ public class CalendarForm extends Dialog {
     public CalendarForm(CalendarService calendarService) {
 
         this.calendarService = calendarService;
-        fillDayOfWeekMap();
+        //fillDayOfWeekMap();
         customizeHeader();
         customizeForm();
         customizeDataLayout();
@@ -113,15 +106,15 @@ public class CalendarForm extends Dialog {
 
     }
 
-    private void fillDayOfWeekMap() {
-        dayOfWeekMap.put(DayOfWeek.MONDAY, monday);
-        dayOfWeekMap.put(DayOfWeek.TUESDAY, tuesday);
-        dayOfWeekMap.put(DayOfWeek.WEDNESDAY, wednesday);
-        dayOfWeekMap.put(DayOfWeek.THURSDAY, thursday);
-        dayOfWeekMap.put(DayOfWeek.FRIDAY, friday);
-        dayOfWeekMap.put(DayOfWeek.SATURDAY, saturday);
-        dayOfWeekMap.put(DayOfWeek.SUNDAY, sunday);
-    }
+//    private void fillDayOfWeekMap() {
+//        dayOfWeekMap.put(DayOfWeek.MONDAY, monday);
+//        dayOfWeekMap.put(DayOfWeek.TUESDAY, tuesday);
+//        dayOfWeekMap.put(DayOfWeek.WEDNESDAY, wednesday);
+//        dayOfWeekMap.put(DayOfWeek.THURSDAY, thursday);
+//        dayOfWeekMap.put(DayOfWeek.FRIDAY, friday);
+//        dayOfWeekMap.put(DayOfWeek.SATURDAY, saturday);
+//        dayOfWeekMap.put(DayOfWeek.SUNDAY, sunday);
+//    }
 
     private void customizeElements() {
 
@@ -133,74 +126,80 @@ public class CalendarForm extends Dialog {
 
         this.setting.setItems(CalendarSettings.values());
 
-        startTime.addValueChangeListener(event -> {
-
-        });
+//        startTime.addValueChangeListener(event -> {
+//
+//        });
 
     }
 
     private void customizeBinder() {
 
         binder.bindInstanceFields(this);
-        dayOfWeekMap.forEach((dayOfWeek, numberField) ->
-                binder.forField(numberField).bind(c -> getHoursInTheDay(dayOfWeek),
-                        (c, aDouble) -> setHoursInTheDay(dayOfWeek, aDouble))
-        );
+//        dayOfWeekMap.forEach((dayOfWeek, numberField) ->
+//                binder.forField(numberField).bind(c -> getHoursInTheDay(dayOfWeek),
+//                        (c, aDouble) -> setHoursInTheDay(dayOfWeek, aDouble))
+//        );
 
     }
 
-    private Double getHoursInTheDay(DayOfWeek dayOfWeek) {
-        var dayIndex = dayOfWeek.getValue();
-        var daysOfWeek = this.calendar.getDaysOfWeekSettings();
-        if (daysOfWeek == null || daysOfWeek.isEmpty()) return 0D;
-        return daysOfWeek.stream().filter(d -> d.getDayOfWeek() == dayIndex)
-                .map(DayOfWeekSettings::getCountHours).map(Calendar::getCountOfHoursDouble)
-                .findFirst().orElse(0D);
-    }
+//    private Double getHoursInTheDay(DayOfWeek dayOfWeek) {
+//        var dayIndex = dayOfWeek.getValue();
+//        var daysOfWeek = this.calendar.getDaysOfWeekSettings();
+//        if (daysOfWeek == null || daysOfWeek.isEmpty()) return 0D;
+//        return daysOfWeek.stream().filter(d -> d.getDayOfWeek() == dayIndex)
+//                .map(DayOfWeekSettings::getCountHours).map(Calendar::getCountOfHoursDouble)
+//                .findFirst().orElse(0D);
+//    }
 
-    private void setHoursInTheDay(DayOfWeek dayOfWeek, Double aDouble) {
-
-        var dayIndex = dayOfWeek.getValue();
-        var daysOfWeek = this.calendar.getDaysOfWeekSettings();
-        if (daysOfWeek == null || daysOfWeek.isEmpty()) {
-            daysOfWeek = this.calendar.getSetting().getDaysOfWeekSettings();
-            this.calendar.setDaysOfWeekSettings(daysOfWeek);
-        }
-
-        var dayOfWeekOptional = daysOfWeek.stream().filter(d -> d.getDayOfWeek() == dayIndex).findFirst();
-        var countOfHours = Calendar.getCountOfHoursInteger(aDouble);
-
-        DayOfWeekSettings currentDayOfWeek;
-        if (dayOfWeekOptional.isEmpty()) {
-            currentDayOfWeek = new DayOfWeekSettings(dayIndex, countOfHours);
-            daysOfWeek.add(currentDayOfWeek);
-        } else {
-            currentDayOfWeek = dayOfWeekOptional.get();
-            currentDayOfWeek.setCountHours(countOfHours);
-        }
-
-    }
+//    private void setHoursInTheDay(DayOfWeek dayOfWeek, Double aDouble) {
+//
+//        var dayIndex = dayOfWeek.getValue();
+//        var daysOfWeek = this.calendar.getDaysOfWeekSettings();
+//        if (daysOfWeek == null || daysOfWeek.isEmpty()) {
+//            daysOfWeek = this.calendar.getSetting().getDaysOfWeekSettings();
+//            this.calendar.setDaysOfWeekSettings(daysOfWeek);
+//        }
+//
+//        var dayOfWeekOptional = daysOfWeek.stream().filter(d -> d.getDayOfWeek() == dayIndex).findFirst();
+//        var countOfHours = Calendar.getCountOfHoursInteger(aDouble);
+//
+//        DayOfWeekSettings currentDayOfWeek;
+//        if (dayOfWeekOptional.isEmpty()) {
+//            currentDayOfWeek = new DayOfWeekSettings(dayIndex, countOfHours);
+//            daysOfWeek.add(currentDayOfWeek);
+//        } else {
+//            currentDayOfWeek = dayOfWeekOptional.get();
+//            currentDayOfWeek.setCountHours(countOfHours);
+//        }
+//
+//    }
 
     private void read() {
 
         binder.readBean(this.calendar);
-        fillExceptions();
+        //fillExceptions();
         refreshHeader();
         workingWeeks.setWorkingWeeks(calendar.getWorkingWeeks());
-        exceptions.setInstantiatable(this.calendar::getCalendarExceptionInstance);
+        exceptions.setInstantiatable(this::getCalendarExceptionInstance);
         exceptions.setCalendarExceptions(this.calendar.getCalendarExceptions());
 
         if (this.calendar.isNew()) sync.setEnabled(false);
 
     }
 
-    private void fillExceptions() {
-
-        this.exceptionDays.setItems(new ArrayList<>());
-        var exceptions = this.calendar.getCalendarException();
-        if (exceptions != null && !exceptions.isEmpty()) this.exceptionDays.setItems(exceptions);
-
+    private CalendarException getCalendarExceptionInstance() {
+        var instance = this.calendar.getCalendarExceptionInstance();
+        instance.setEndOfWeek(this.endOfWeek.getValue());
+        return instance;
     }
+
+//    private void fillExceptions() {
+//
+//        this.exceptionDays.setItems(new ArrayList<>());
+//        var exceptions = this.calendar.getCalendarException();
+//        if (exceptions != null && !exceptions.isEmpty()) this.exceptionDays.setItems(exceptions);
+//
+//    }
 
     private void customizeForm() {
 
@@ -227,23 +226,23 @@ public class CalendarForm extends Dialog {
 
         //var workingDaysLayout = new VerticalLayout(monday, tuesday, wednesday, thursday, friday, saturday, sunday);
 
-        workingDaysLayout.addFormItem(monday, "Monday");
-        workingDaysLayout.addFormItem(tuesday, "Tuesday");
-        workingDaysLayout.addFormItem(wednesday, "Wednesday");
-        workingDaysLayout.addFormItem(thursday, "Thursday");
-        workingDaysLayout.addFormItem(friday, "Friday");
-        workingDaysLayout.addFormItem(saturday, "Saturday");
-        workingDaysLayout.addFormItem(sunday, "Sunday");
-
-        workingDaysLayout.setResponsiveSteps(
-                new FormLayout.ResponsiveStep("0px", 1),
-                new FormLayout.ResponsiveStep("0px", 1),
-                new FormLayout.ResponsiveStep("0px", 1),
-                new FormLayout.ResponsiveStep("0px", 1),
-                new FormLayout.ResponsiveStep("0px", 1),
-                new FormLayout.ResponsiveStep("0px", 1),
-                new FormLayout.ResponsiveStep("0px", 1)
-                );
+//        workingDaysLayout.addFormItem(monday, "Monday");
+//        workingDaysLayout.addFormItem(tuesday, "Tuesday");
+//        workingDaysLayout.addFormItem(wednesday, "Wednesday");
+//        workingDaysLayout.addFormItem(thursday, "Thursday");
+//        workingDaysLayout.addFormItem(friday, "Friday");
+//        workingDaysLayout.addFormItem(saturday, "Saturday");
+//        workingDaysLayout.addFormItem(sunday, "Sunday");
+//
+//        workingDaysLayout.setResponsiveSteps(
+//                new FormLayout.ResponsiveStep("0px", 1),
+//                new FormLayout.ResponsiveStep("0px", 1),
+//                new FormLayout.ResponsiveStep("0px", 1),
+//                new FormLayout.ResponsiveStep("0px", 1),
+//                new FormLayout.ResponsiveStep("0px", 1),
+//                new FormLayout.ResponsiveStep("0px", 1),
+//                new FormLayout.ResponsiveStep("0px", 1)
+//                );
 
 //        var horizontalLayout = new HorizontalLayout(mainLayout, workingDaysLayout, exceptionDays);
 
@@ -310,11 +309,11 @@ public class CalendarForm extends Dialog {
     private boolean validateAndSave() {
         try {
             binder.writeBean(this.calendar);
-            validation.validate(this.calendar);
+            calendarValidation.validate(this.calendar);
             //this.calendar.setCalendarException(exceptionDays.getItems());
             this.calendar.setWorkingWeeks(workingWeeks.getWorkingWeeks());
             this.calendar.setCalendarExceptions(exceptions.getCalendarExceptions());
-            calendarService.save(this.calendar);
+            this.calendar = calendarService.save(this.calendar);
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
             return false;
@@ -355,101 +354,101 @@ public class CalendarForm extends Dialog {
         }
     }
 
-    private class ExceptionDays extends ObjectGrid<ExceptionDay> {
+//    private class ExceptionDays extends ObjectGrid<ExceptionDay> {
+//
+//        ExceptionDays() {
+//            customizeColumnsAndBinder();
+//            customizeGrid();
+//            setDeletable(true);
+//            setInstantiatable(this::setInstantiatable);
+//            setCopyable(this::setCopyable);
+//        }
+//
+//        private void customizeGrid() {
+//
+//            this.grid.addItemClickListener(listener -> {
+//                var item = listener.getItem();
+//                if (item != null) return;
+//                grid.deselectAll();
+//                this.endEditing();
+//            });
+//
+//        }
+//
+//        private ExceptionDay setInstantiatable() {
+//            return new ExceptionDay();
+//        }
+//
+//        private ExceptionDay setCopyable(ExceptionDay exceptionDay) {
+//            ExceptionDay copy = new ExceptionDay();
+//            copy.setDate(exceptionDay.getDate());
+//            copy.setDuration(exceptionDay.getDuration());
+//            return copy;
+//        }
+//
+//        private void customizeColumnsAndBinder() {
+//
+//            var dayColumn = addColumn(ExceptionDay::getDate).setHeader("Day");
+//            var hoursColumn = addColumn(this::getCountOfHours).setHeader("Hours");
+//
+//            var dayColumnField = new DatePicker();
+//            dayColumnField.setWidthFull();
+//            addCloseHandler(dayColumnField, editor);
+//            binder.forField(dayColumnField)
+//                    .bind(ExceptionDay::getDate, ExceptionDay::setDate);
+//            dayColumn.setEditorComponent(dayColumnField);
+//            dayColumnField.addValueChangeListener(event -> {
+//                //var value = dayColumnField.getValue();
+//                var value = event.getValue();
+//                String errorMessage = null;
+//                var ifExistedDate = this.grid.getListDataView().getItems().anyMatch(exceptionDay -> Objects.equals(value, exceptionDay.getDate()));
+//                if (ifExistedDate) {
+//                    errorMessage = "The selected date is already contained in the table.";
+//                }
+//                dayColumnField.setErrorMessage(errorMessage);
+//            });
+//
+//            var numberOfHoursField = new NumberField();
+//            numberOfHoursField.addThemeVariants(
+//                    //TextFieldVariant.LUMO_SMALL,
+//                    TextFieldVariant.LUMO_ALIGN_RIGHT
+//            );
+//            numberOfHoursField.setWidthFull();
+//            numberOfHoursField.setMin(0);
+//            numberOfHoursField.setMax(24.00);
+//            addCloseHandler(numberOfHoursField, editor);
+//            binder.forField(numberOfHoursField)//.withConverter(new BigDecimalToDoubleConverter(lagRepresentation))
+//                    .bind(this::getCountOfHours, this::setCountOfHours);
+//            //countOfHoursField.addValidationStatusChangeListener(this::validationStatusChangeEvent);
+//            hoursColumn.setEditorComponent(numberOfHoursField);
+//
+//        }
+//
+//        private void setCountOfHours(ExceptionDay exceptionDay, Double value) {
+//
+////            var startTime = calendar.getStartTime();
+////            var seconds = startTime.getSecond();
+////            var secondsInHour = 24 * 3600;
+////            var secondsLeft = secondsInHour - seconds;
+////            var duration = Calendar.getCountOfHoursInteger(value);
+////            if (duration > secondsLeft) {
+////                var dialog = new ConfirmDialog();
+////                dialog.add("The number of hours selected is greater than the number available.");
+////                dialog.open();
+////                return;
+////            }
+////
+////            exceptionDay.setDuration(duration);
+//
+//        }
+//
+//        private Double getCountOfHours(ExceptionDay exceptionDay) {
+//            return Calendar.getCountOfHoursDouble(exceptionDay.getDuration());
+//        }
+//
+//    }
 
-        ExceptionDays() {
-            customizeColumnsAndBinder();
-            customizeGrid();
-            setDeletable(true);
-            setInstantiatable(this::setInstantiatable);
-            setCopyable(this::setCopyable);
-        }
-
-        private void customizeGrid() {
-
-            this.grid.addItemClickListener(listener -> {
-                var item = listener.getItem();
-                if (item != null) return;
-                grid.deselectAll();
-                this.endEditing();
-            });
-
-        }
-
-        private ExceptionDay setInstantiatable() {
-            return new ExceptionDay();
-        }
-
-        private ExceptionDay setCopyable(ExceptionDay exceptionDay) {
-            ExceptionDay copy = new ExceptionDay();
-            copy.setDate(exceptionDay.getDate());
-            copy.setDuration(exceptionDay.getDuration());
-            return copy;
-        }
-
-        private void customizeColumnsAndBinder() {
-
-            var dayColumn = addColumn(ExceptionDay::getDate).setHeader("Day");
-            var hoursColumn = addColumn(this::getCountOfHours).setHeader("Hours");
-
-            var dayColumnField = new DatePicker();
-            dayColumnField.setWidthFull();
-            addCloseHandler(dayColumnField, editor);
-            binder.forField(dayColumnField)
-                    .bind(ExceptionDay::getDate, ExceptionDay::setDate);
-            dayColumn.setEditorComponent(dayColumnField);
-            dayColumnField.addValueChangeListener(event -> {
-                //var value = dayColumnField.getValue();
-                var value = event.getValue();
-                String errorMessage = null;
-                var ifExistedDate = this.grid.getListDataView().getItems().anyMatch(exceptionDay -> Objects.equals(value, exceptionDay.getDate()));
-                if (ifExistedDate) {
-                    errorMessage = "The selected date is already contained in the table.";
-                }
-                dayColumnField.setErrorMessage(errorMessage);
-            });
-
-            var numberOfHoursField = new NumberField();
-            numberOfHoursField.addThemeVariants(
-                    //TextFieldVariant.LUMO_SMALL,
-                    TextFieldVariant.LUMO_ALIGN_RIGHT
-            );
-            numberOfHoursField.setWidthFull();
-            numberOfHoursField.setMin(0);
-            numberOfHoursField.setMax(24.00);
-            addCloseHandler(numberOfHoursField, editor);
-            binder.forField(numberOfHoursField)//.withConverter(new BigDecimalToDoubleConverter(lagRepresentation))
-                    .bind(this::getCountOfHours, this::setCountOfHours);
-            //countOfHoursField.addValidationStatusChangeListener(this::validationStatusChangeEvent);
-            hoursColumn.setEditorComponent(numberOfHoursField);
-
-        }
-
-        private void setCountOfHours(ExceptionDay exceptionDay, Double value) {
-
-            var startTime = calendar.getStartTime();
-            var seconds = startTime.getSecond();
-            var secondsInHour = 24 * 3600;
-            var secondsLeft = secondsInHour - seconds;
-            var duration = Calendar.getCountOfHoursInteger(value);
-            if (duration > secondsLeft) {
-                var dialog = new ConfirmDialog();
-                dialog.add("The number of hours selected is greater than the number available.");
-                dialog.open();
-                return;
-            }
-
-            exceptionDay.setDuration(duration);
-
-        }
-
-        private Double getCountOfHours(ExceptionDay exceptionDay) {
-            return Calendar.getCountOfHoursDouble(exceptionDay.getDuration());
-        }
-
-    }
-
-    private class Exceptions extends ObjectGrid<CalendarException> {
+    private static class Exceptions extends ObjectGrid<CalendarException> {
 
         Exceptions() {
             this.addColumns();

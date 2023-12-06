@@ -1,14 +1,14 @@
 package com.pmvaadin.terms.calendars.services;
 
 import com.pmvaadin.commonobjects.services.ListService;
+import com.pmvaadin.projectstructure.ProjectRecalculation;
 import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.terms.calendars.common.CheckAccuracyOfData;
-import com.pmvaadin.terms.calendars.common.CheckAccuracyOfDataImpl;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.entity.*;
 import com.pmvaadin.terms.calendars.repositories.CalendarRepository;
 import com.pmvaadin.terms.calculation.TermCalculationData;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.terms.calendars.validators.CalendarValidation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Pageable;
@@ -17,8 +17,6 @@ import org.springframework.stereotype.Service;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
-import java.sql.Time;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -29,6 +27,8 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     private final Calendar defaultCalendar = new CalendarImpl().getDefaultCalendar();
 
     private CalendarRepository calendarRepository;
+    private ProjectRecalculation projectRecalculation;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -38,6 +38,11 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     @Autowired
     public void setCalendarRepository(CalendarRepository calendarRepository) {
         this.calendarRepository = calendarRepository;
+    }
+
+    @Autowired
+    public void setProjectRecalculation(ProjectRecalculation projectRecalculation) {
+        this.projectRecalculation = projectRecalculation;
     }
 
     @Override
@@ -58,11 +63,11 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
     @Transactional
     @Override
-    public void save(Calendar calendar) {
+    public Calendar save(Calendar calendar) {
 
-        //TODO Check the accuracy of the data
-        var proceed = checkAccuracyOfData(calendar);
-        if (!proceed) return;
+        var calendarValidation = applicationContext.getBean(CalendarValidation.class);
+        var proceed = calendarValidation.validate(calendar);
+        if (!proceed) return calendar;
 
         if (!calendar.isNew()) {
 
@@ -78,10 +83,12 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
         calendar.fillWorkingWeekSort();
         calendar.fillExceptionSort();
-        // TODO to define alterations of the DaysOfWeekSettings and the CalendarException and to find tasks that used this calendar
 
-        calendarRepository.save(calendar);
+        var savedCalendar = calendarRepository.save(calendar);
 
+        projectRecalculation.recalculate(savedCalendar, calendar);
+
+        return savedCalendar;
 
     }
 
@@ -144,24 +151,8 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         Calendar calendar = calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
         if (calendar instanceof HasIdentifyingFields)
             ((HasIdentifyingFields) calendar).nullIdentifyingFields();
-//        calendar.setId(null);
-//        calendar.setVersion(null);
-//        calendar.setPredefined(false);
-//        calendar.getDaysOfWeekSettings().forEach(dayOfWeekSettings ->
-//            dayOfWeekSettings.setId(null)
-//        );
-//        calendar.getCalendarException().forEach(exceptionDay ->
-//            exceptionDay.setId(null)
-//        );
 
         return calendar;
-
-    }
-
-    private boolean checkAccuracyOfData(Calendar calendar) {
-
-        var checkAccuracyOfData = new CheckAccuracyOfDataImpl();
-        return checkAccuracyOfData.check(calendar);
 
     }
 
@@ -200,10 +191,7 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         for (Object[] row: resultList) {
 
             CalendarSettings calendarSettings = converter.convertToEntityAttribute(Integer.valueOf((Short) row[2]));
-            var time = (Time) row[3];
-            LocalTime localTime = null;
-            if (time != null) localTime = time.toLocalTime();
-            var dto = new CalendarRepresentationDTO((Integer) row[0], (String) row[1], calendarSettings, localTime, (Boolean) row[4]);
+            var dto = new CalendarRepresentationDTO((Integer) row[0], (String) row[1], calendarSettings, (Boolean) row[4]);
             calendarReps.add(dto);
 
         }
@@ -220,7 +208,6 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
             	id,
             	name,
             	settings_id,
-            	start_time,
             	predefined
             FROM calendars
             WHERE
@@ -241,7 +228,6 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
             	id,
             	name,
             	settings_id,
-            	start_time,
             	predefined
             FROM calendars
             WHERE
