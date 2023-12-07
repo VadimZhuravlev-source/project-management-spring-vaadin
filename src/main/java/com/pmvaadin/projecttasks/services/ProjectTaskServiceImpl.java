@@ -15,6 +15,7 @@ import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.terms.calendars.services.TermCalculationService;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +39,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private HierarchyService hierarchyService;
     private TreeProjectTasks treeProjectTasks;
     private DependenciesService dependenciesService;
-    private CalendarService calendarService;
+    private TermCalculationService calendarService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -64,7 +65,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     }
 
     @Autowired
-    public void setCalendarService(CalendarService calendarService){
+    public void setTermCalculationService(TermCalculationService calendarService){
         this.calendarService = calendarService;
     }
 

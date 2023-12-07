@@ -11,6 +11,4 @@ public interface CalendarService {
 
     Calendar save(Calendar calendar);
 
-    void fillCalendars(TermCalculationData termCalculationData);
-
 }

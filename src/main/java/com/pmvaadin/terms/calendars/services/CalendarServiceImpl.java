@@ -6,8 +6,6 @@ import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.entity.*;
 import com.pmvaadin.terms.calendars.repositories.CalendarRepository;
-import com.pmvaadin.terms.calculation.TermCalculationData;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.terms.calendars.validators.CalendarValidation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -24,6 +22,7 @@ import java.util.List;
 @Service
 public class CalendarServiceImpl implements CalendarService, ListService<CalendarRepresentation, Calendar> {
 
+    // used in CalendarServiceImpl
     private final Calendar defaultCalendar = new CalendarImpl().getDefaultCalendar();
 
     private CalendarRepository calendarRepository;
@@ -89,19 +88,6 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         projectRecalculation.recalculate(savedCalendar, calendar);
 
         return savedCalendar;
-
-    }
-
-    @Override
-    public void fillCalendars(TermCalculationData termCalculationData) {
-
-        var calendarIds = termCalculationData.getProjectTasks().stream()
-                .map(ProjectTask::getCalendarId).toList();
-
-        List<Calendar> calendars = calendarRepository.findAllById(calendarIds);
-
-        termCalculationData.setDefaultCalendar(defaultCalendar);
-        termCalculationData.setCalendars(calendars);
 
     }
 

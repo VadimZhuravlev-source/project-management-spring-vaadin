@@ -6,7 +6,6 @@ import com.pmvaadin.terms.calendars.common.IntervalGrid;
 import com.pmvaadin.terms.calendars.validators.CalendarValidation;
 import com.pmvaadin.terms.calendars.validators.CalendarValidationImpl;
 import com.pmvaadin.terms.calendars.workingweeks.IntervalSetting;
-import com.pmvaadin.terms.calendars.workingweeks.WorkingTime;
 import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.ComponentEvent;
@@ -39,7 +38,6 @@ import java.util.*;
 public class WorkingWeekForm extends Dialog {
 
     private final WorkingWeek workingWeek;
-    private final WorkingTime workingTimeInstance;
 
     private final TextField name = new TextField();
     private final DatePicker start = new DatePicker();
@@ -52,10 +50,10 @@ public class WorkingWeekForm extends Dialog {
     private final Map<DayOfWeek, WorkingDaysSetting> mapIntervalChanges = new HashMap<>();
 
     private final CalendarValidation calendarValidation = new CalendarValidationImpl();
+    private boolean init = true;
 
     public WorkingWeekForm(WorkingWeek workingWeek) {
         this.workingWeek = workingWeek;
-        this.workingTimeInstance = workingWeek.getWorkingTimeInstance();
         fillMapIntervalChanges();
         customizeForm();
         customizeElements();
@@ -66,6 +64,7 @@ public class WorkingWeekForm extends Dialog {
         start.setValue(this.workingWeek.getStart());
         finish.setValue(this.workingWeek.getFinish());
         days.select(DayOfWeek.MONDAY);
+        init = false;
     }
 
     private void fillMapIntervalChanges() {
@@ -165,6 +164,7 @@ public class WorkingWeekForm extends Dialog {
         var selectedDays = days.getSelectedItems();
 
         selectedDays.forEach(dayOfWeek -> {
+            if (init) return;
             var workingDaysSetting = mapIntervalChanges.get(dayOfWeek);
             if (workingDaysSetting == null) {
                 workingDaysSetting = new WorkingDaysSetting(IntervalSetting.CUSTOM, new ArrayList<>());
@@ -177,7 +177,13 @@ public class WorkingWeekForm extends Dialog {
             }
             workingDaysSetting.getIntervals().clear();
             if (selectedSetting == IntervalSetting.DEFAULT) {
-                var intervalList = workingTimeInstance.getDefaultIntervals(dayOfWeek, workingWeek.getCalendar().getSetting());
+                if (selectedDays.size() != 1) return;
+                var selectedDayOfWeek = selectedDays.stream().findFirst().get();
+                var workingTimeOpt = workingWeek.getWorkingTimes().stream()
+                        .filter(workingTime -> workingTime.getDayOfWeek().equals(selectedDayOfWeek)).findFirst();
+                if (workingTimeOpt.isEmpty()) return;
+                var workingTime = workingTimeOpt.get();
+                var intervalList = workingTime.getDefaultIntervals(dayOfWeek, workingWeek.getCalendar().getSetting());
                 workingDaysSetting.getIntervals().addAll(intervalList);
                 intervals.setItems(intervalList);
             }
@@ -248,6 +254,7 @@ public class WorkingWeekForm extends Dialog {
         this.workingWeek.setStart(start.getValue());
         this.workingWeek.setFinish(finish.getValue());
 
+        // TODO comparison changes made in mapIntervalChanges
         if (this.workingWeek.getWorkingTimes().size() != DayOfWeek.values().length)
             this.workingWeek.fillDefaultWorkingTimes();
         this.workingWeek.getWorkingTimes().forEach(workingTime -> {
@@ -341,12 +348,20 @@ public class WorkingWeekForm extends Dialog {
 
         private Interval onAddInterval() {
 
-            var newInterval = workingTimeInstance.getIntervalInstance();
+            var selectedDays = days.getSelectedItems();
+            if (selectedDays.size() != 1) return null;
+
+            var selectedDayOfWeek = selectedDays.stream().findFirst().get();
+            var workingTimeOpt = workingWeek.getWorkingTimes().stream()
+                    .filter(workingTime -> workingTime.getDayOfWeek().equals(selectedDayOfWeek)).findFirst();
+            if (workingTimeOpt.isEmpty()) return null;
+            var workingTime = workingTimeOpt.get();
+            var newInterval = workingTime.getIntervalInstance();
             var previousTimeTo = this.grid.getListDataView().getItems().map(Interval::getTo)
                     .max(Comparator.naturalOrder()).orElse(LocalTime.MIN);
             newInterval.setFrom(previousTimeTo.plusHours(1));
             newInterval.setTo(previousTimeTo.plusHours(2));
-            var selectedDays = days.getSelectedItems();
+            selectedDays = days.getSelectedItems();
             selectedDays.forEach(dayOfWeek -> {
                 var workingDaysSetting = mapIntervalChanges.get(dayOfWeek);
                 if (workingDaysSetting == null) return;
