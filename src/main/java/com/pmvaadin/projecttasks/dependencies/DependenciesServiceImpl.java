@@ -147,6 +147,8 @@ public class DependenciesServiceImpl implements DependenciesService {
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
 
         if (isNullElement) throw new IllegalArgumentException("Passed parameters haven't to contain null.");
+        if (ids.isEmpty())
+            return new TermCalculationDataImpl(new ArrayList<>(0), new ArrayList<>(0), false);
 
         String pairsOfValues = String.join(";", ids.stream().map(Object::toString).toList());
 

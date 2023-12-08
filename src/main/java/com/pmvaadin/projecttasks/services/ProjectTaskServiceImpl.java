@@ -2,7 +2,6 @@ package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.AppConfiguration;
 import com.pmvaadin.projectstructure.ProjectRecalculation;
-import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TestCase;
@@ -40,6 +39,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     private TreeProjectTasks treeProjectTasks;
     private DependenciesService dependenciesService;
     private TermCalculationService calendarService;
+    private ProjectRecalculation projectRecalculation;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -67,6 +67,11 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
     @Autowired
     public void setTermCalculationService(TermCalculationService calendarService){
         this.calendarService = calendarService;
+    }
+
+    @Autowired
+    public void setProjectRecalculation(ProjectRecalculation projectRecalculation){
+        this.projectRecalculation = projectRecalculation;
     }
 
     @Override
@@ -234,7 +239,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         List<ProjectTask> savedTasks = projectTaskRepository.saveAll(respond.getChangedTasks());
 
-        var projectRecalculation = context.getBean(ProjectRecalculation.class);
         projectRecalculation.recalculate(respond.getRecalculatedProjects());
 
         return savedTasks;
@@ -349,6 +353,12 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         currentTasks.addAll(persistedTasks);
 
+        // There has caused an error in the grouping below if at least one value is null
+        currentTasks.forEach(propertiesPT -> {
+            var pT = propertiesPT.value;
+            if (pT.getParentId() == null) pT.setParentId(Integer.MIN_VALUE);
+        });
+
         Map<?, List<PropertiesPT>> groupedByParentId = currentTasks.stream().collect(groupingBy(p -> p.value.getParentId()));
 
         Map<ProjectTask, List<ProjectTask>> newParentsOfMovedTasks = new HashMap<>();
@@ -381,6 +391,12 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
             }
 
         }
+
+        // Take back previous values to parent_id
+        currentTasks.forEach(propertiesPT -> {
+            var pT = propertiesPT.value;
+            if (pT.getParentId() != null && pT.getParentId().equals(Integer.MIN_VALUE)) pT.setParentId(null);
+        });
 
         changeLocation(newParentsOfMovedTasks);
 

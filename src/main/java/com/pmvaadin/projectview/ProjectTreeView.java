@@ -50,7 +50,7 @@ public class ProjectTreeView extends VerticalLayout {
     private final TextField filterText = new TextField();
     private final ProjectTaskForm projectTaskForm;
     private ProjectTaskForm editingForm;
-    private final ProjectHierarchicalDataProvider dataProvider;
+    private final MainTreeProvider dataProvider;
     private boolean isEditingFormOpen;
     private final List<String> chosenColumns;
     private final ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
@@ -61,7 +61,7 @@ public class ProjectTreeView extends VerticalLayout {
         this.treeHierarchyChangeService = treeHierarchyChangeService;
         this.projectTaskForm = projectTaskForm;
         chosenColumns = projectTaskPropertyNames.getTreeDefaultColumns();
-        dataProvider = new MainTreeProvider(this.treeHierarchyChangeService, chosenColumns);
+        dataProvider = new MainTreeProvider(this.treeHierarchyChangeService, chosenColumns, treeGrid);
         addClassName("project-tasks-view");
         setSizeFull();
         configureTreeGrid();
@@ -145,6 +145,8 @@ public class ProjectTreeView extends VerticalLayout {
         if (isEditingFormOpen) return;
 
         try {
+            var selectedItems = treeGrid.getSelectedItems();
+            dataProvider.setSelectedItems(selectedItems);
             treeGrid.asMultiSelect().clear();
             treeGrid.getDataProvider().refreshAll();
         } catch (Throwable e) {

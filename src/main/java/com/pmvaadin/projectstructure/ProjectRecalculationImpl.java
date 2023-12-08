@@ -11,7 +11,6 @@ import com.pmvaadin.terms.calculation.TermCalculationData;
 import com.pmvaadin.terms.calculation.TermCalculationDataImpl;
 import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.terms.calendars.entity.Calendar;
-import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.terms.calendars.services.TermCalculationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -94,19 +93,28 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
     private Set<ProjectTask> calculateProject(ProjectTask projectTask) {
 
         var tasks = getAllTasksOfProject(projectTask);
-        var tasksIds = tasks.stream().map(ProjectTask::getId).toList();
-        var links = linkRepository.findDistinctByProjectTaskIdIn(tasksIds);
-        var termCalculationData = new TermCalculationDataImpl(tasks, links, false);
+        var tasksIds = tasks.stream().map(ProjectTask::getId).collect(Collectors.toSet());
+        var entityManager = entityManagerFactory.createEntityManager();
+        TermCalculationData termCalculationData = null;
+        try {
+            termCalculationData = dependenciesService.getAllDependenciesForTermCalc(entityManager, tasksIds);
+        } finally {
+            entityManager.close();
+        }
+
+        if (termCalculationData == null) return new HashSet<>(0);
+
         calendarService.fillCalendars(termCalculationData);
 
         ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
         TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
         var respond = termsCalculation.calculate(termCalculationData);
 
+        if (respond.getChangedTasks().isEmpty()) return new HashSet<>(0);
+
         var savedTasks = projectTaskRepository.saveAll(respond.getChangedTasks());
         var ids = savedTasks.stream().map(ProjectTask::getId).collect(Collectors.toSet());
 
-        var entityManager = entityManagerFactory.createEntityManager();
         TermCalculationData termCalculationData2;
         try {
             termCalculationData2 = dependenciesService.getAllDependenciesForTermCalc(entityManager, ids);
@@ -134,6 +142,7 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
 
     private Set<ProjectTask> getProjectsThatUsedCalendar(Calendar calendar) {
 
+        // TODO another way of a calculation of the tasks
         if (calendar.getId() == null) throw new IllegalArgumentException("Illegal parameter");
 
         var queryText = getQueryTextLookingForTasksOfCalendar();
