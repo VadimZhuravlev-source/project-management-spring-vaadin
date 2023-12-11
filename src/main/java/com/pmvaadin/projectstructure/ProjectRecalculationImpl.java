@@ -8,7 +8,6 @@ import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.projecttasks.services.HierarchyService;
 import com.pmvaadin.terms.calculation.TermCalculationData;
-import com.pmvaadin.terms.calculation.TermCalculationDataImpl;
 import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.services.TermCalculationService;
@@ -18,7 +17,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityManagerFactory;
 import java.util.*;
 import java.util.stream.Collectors;
 

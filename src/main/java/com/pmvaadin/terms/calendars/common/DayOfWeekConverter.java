@@ -2,8 +2,8 @@ package com.pmvaadin.terms.calendars.common;
 
 import org.springframework.stereotype.Component;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.time.DayOfWeek;
 
 @Component

@@ -6,6 +6,7 @@ import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.lumo.Lumo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 @SpringBootApplication
@@ -16,5 +17,11 @@ public class PmVaadinApplication extends SpringBootServletInitializer implements
 	public static void main(String[] args) {
 		SpringApplication.run(PmVaadinApplication.class, args);
 	}
+
+//	@Override
+//	protected SpringApplicationBuilder configure(
+//			SpringApplicationBuilder application) {
+//		return application.sources(PmVaadinApplication.class);
+//	}
 
 }

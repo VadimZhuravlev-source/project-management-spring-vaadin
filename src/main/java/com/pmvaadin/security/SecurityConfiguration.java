@@ -1,6 +1,6 @@
 package com.pmvaadin.security;
 
-import com.vaadin.flow.spring.security.VaadinWebSecurityConfigurerAdapter;
+import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -12,15 +12,10 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 @EnableWebSecurity
 @Configuration
 @AllArgsConstructor
-public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
+public class SecurityConfiguration extends VaadinWebSecurity {
 
     private final UserDetailsService userDetailsService;
     private final CustomPasswordEncoder passwordEncoder;
-
-    @Override
-    public void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
-    }
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
@@ -32,9 +27,9 @@ public class SecurityConfiguration extends VaadinWebSecurityConfigurerAdapter {
 
     @Override
     public void configure(WebSecurity web) throws Exception {
-        web.ignoring().antMatchers(
-                "/images/**"
-        );
+//        web.ignoring().antMatchers(
+//                "/images/**"
+//        );
 
         super.configure(web);
     }

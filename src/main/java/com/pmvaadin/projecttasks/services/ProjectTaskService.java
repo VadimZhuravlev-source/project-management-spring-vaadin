@@ -2,7 +2,7 @@ package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;

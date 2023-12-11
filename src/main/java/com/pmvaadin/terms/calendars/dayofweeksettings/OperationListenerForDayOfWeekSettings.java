@@ -1,6 +1,6 @@
 package com.pmvaadin.terms.calendars.dayofweeksettings;
 
-import javax.persistence.PostLoad;
+import jakarta.persistence.PostLoad;
 
 public class OperationListenerForDayOfWeekSettings {
 

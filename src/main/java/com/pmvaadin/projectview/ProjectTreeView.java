@@ -3,7 +3,6 @@ package com.pmvaadin.projectview;
 import com.pmvaadin.MainLayout;
 import com.pmvaadin.commonobjects.ConfirmDialog;
 import com.pmvaadin.projectstructure.MainTreeProvider;
-import com.pmvaadin.projectstructure.ProjectHierarchicalDataProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.services.ProjectTreeService;
@@ -33,7 +32,7 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-import javax.annotation.security.PermitAll;
+import jakarta.annotation.security.PermitAll;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;

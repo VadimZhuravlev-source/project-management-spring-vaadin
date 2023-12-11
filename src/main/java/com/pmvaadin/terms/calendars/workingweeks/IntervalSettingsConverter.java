@@ -2,8 +2,8 @@ package com.pmvaadin.terms.calendars.workingweeks;
 
 import org.springframework.stereotype.Component;
 
-import javax.persistence.AttributeConverter;
-import javax.persistence.Converter;
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 
 @Component
 @Converter(autoApply = true)
@@ -24,11 +24,6 @@ public class IntervalSettingsConverter implements AttributeConverter<IntervalSet
         }
 
         return IntervalSetting.of(code);
-
-//        return Stream.of(IntervalSettings.values())
-//                .filter(c -> c.getCode().equals(code))
-//                .findFirst()
-//                .orElseThrow(IllegalArgumentException::new);
     }
 
 }

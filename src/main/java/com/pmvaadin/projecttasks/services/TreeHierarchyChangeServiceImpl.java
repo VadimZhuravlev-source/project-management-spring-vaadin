@@ -4,14 +4,12 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.LinkType;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
-import com.pmvaadin.terms.calendars.services.CalendarService;
-import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;

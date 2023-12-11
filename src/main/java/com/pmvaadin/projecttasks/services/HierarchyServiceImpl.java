@@ -5,7 +5,7 @@ import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;

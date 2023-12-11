@@ -52,10 +52,10 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     }
 
-    @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parent_id = :parentId")
+    @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parentId = :parentId")
     int getChildrenCount(@Param("parentId") Integer parentId);
 
-    @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parent_id IS NULL")
+    @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parentId IS NULL")
     int getChildrenCount();
 
     @Query(value = """

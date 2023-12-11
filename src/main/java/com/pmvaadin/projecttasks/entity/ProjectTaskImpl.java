@@ -1,15 +1,12 @@
 package com.pmvaadin.projecttasks.entity;
 
-import com.pmvaadin.terms.timeunit.entity.TimeUnit;
-import com.pmvaadin.terms.timeunit.entity.TimeUnitImpl;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.*;
 
-import javax.persistence.*;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
