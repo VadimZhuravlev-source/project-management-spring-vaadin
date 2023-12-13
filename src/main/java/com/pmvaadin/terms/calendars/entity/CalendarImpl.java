@@ -424,7 +424,9 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
                             break;
                         continue;
                     } else {
-                        time = interval.getFrom().plusSeconds(remainedDuration);
+                        time = interval.getTo().plusSeconds(remainedDuration);
+                        if (time.equals(LocalTime.MIN))
+                            day = day.plusDays(1);
                         return true;
                     }
                 } else if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
@@ -476,7 +478,7 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
                             break;
                         continue;
                     } else {
-                        time = interval.getTo().minusSeconds(remainedDuration);
+                        time = interval.getFrom().minusSeconds(remainedDuration);
                         return true;
                     }
                 } else if (time.compareTo(interval.getFrom()) <= 0)

@@ -75,14 +75,22 @@ public class CalendarValidationImpl implements CalendarValidation {
     private void validateWorkingWeekTerms(WorkingWeek workingWeek) {
 
         // TODO null validation for the principal fields
-        var foundedWeekOpt = this.calendar.getWorkingWeeks().stream()
-                .filter(ww -> !(ww == workingWeek || ww.isDefault()))
-                .filter(ww ->
-                        !(ww.getStart().compareTo(workingWeek.getFinish()) > 0 || ww.getFinish().compareTo(workingWeek.getStart()) < 0)
-                ).findFirst();
-
-        if (foundedWeekOpt.isEmpty()) return;
-        var foundedWeek = foundedWeekOpt.get();
+        WorkingWeek foundedWeek = null;
+        for (var ww: this.calendar.getWorkingWeeks()) {
+            if (ww == workingWeek || ww.isDefault()) return;
+            if (ww.getStart().compareTo(workingWeek.getFinish()) > 0 || ww.getFinish().compareTo(workingWeek.getStart()) < 0) return;
+            foundedWeek = ww;
+            break;
+        }
+        if (foundedWeek == null) return;
+//        var foundedWeekOpt = this.calendar.getWorkingWeeks().stream()
+//                .filter(ww -> !(ww == workingWeek || ww.isDefault()))
+//                .filter(ww ->
+//                        !(ww.getStart().compareTo(workingWeek.getFinish()) > 0 || ww.getFinish().compareTo(workingWeek.getStart()) < 0)
+//                ).findFirst();
+//
+//        if (foundedWeekOpt.isEmpty()) return;
+//        var foundedWeek = foundedWeekOpt.get();
 
         var rep = foundedWeek.getName() + ": start at " + foundedWeek.getStart() + ", end at " + foundedWeek.getFinish();
 

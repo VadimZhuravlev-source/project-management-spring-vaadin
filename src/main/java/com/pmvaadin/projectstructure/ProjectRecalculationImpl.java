@@ -115,6 +115,7 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
         var ids = savedTasks.stream().map(ProjectTask::getId).collect(Collectors.toSet());
 
         TermCalculationData termCalculationData2;
+        entityManager = entityManagerFactory.createEntityManager();
         try {
             termCalculationData2 = dependenciesService.getAllDependenciesForTermCalc(entityManager, ids);
         } finally {

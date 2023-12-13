@@ -237,7 +237,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
             for (Object[] row: rows) {
                 I id = (I) row[idIndex];
-                var count = ((BigInteger) row[countIndex]).intValue();
+                var count = (Integer) row[countIndex];
                 var calRep = Objects.toString(row[calIndex], "");
                 var timeRep = Objects.toString(row[timeIndex], "");
                 var durRep = Objects.toString(row[durIndex], "");
@@ -597,7 +597,14 @@ LEFT JOIN links_rep
                 	&join
                 	)
                 	
-                	SELECT * FROM result_query
+                	SELECT
+                	    result_query.id,
+                  		CAST(result_query.amount AS INT) amount,
+                  		result_query.calendar_rep,
+                        result_query.time_rep,
+                        result_query.dur_rep,
+                        result_query.link_rep
+                	FROM result_query
                         
                         """;
 

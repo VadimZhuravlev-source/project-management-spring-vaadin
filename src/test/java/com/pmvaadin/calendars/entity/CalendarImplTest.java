@@ -1,6 +1,7 @@
 package com.pmvaadin.calendars.entity;
 
 import com.pmvaadin.terms.calendars.common.Interval;
+import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
@@ -400,6 +401,14 @@ class CalendarImplTest {
         LocalDateTime newDate = calendar24.getDateByDuration(date, duration);
         assertEquals(backDate, newDate);
 
+    }
+
+    @Test
+    void checkFullDayCalendarReturnNextDay() {
+        var date = LocalDateTime.of(2023, 11, 20, 0, 0);
+        var newDate = calendar24.getDateByDuration(date, Calendar.FULL_DAY_SECONDS);
+        date = date.plusDays(1);
+        assertEquals(date, newDate);
     }
 
 }

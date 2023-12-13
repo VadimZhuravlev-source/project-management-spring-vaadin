@@ -234,10 +234,10 @@
   "Frontend/generated/jar-resources/vaadin-grid-flow-selection-column.js",
   "Frontend/generated/jar-resources/vaadin-time-picker/timepickerConnector.js",
   "Frontend/generated/jar-resources/virtualListConnector.js",
-  "Frontend/styles/test_year-month-calendar.css"
+  "Frontend/styles/year-month-calendar-colors.css"
  ],
  "frontendHashes": {
-  "styles/test_year-month-calendar.css": "0b74768a6d01a064b1f14bf3253d1a82ebe1488806883cdb02e36de32e7f9092",
+  "styles/year-month-calendar-colors.css": "790e24c013675795d750cb18af4adb3183ba46d96382a47cba02dff79f0f61de",
   "buttonFunctions.js": "c852123f9b2c44eb75e555119d3e05a7dbe78b91d0ab616feb9df1654474707d",
   "comboBoxConnector.js": "1d004c3dae9c76f8bcc68678abe1b8f7bdc8b456f5c9c4c7f190df8ed25d66cd",
   "contextMenuConnector.js": "8960e00884b9a8b62e24be63e03fe7045dcb9b6844a8a238eb4619d5595e2cfc",
@@ -266,12 +266,12 @@
   "myapp": "{\n  \"lumoImports\" : [ \"typography\", \"color\", \"spacing\", \"badge\", \"utility\" ]\n}"
  },
  "entryScripts": [
-  "VAADIN/build/indexhtml-891fb49e.js"
+  "VAADIN/build/indexhtml-5d97bb51.js"
  ],
  "webComponents": [],
  "cvdlModules": {},
  "packageJsonHash": "56cec735c12cec056dbe0eca5fb34acc96a8c5afd2f5ee2d60603a02a80a9167",
  "indexHtmlGenerated": [
-  "  <script type=\"module\" crossorigin src=\"./VAADIN/build/indexhtml-891fb49e.js\"></script>"
+  "  <script type=\"module\" crossorigin src=\"./VAADIN/build/indexhtml-5d97bb51.js\"></script>"
  ]
 }

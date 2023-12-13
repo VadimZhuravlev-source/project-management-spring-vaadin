@@ -28,6 +28,8 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     private CalendarRepository calendarRepository;
     private ProjectRecalculation projectRecalculation;
 
+    private CalendarServiceTransactionalImpl calServiceTran;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -42,6 +44,11 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     @Autowired
     public void setProjectRecalculation(ProjectRecalculation projectRecalculation) {
         this.projectRecalculation = projectRecalculation;
+    }
+
+    @Autowired
+    public void setCalServiceTran(CalendarServiceTransactionalImpl calServiceTran) {
+        this.calServiceTran = calServiceTran;
     }
 
     @Override
@@ -60,7 +67,6 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         return calendarRepository.findById(1).orElse(defaultCalendar);
     }
 
-    @Transactional
     @Override
     public Calendar save(Calendar calendar) {
 
@@ -83,7 +89,7 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         calendar.fillWorkingWeekSort();
         calendar.fillExceptionSort();
 
-        var savedCalendar = calendarRepository.save(calendar);
+        var savedCalendar = calServiceTran.save(calendar);
 
         projectRecalculation.recalculate(savedCalendar, calendar);
 

@@ -95,7 +95,7 @@ public class WorkingWeekForm extends Dialog {
 
     private void finishValueChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
         var value = event.getValue();
-        if (value != null && (start.getValue() == null || value.compareTo(start.getValue()) > 0)) start.setValue(value);
+        if (value != null && (start.getValue() == null || value.compareTo(start.getValue()) < 0)) start.setValue(value);
     }
 
 

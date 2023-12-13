@@ -2,7 +2,6 @@ package com.pmvaadin.terms.calendars.view;
 
 import com.pmvaadin.commonobjects.ObjectGrid;
 import com.pmvaadin.projectstructure.NotificationDialogs;
-import com.pmvaadin.terms.calendars.common.ExceptionLength;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import com.pmvaadin.terms.calendars.exceptions.CalendarException;
@@ -28,7 +27,6 @@ import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.select.SelectVariant;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
@@ -41,6 +39,7 @@ import java.time.LocalDate;
 import java.time.format.TextStyle;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SpringComponent
 public class CalendarForm extends Dialog {
@@ -65,11 +64,12 @@ public class CalendarForm extends Dialog {
 
     // Exceptions
     private final Exceptions exceptions = new Exceptions();
-
+    private final Map<LocalDate, LocalDate> exceptionsMap = new HashMap<>();
     // tabs
     private final Tab exceptionsTab = new Tab("Exceptions");
     private final Tab workWeeksTab = new Tab("Work Weeks");
     private final TabSheet tabSheet = new TabSheet();
+    private final YearCalendar yearCalendar = new YearCalendar(this);
 
     public CalendarForm(CalendarService calendarService) {
 
@@ -95,10 +95,23 @@ public class CalendarForm extends Dialog {
 
     }
 
-    public Map<LocalDate, ExceptionLength> getExceptionsDate() {
-        var map = new HashMap<LocalDate, ExceptionLength>();
-        this.exceptions.getItems().forEach(e -> map.putAll(e.getExceptionAsDayConstraint()));
-        return map;
+    public Map<LocalDate, LocalDate> getExceptionsDate() {
+        return exceptionsMap;
+    }
+
+    public Stream<WorkingWeek> getWorkingWeeks() {
+        return workingWeeks.getWorkingWeeksSteam();
+    }
+
+    public List<DayOfWeek> getWeekends() {
+        var weekends = new ArrayList<DayOfWeek>();
+        if (setting.getValue() == CalendarSettings.STANDARD) {
+            weekends.add(DayOfWeek.SATURDAY);
+            weekends.add(DayOfWeek.SUNDAY);
+        } else if (setting.getValue() == CalendarSettings.NIGHT_SHIFT) {
+            weekends.add(DayOfWeek.SUNDAY);
+        }
+        return weekends;
     }
 
     private void customizeElements() {
@@ -106,6 +119,7 @@ public class CalendarForm extends Dialog {
         endOfWeek.setItems(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
         endOfWeek.addThemeVariants(SelectVariant.LUMO_SMALL);
         endOfWeek.setRenderer(new ComponentRenderer<>(dayOfWeek -> new Text(dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()))));
+        setting.addValueChangeListener(event -> yearCalendar.refreshAll());
 
         tabSheet.setSizeFull();
 
@@ -126,7 +140,10 @@ public class CalendarForm extends Dialog {
         workingWeeks.setWorkingWeeks(calendar.getWorkingWeeks());
         exceptions.setInstantiatable(this::getCalendarExceptionInstance);
         exceptions.setCalendarExceptions(this.calendar.getCalendarExceptions());
-
+        exceptionsMap.clear();
+        exceptions.getItems().forEach(e ->
+                e.getExceptionAsDayConstraint().forEach((k, v) -> exceptionsMap.put(k, k))
+        );
         if (this.calendar.isNew()) sync.setEnabled(false);
 
     }
@@ -159,8 +176,6 @@ public class CalendarForm extends Dialog {
 
         tabSheet.add(exceptionsTab, vertLayout);
         tabSheet.add(workWeeksTab, workingWeeks);
-
-        var yearCalendar = new YearCalendar(this);
 
         var verticalLayout = new VerticalLayout(yearCalendar, mainLayout, tabSheet);
         super.add(verticalLayout);
@@ -265,7 +280,7 @@ public class CalendarForm extends Dialog {
         }
     }
 
-    private static class Exceptions extends ObjectGrid<CalendarException> {
+    private class Exceptions extends ObjectGrid<CalendarException> {
 
         Exceptions() {
             this.addColumns();
@@ -302,7 +317,12 @@ public class CalendarForm extends Dialog {
         private void saveCalendarExceptionListener(CalendarExceptionForm.SaveEvent event) {
             var calendarException = event.getCalendarException();
             if (calendarException == null) return;
+            exceptionsMap.clear();
+            this.grid.getListDataView().getItems().forEach(e ->
+                e.getExceptionAsDayConstraint().forEach((k, v) -> exceptionsMap.put(k, k))
+            );
             this.grid.getListDataView().refreshItem(calendarException);
+            yearCalendar.refreshAll();
         }
 
     }
@@ -325,6 +345,10 @@ public class CalendarForm extends Dialog {
 
         public List<WorkingWeek> getWorkingWeeks() {
             return this.grid.getListDataView().getItems().collect(Collectors.toList());
+        }
+
+        public Stream<WorkingWeek> getWorkingWeeksSteam() {
+            return this.grid.getListDataView().getItems();
         }
 
         private void addColumns() {
@@ -369,6 +393,7 @@ public class CalendarForm extends Dialog {
             var workingWeek = event.getWorkingWeek();
             if (workingWeek == null) return;
             grid.getListDataView().refreshItem(workingWeek);
+            yearCalendar.refreshAll();
         }
 
         private void addWorkingWeek(ClickEvent<Button> event) {
