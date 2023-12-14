@@ -393,7 +393,9 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
 
         private LocalDateTime calculateDate() {
 
-            while (remainedDuration > 0) {
+            var counter = 0;
+            var limit = 10000000; // limit of number of day
+            while (remainedDuration > 0 && ++counter < limit) {
 
                 var exception = getExceptionFromCache(day);
                 if (exception.getDuration() != 0) {
@@ -405,9 +407,11 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
                     }
                 }
                 dayChanger.change();
-                time = LocalTime.MIN;
 
             }
+
+            if (counter == limit)
+                throw new StandardError("The calculated duration has exceeded the limit of 10 000 000 days. Please contact the developers.");
 
             return LocalDateTime.of(day, time);
 
@@ -416,40 +420,71 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
         private boolean calculateIntervalsAscendOrder(List<Interval> intervals) {
 
             for (Interval interval : intervals) {
-                if (time.compareTo(interval.getFrom()) <= 0) {
-                    if (interval.getDuration() < remainedDuration) {
-                        remainedDuration = remainedDuration - interval.getDuration();
-                        time = interval.getTo();
-                        if (time.equals(LocalTime.MIN))
-                            break;
-                        continue;
-                    } else {
-                        time = interval.getTo().plusSeconds(remainedDuration);
-                        if (time.equals(LocalTime.MIN))
-                            day = day.plusDays(1);
-                        return true;
-                    }
-                } else if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
+
+                var intervalEnd = interval.getTo();
+                var intervalEndIsMin = intervalEnd.equals(LocalTime.MIN);
+                if (!intervalEndIsMin && time.compareTo(intervalEnd) >= 0)
                     continue;
 
-                var secondsOfDayTo = interval.getTo().toSecondOfDay();
-                if (interval.getTo().equals(LocalTime.MIN)) secondsOfDayTo = fullDay;
-                var intervalDuration = secondsOfDayTo - time.toSecondOfDay();
-                if (intervalDuration >= remainedDuration) {
+                var from = interval.getFrom();
+                if (time.compareTo(from) < 0)
+                    time = from;
+
+                var secondsToIntervalEnd = 0;
+                if (intervalEndIsMin) {
+                    secondsToIntervalEnd = fullDay;
+                } else
+                    secondsToIntervalEnd = intervalEnd.toSecondOfDay();
+
+                var availableDuration = secondsToIntervalEnd - time.toSecondOfDay();;
+                if (availableDuration >= remainedDuration) {
                     time = time.plusSeconds(remainedDuration);
+                    if (time.equals(LocalTime.MIN))
+                        day = day.plusDays(1);
                     return true;
                 } else {
-                    remainedDuration = remainedDuration - intervalDuration;
-                    time = interval.getTo();
-                    if (time.equals(LocalTime.MIN))
-                        break;
+                    remainedDuration = remainedDuration - availableDuration;
                 }
+
+                if (intervalEndIsMin)
+                    break;
+
+
+//                if (time.compareTo(interval.getFrom()) <= 0) {
+//                    if (interval.getDuration() < remainedDuration) {
+//                        remainedDuration = remainedDuration - interval.getDuration();
+//                        time = interval.getTo();
+//                        if (time.equals(LocalTime.MIN))
+//                            break;
+//                        continue;
+//                    } else {
+//                        time = interval.getTo().plusSeconds(remainedDuration);
+//                        if (time.equals(LocalTime.MIN))
+//                            day = day.plusDays(1);
+//                        return true;
+//                    }
+//                } else if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
+//                    continue;
+//
+//                var secondsOfDayTo = interval.getTo().toSecondOfDay();
+//                if (interval.getTo().equals(LocalTime.MIN)) secondsOfDayTo = fullDay;
+//                var intervalDuration = secondsOfDayTo - time.toSecondOfDay();
+//                if (intervalDuration >= remainedDuration) {
+//                    time = time.plusSeconds(remainedDuration);
+//                    return true;
+//                } else {
+//                    remainedDuration = remainedDuration - intervalDuration;
+//                    time = interval.getTo();
+//                    if (time.equals(LocalTime.MIN))
+//                        break;
+//                }
             }
             return false;
         }
 
         private void plusDay() {
             day = day.plusDays(1);
+            time = LocalTime.MIN;
         }
 
         private void init(LocalDateTime date, long duration) {
@@ -470,38 +505,70 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
             var iterator = intervals.listIterator(intervals.size());
             while (iterator.hasPrevious()) {
                 var interval = iterator.previous();
-                if (time.equals(LocalTime.MIN) || time.compareTo(interval.getTo()) >= 0) {
-                    if (interval.getDuration() < remainedDuration) {
-                        remainedDuration = remainedDuration - interval.getDuration();
-                        time = interval.getFrom();
-                        if (time.equals(LocalTime.MIN))
-                            break;
-                        continue;
-                    } else {
-                        time = interval.getFrom().minusSeconds(remainedDuration);
-                        return true;
-                    }
-                } else if (time.compareTo(interval.getFrom()) <= 0)
+
+                var intervalStart = interval.getFrom();
+                var intervalStartIsMin = intervalStart.equals(LocalTime.MIN);
+                if (!intervalStartIsMin && time.compareTo(intervalStart) <= 0)
                     continue;
 
-                var secondsOfDayFrom = interval.getFrom().toSecondOfDay();
-                var intervalDuration = secondsOfDayFrom - time.toSecondOfDay();
-                intervalDuration = - intervalDuration;
-                if (intervalDuration >= remainedDuration) {
+                var intervalEnd = interval.getTo();
+                if (time.compareTo(intervalEnd) > 0)
+                    time = intervalEnd;
+
+                var secondsToIntervalStart = intervalStart.toSecondOfDay();
+                var secondsTime = time.toSecondOfDay();
+                if (time.equals(LocalTime.MAX)) secondsTime = fullDay;
+                var availableDuration = secondsToIntervalStart - secondsTime;
+                if (intervalStartIsMin && time.equals(intervalStart))
+                    availableDuration = fullDay;
+                availableDuration = Math.abs(availableDuration);
+                if (availableDuration >= remainedDuration) {
                     time = time.minusSeconds(remainedDuration);
+                    if (time.equals(LocalTime.MIN)
+                            && availableDuration == remainedDuration
+                            && remainedDuration == fullDay)
+                        day = day.minusDays(1);
                     return true;
                 } else {
-                    remainedDuration = remainedDuration - intervalDuration;
-                    time = interval.getFrom();
-                    if (time.equals(LocalTime.MIN))
-                        break;
+                    remainedDuration = remainedDuration - availableDuration;
                 }
+
+                if (intervalStartIsMin)
+                    break;
+
+//                if (time.equals(LocalTime.MIN) || time.compareTo(interval.getTo()) >= 0) {
+//                    if (interval.getDuration() < remainedDuration) {
+//                        remainedDuration = remainedDuration - interval.getDuration();
+//                        time = interval.getFrom();
+//                        if (time.equals(LocalTime.MIN))
+//                            break;
+//                        continue;
+//                    } else {
+//                        time = interval.getFrom().minusSeconds(remainedDuration);
+//                        return true;
+//                    }
+//                } else if (time.compareTo(interval.getFrom()) <= 0)
+//                    continue;
+//
+//                var secondsOfDayFrom = interval.getFrom().toSecondOfDay();
+//                var intervalDuration = secondsOfDayFrom - time.toSecondOfDay();
+//                intervalDuration = - intervalDuration;
+//                if (intervalDuration >= remainedDuration) {
+//                    time = time.minusSeconds(remainedDuration);
+//                    return true;
+//                } else {
+//                    remainedDuration = remainedDuration - intervalDuration;
+//                    time = interval.getFrom();
+//                    if (time.equals(LocalTime.MIN))
+//                        break;
+//                }
             }
             return false;
         }
 
         private void minusDay() {
             day = day.minusDays(1);
+            time = LocalTime.MAX;
         }
 
         @FunctionalInterface
