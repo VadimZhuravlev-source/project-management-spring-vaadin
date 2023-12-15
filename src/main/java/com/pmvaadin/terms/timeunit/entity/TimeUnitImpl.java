@@ -1,5 +1,6 @@
 package com.pmvaadin.terms.timeunit.entity;
 
+import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +12,7 @@ import java.util.Objects;
 @Entity
 @Getter
 @Table(name = "time_unit")
-public class TimeUnitImpl implements TimeUnit {
+public class TimeUnitImpl implements TimeUnit, HasIdentifyingFields {
 
     private static final BigDecimal numberOfSecondsInHour = new BigDecimal(3600);
 
@@ -30,7 +31,7 @@ public class TimeUnitImpl implements TimeUnit {
 
     @Setter
     @Column(name = "number_of_hours")
-    private BigDecimal numberOfHours;
+    private BigDecimal numberOfHours = new BigDecimal("8.00");
 
     @Override
     public int hashCode() {
@@ -75,6 +76,12 @@ public class TimeUnitImpl implements TimeUnit {
                 .divide(numberOfSecondsInHour, 2, RoundingMode.CEILING)
                 .setScale(2, RoundingMode.CEILING);
 
+    }
+
+    @Override
+    public void nullIdentifyingFields() {
+        this.id = null;
+        this.version = null;
     }
 
 }

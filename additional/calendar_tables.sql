@@ -113,3 +113,8 @@ DROP COLUMN IF EXISTS end_of_week;
 ALTER TABLE calendars
 ADD end_of_week SMALLINT NOT NULL DEFAULT 7;
 
+-- this changes auto increment value after adding some row manually
+SELECT setval('time_unit_id_seq', max(id)) FROM time_unit;
+SELECT setval('calendars_id_seq', max(id)) FROM calendars;
+ALTER TABLE time_unit
+  RENAME TO time_units;

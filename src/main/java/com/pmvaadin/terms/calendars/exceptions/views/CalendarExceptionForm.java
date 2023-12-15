@@ -669,7 +669,7 @@ public class CalendarExceptionForm extends Dialog {
 
         Button closeButton = new Button(new Icon("lumo", "cross"),
                 e -> {
-                    fireEvent(new CalendarExceptionForm.CloseEvent(this, this.calendarException));
+                    fireEvent(new CloseEvent(this, this.calendarException));
                     this.close();
                 });
         closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
@@ -704,7 +704,7 @@ public class CalendarExceptionForm extends Dialog {
                 confDialog.open();
                 return;
             }
-            fireEvent(new CalendarExceptionForm.SaveEvent(this, this.calendarException));
+            fireEvent(new SaveEvent(this, this.calendarException));
             close();
 
         });
@@ -713,7 +713,7 @@ public class CalendarExceptionForm extends Dialog {
         close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         close.addClickListener(event ->
         {
-            fireEvent(new CalendarExceptionForm.CloseEvent(this, this.calendarException));
+            fireEvent(new CloseEvent(this, this.calendarException));
             close();
         });
 

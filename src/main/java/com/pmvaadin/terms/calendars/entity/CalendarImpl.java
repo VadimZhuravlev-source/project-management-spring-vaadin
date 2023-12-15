@@ -11,8 +11,6 @@ import com.pmvaadin.terms.calendars.workingweeks.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.LazyCollection;
-import org.hibernate.annotations.LazyCollectionOption;
 
 import jakarta.persistence.*;
 import java.io.Serializable;
@@ -61,15 +59,13 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
 
     @Setter
     @OneToMany(mappedBy = "calendar",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @OrderBy("sort ASC")
-    @LazyCollection(LazyCollectionOption.FALSE)
     private List<CalendarExceptionImpl> exceptions = new ArrayList<>();
 
     @OneToMany(mappedBy = "calendar",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @OrderBy("sort ASC")
-    @LazyCollection(LazyCollectionOption.FALSE)
     private List<WorkingWeekImpl> workingWeeks = new ArrayList<>();
 
     @Transient
@@ -413,6 +409,11 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
             if (counter == limit)
                 throw new StandardError("The calculated duration has exceeded the limit of 10 000 000 days. Please contact the developers.");
 
+            if (time.equals(LocalTime.MAX)) {
+                time = LocalTime.MIN;
+                day = day.plusDays(1);
+            }
+
             return LocalDateTime.of(day, time);
 
         }
@@ -436,7 +437,7 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
                 } else
                     secondsToIntervalEnd = intervalEnd.toSecondOfDay();
 
-                var availableDuration = secondsToIntervalEnd - time.toSecondOfDay();;
+                var availableDuration = secondsToIntervalEnd - time.toSecondOfDay();
                 if (availableDuration >= remainedDuration) {
                     time = time.plusSeconds(remainedDuration);
                     if (time.equals(LocalTime.MIN))
@@ -449,35 +450,6 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
                 if (intervalEndIsMin)
                     break;
 
-
-//                if (time.compareTo(interval.getFrom()) <= 0) {
-//                    if (interval.getDuration() < remainedDuration) {
-//                        remainedDuration = remainedDuration - interval.getDuration();
-//                        time = interval.getTo();
-//                        if (time.equals(LocalTime.MIN))
-//                            break;
-//                        continue;
-//                    } else {
-//                        time = interval.getTo().plusSeconds(remainedDuration);
-//                        if (time.equals(LocalTime.MIN))
-//                            day = day.plusDays(1);
-//                        return true;
-//                    }
-//                } else if (time.compareTo(interval.getTo()) >= 0 && !interval.getTo().equals(LocalTime.MIN))
-//                    continue;
-//
-//                var secondsOfDayTo = interval.getTo().toSecondOfDay();
-//                if (interval.getTo().equals(LocalTime.MIN)) secondsOfDayTo = fullDay;
-//                var intervalDuration = secondsOfDayTo - time.toSecondOfDay();
-//                if (intervalDuration >= remainedDuration) {
-//                    time = time.plusSeconds(remainedDuration);
-//                    return true;
-//                } else {
-//                    remainedDuration = remainedDuration - intervalDuration;
-//                    time = interval.getTo();
-//                    if (time.equals(LocalTime.MIN))
-//                        break;
-//                }
             }
             return false;
         }
@@ -536,32 +508,6 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
                 if (intervalStartIsMin)
                     break;
 
-//                if (time.equals(LocalTime.MIN) || time.compareTo(interval.getTo()) >= 0) {
-//                    if (interval.getDuration() < remainedDuration) {
-//                        remainedDuration = remainedDuration - interval.getDuration();
-//                        time = interval.getFrom();
-//                        if (time.equals(LocalTime.MIN))
-//                            break;
-//                        continue;
-//                    } else {
-//                        time = interval.getFrom().minusSeconds(remainedDuration);
-//                        return true;
-//                    }
-//                } else if (time.compareTo(interval.getFrom()) <= 0)
-//                    continue;
-//
-//                var secondsOfDayFrom = interval.getFrom().toSecondOfDay();
-//                var intervalDuration = secondsOfDayFrom - time.toSecondOfDay();
-//                intervalDuration = - intervalDuration;
-//                if (intervalDuration >= remainedDuration) {
-//                    time = time.minusSeconds(remainedDuration);
-//                    return true;
-//                } else {
-//                    remainedDuration = remainedDuration - intervalDuration;
-//                    time = interval.getFrom();
-//                    if (time.equals(LocalTime.MIN))
-//                        break;
-//                }
             }
             return false;
         }

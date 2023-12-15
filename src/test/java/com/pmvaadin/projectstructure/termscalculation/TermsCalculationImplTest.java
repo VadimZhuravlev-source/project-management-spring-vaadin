@@ -7,7 +7,6 @@ import com.pmvaadin.terms.calculation.TermsCalculationImpl;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.entity.ScheduleMode;

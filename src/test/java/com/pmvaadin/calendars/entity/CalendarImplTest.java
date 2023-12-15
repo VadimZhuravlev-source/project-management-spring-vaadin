@@ -4,7 +4,6 @@ import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDay;
 import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionImpl;
 import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionSetting;
 import org.junit.jupiter.api.Test;
@@ -79,23 +78,6 @@ class CalendarImplTest {
         exceptions.add(exception);
 
         calendar.setExceptions(exceptions);
-
-    }
-
-    private List<ExceptionDay> getExceptions() {
-
-        List<ExceptionDay> exceptions = new ArrayList<>(7);
-
-        // Big new year holidays
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 10), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 7), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 6), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 5), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 4), 0));
-        exceptions.add(new ExceptionDay(LocalDate.of(2022, 1, 3), 0));
-        exceptions.add(new ExceptionDay(shortWorkingDay, 7 * secondInHour));
-
-        return exceptions;
 
     }
 
@@ -422,6 +404,11 @@ class CalendarImplTest {
         var newDate = calendar.getDateByDuration(date, 3L * secondInHour);
         date = date.plusHours(4);
         assertEquals(date, newDate);
+
+        newDate = calendar.getDateByDuration(date, - 3L * secondInHour);
+        date = date.minusHours(4);
+        assertEquals(date, newDate);
+
     }
 
 }

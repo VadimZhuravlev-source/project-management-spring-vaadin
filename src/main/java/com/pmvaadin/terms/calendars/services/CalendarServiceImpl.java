@@ -28,7 +28,7 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     private CalendarRepository calendarRepository;
     private ProjectRecalculation projectRecalculation;
 
-    private CalendarServiceTransactionalImpl calServiceTran;
+    private CalendarServiceTransactional calServiceTran;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -47,7 +47,7 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     }
 
     @Autowired
-    public void setCalServiceTran(CalendarServiceTransactionalImpl calServiceTran) {
+    public void setCalServiceTran(CalendarServiceTransactional calServiceTran) {
         this.calServiceTran = calServiceTran;
     }
 
@@ -138,9 +138,9 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     }
 
     @Override
-    public Calendar copy(CalendarRepresentation calRep) {
+    public Calendar copy(CalendarRepresentation reps) {
 
-        Calendar calendar = calendarRepository.findById(calRep.getId()).orElse(defaultCalendar.getDefaultCalendar());
+        Calendar calendar = calendarRepository.findById(reps.getId()).orElse(defaultCalendar.getDefaultCalendar());
         if (calendar instanceof HasIdentifyingFields)
             ((HasIdentifyingFields) calendar).nullIdentifyingFields();
 
@@ -239,6 +239,23 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
         return text;
 
+    }
+
+}
+
+@Service
+class CalendarServiceTransactional {
+
+    private CalendarRepository calendarRepository;
+
+    @Autowired
+    public void setCalendarRepository(CalendarRepository calendarRepository) {
+        this.calendarRepository = calendarRepository;
+    }
+
+    @Transactional
+    public Calendar save(Calendar calendar) {
+        return calendarRepository.save(calendar);
     }
 
 }

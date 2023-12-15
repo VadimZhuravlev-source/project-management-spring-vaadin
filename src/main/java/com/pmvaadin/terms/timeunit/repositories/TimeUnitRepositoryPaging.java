@@ -13,8 +13,12 @@ public interface TimeUnitRepositoryPaging extends PagingAndSortingRepository<Tim
     List<TimeUnit> findByNameLikeIgnoreCase(String name, Pageable pageable);
     int countByNameLikeIgnoreCase(String name);
 
-    Optional<TimeUnit> findById(int i);
+    <I> Optional<TimeUnit> findById(I i);
 
     List<TimeUnit> findAllById(Iterable<?> ids);
+
+    void deleteAllById(Iterable<?> ids);
+
+    TimeUnit save(TimeUnit timeUnit);
 
 }
