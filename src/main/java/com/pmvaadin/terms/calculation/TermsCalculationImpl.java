@@ -167,12 +167,9 @@ public class TermsCalculationImpl implements TermsCalculation {
         fillFinish(currentTask);
 
         // It is a condition that this task is the last one in the chain of dependencies.
-        if (treeItem.getChildren().isEmpty() && treeItem.links.isEmpty()) {
-            treeItem.isCalculated = true;
-            return;
-        }
-
-        if (currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY)) {
+        var notProceedCalculation = treeItem.getChildren().isEmpty() && treeItem.links.isEmpty()
+                || currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY);
+        if (!notProceedCalculation) {
             treeItem.isCalculated = true;
             return;
         }
@@ -200,7 +197,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         if (!treeItem.getChildren().isEmpty() &&
                 minStartDate != LocalDateTime.MAX && maxFinishDate != LocalDateTime.MIN
                 && (!minStartDate.equals(currentTask.getStartDate()) || !maxFinishDate.equals(currentTask.getFinishDate()))) {
-            if (currentTask.getParentId() == null || currentTask.isProject()) {
+            if (currentTask.isProject()) {
                 projectsForRecalculation.add(currentTask);
             }
             currentTask.setStartDate(minStartDate);

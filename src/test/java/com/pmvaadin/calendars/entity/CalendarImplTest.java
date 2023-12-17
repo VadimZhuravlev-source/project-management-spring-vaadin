@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -407,6 +406,60 @@ class CalendarImplTest {
 
         newDate = calendar.getDateByDuration(date, - 3L * secondInHour);
         date = date.minusHours(4);
+        assertEquals(date, newDate);
+
+    }
+
+    @Test
+    void testGettingClosestWorkingDay() {
+
+        var date = LocalDateTime.of(2023, 11, 20, 11, 0);
+        var newDate = calendar.getClosestWorkingDay(date);
+        assertEquals(date, newDate);
+
+        // If date is the end of a current day
+        date = date.plusHours(6);
+        newDate = calendar.getClosestWorkingDay(date);
+        date = date.plusHours(15);
+        assertEquals(date, newDate);
+
+        // when date is a weekend day
+        date = LocalDateTime.of(2023, 11, 25, 3, 0);
+        newDate = calendar.getClosestWorkingDay(date);
+        date = LocalDateTime.of(2023, 11, 27, 8, 0);
+        assertEquals(date, newDate);
+
+        // when date is pointed in the break of a day
+        date = LocalDateTime.of(2023, 11, 20, 12, 33);
+        newDate = calendar.getClosestWorkingDay(date);
+        date = LocalDateTime.of(2023, 11, 20, 13, 0);
+        assertEquals(date, newDate);
+
+        // when date is the start of a day
+        date = LocalDateTime.of(2023, 11, 20, 0, 0);
+        newDate = calendar24.getClosestWorkingDay(date);
+        assertEquals(date, newDate);
+
+    }
+
+    @Test
+    void testEndOfWorkingDay() {
+
+        var date = LocalDateTime.of(2023, 11, 20, 11, 0);
+        var newDate = calendar.getEndOfWorkingDay(date.toLocalDate());
+        date = date.plusHours(6);
+        assertEquals(date, newDate);
+
+        // when date is a weekend day
+        date = LocalDateTime.of(2023, 11, 25, 3, 0);
+        newDate = calendar.getEndOfWorkingDay(date.toLocalDate());
+        date = LocalDateTime.of(2023, 11, 27, 17, 0);
+        assertEquals(date, newDate);
+
+        // when date is the start of a day
+        date = LocalDateTime.of(2023, 11, 20, 0, 0);
+        newDate = calendar24.getEndOfWorkingDay(date.toLocalDate());
+        date = date.plusDays(1);
         assertEquals(date, newDate);
 
     }

@@ -21,7 +21,7 @@ CREATE TABLE calendar_exceptions(
 	every_number_of_days INT DEFAULT 1,
 	
 	every_number_of_weeks INT DEFAULT 1,
-	end_of_week SMALLINT NOT NULL DEFAULT 7, -- end of week Sunday
+	end_of_week SMALLINT NOT NULL DEFAULT 7, -- end of week is Sunday
 	every_monday BOOLEAN NOT NULL DEFAULT FALSE,
 	every_tuesday BOOLEAN NOT NULL DEFAULT FALSE,
 	every_wednesday BOOLEAN NOT NULL DEFAULT FALSE,
@@ -118,3 +118,8 @@ SELECT setval('time_unit_id_seq', max(id)) FROM time_unit;
 SELECT setval('calendars_id_seq', max(id)) FROM calendars;
 ALTER TABLE time_unit
   RENAME TO time_units;
+  
+ALTER TABLE calendars
+DROP COLUMN IF EXISTS start_time;
+DROP TABLE IF EXISTS calendar_exception;
+DROP TABLE IF EXISTS day_of_week_settings;

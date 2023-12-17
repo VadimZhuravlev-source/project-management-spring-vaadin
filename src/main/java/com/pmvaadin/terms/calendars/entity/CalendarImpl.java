@@ -316,7 +316,8 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
             for (var interval : exception.getIntervals()) {
                 if (startTime.compareTo(interval.getFrom()) < 0)
                     return LocalDateTime.of(startDay, interval.getFrom());
-                if (startTime.compareTo(interval.getFrom()) >= 0 || startTime.compareTo(interval.getTo()) <= 0)
+                if (startTime.compareTo(interval.getFrom()) >= 0 && startTime.compareTo(interval.getTo()) < 0
+                    || startTime.equals(LocalTime.MIN) && interval.getTo().equals(LocalTime.MIN))
                     return date;
             }
         }
@@ -329,6 +330,7 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
 
         for (var interval : exception.getIntervals()) {
             startTime = interval.getFrom();
+            break;
         }
 
         return LocalDateTime.of(startDay, startTime);
@@ -347,12 +349,17 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
 
         var intervals = exception.getIntervals();
 
-        var iterator = intervals.listIterator(intervals.size());
-        while (iterator.hasPrevious()) {
-            var interval = iterator.previous();
-            newTime = interval.getTo();
-            break;
+        if (!intervals.isEmpty()) {
+            newTime = intervals.get(intervals.size() - 1).getTo();
         }
+//        var intervals = exception.getIntervals();
+//
+//        var iterator = intervals.listIterator(intervals.size());
+//        while (iterator.hasPrevious()) {
+//            var interval = iterator.previous();
+//            newTime = interval.getTo();
+//            break;
+//        }
 
         if (newTime.equals(LocalTime.MIN))
             newDay = newDay.plusDays(1);

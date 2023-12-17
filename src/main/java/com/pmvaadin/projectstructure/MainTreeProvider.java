@@ -62,6 +62,7 @@ public class MainTreeProvider extends ProjectHierarchicalDataProvider {
                 var currentSelectedItems = multiSelect.getSelectedItems();
                 var newSet = new HashSet<>(currentSelectedItems);
                 newSet.addAll(newSelectedItems);
+                selectedItems = new HashSet<>(selectedItems);
                 selectedItems.removeAll(newSet);
                 multiSelect.setValue(newSet);
             }

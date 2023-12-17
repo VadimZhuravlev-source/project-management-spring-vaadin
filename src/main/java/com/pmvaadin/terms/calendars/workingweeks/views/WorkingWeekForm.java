@@ -50,7 +50,6 @@ public class WorkingWeekForm extends Dialog {
     private final Map<DayOfWeek, WorkingDaysSetting> mapIntervalChanges = new HashMap<>();
 
     private final CalendarValidation calendarValidation = new CalendarValidationImpl();
-    private boolean init = true;
 
     public WorkingWeekForm(WorkingWeek workingWeek) {
         this.workingWeek = workingWeek;
@@ -64,7 +63,6 @@ public class WorkingWeekForm extends Dialog {
         start.setValue(this.workingWeek.getStart());
         finish.setValue(this.workingWeek.getFinish());
         days.select(DayOfWeek.MONDAY);
-        init = false;
     }
 
     private void fillMapIntervalChanges() {
@@ -164,17 +162,24 @@ public class WorkingWeekForm extends Dialog {
         var selectedDays = days.getSelectedItems();
 
         selectedDays.forEach(dayOfWeek -> {
-            if (init) return;
             var workingDaysSetting = mapIntervalChanges.get(dayOfWeek);
             if (workingDaysSetting == null) {
                 workingDaysSetting = new WorkingDaysSetting(IntervalSetting.CUSTOM, new ArrayList<>());
                 mapIntervalChanges.put(dayOfWeek, workingDaysSetting);
             }
+
+            if (selectedSetting == IntervalSetting.DEFAULT && selectedSetting == workingDaysSetting.getIntervalSetting()) {
+                intervals.setItems(workingDaysSetting.getIntervals());
+                workingDaysSetting.setIntervalSetting(selectedSetting);
+                return;
+            }
+
             workingDaysSetting.setIntervalSetting(selectedSetting);
             if (selectedSetting == IntervalSetting.CUSTOM) {
                 intervals.setItems(workingDaysSetting.getIntervals());
                 return;
             }
+
             workingDaysSetting.getIntervals().clear();
             if (selectedSetting == IntervalSetting.DEFAULT) {
                 if (selectedDays.size() != 1) return;

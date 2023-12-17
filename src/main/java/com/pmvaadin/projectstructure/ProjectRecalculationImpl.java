@@ -123,6 +123,7 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
         }
 
         if (termCalculationData2 == null) return new HashSet<>(0);
+        calendarService.fillCalendars(termCalculationData2);
 
         var respond2 = termsCalculation.calculate(termCalculationData2);
         projectTaskRepository.saveAll(respond2.getChangedTasks());
