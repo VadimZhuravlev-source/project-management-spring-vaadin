@@ -70,7 +70,13 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
         while (true) {
             var newProjects1 = new HashSet<ProjectTask>();
             for (var project : newProjects) {
-                var projectsToRecalculate = calculateProject(project);
+
+                Set<ProjectTask> projectsToRecalculate = new HashSet<>();
+                try {
+                    projectsToRecalculate = calculateProject(project);
+                }
+                catch (Exception ignored) {
+                }
                 newProjects1.addAll(projectsToRecalculate);
             }
             if (newProjects1.size() == 0 | counter++ > 1000) break;

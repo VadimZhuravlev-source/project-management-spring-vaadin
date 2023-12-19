@@ -1,12 +1,15 @@
 package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.commonobjects.ChangedTableData;
+import com.pmvaadin.projectstructure.ProjectRecalculation;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.data.ProjectTaskDataImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.terms.calculation.TermCalculationRespond;
+import com.pmvaadin.terms.calculation.TermCalculationRespondImpl;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
@@ -34,6 +37,8 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     private TimeUnitService timeUnitService;
     private ProjectTaskRepository projectTaskRepository;
     private ApplicationContext applicationContext;
+    private SaveProjectDataTransactional saveProjectDataTransactional;
+    private ProjectRecalculation projectRecalculation;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -68,20 +73,25 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         this.applicationContext = applicationContext;
     }
 
+    @Autowired
+    public void setSaveProjectDataTransactional(SaveProjectDataTransactional saveProjectDataTransactional) {
+        this.saveProjectDataTransactional = saveProjectDataTransactional;
+    }
+
+    @Autowired
+    public void setProjectRecalculation(ProjectRecalculation projectRecalculation){
+        this.projectRecalculation = projectRecalculation;
+    }
+
     @Override
-    @Transactional
+    //@Transactional
     public ProjectTaskData save(ProjectTaskData projectTaskData) {
 
         // validation
-        boolean validationPass = projectTaskService.validate(projectTaskData.getProjectTask());
-        if (!validationPass) return projectTaskData;
-
-        fillLinksByChanges(projectTaskData);
-
-        validationPass = linkService.validate(projectTaskData);
-        if (!validationPass) return projectTaskData;
-
-        return saveData(projectTaskData);
+        var saveRespond = saveProjectDataTransactional.save(projectTaskData);
+        var returnedValue = getProjectTaskDateRespond(saveRespond.projectTaskData());
+        projectRecalculation.recalculate(saveRespond.respond().getRecalculatedProjects());
+        return returnedValue;
 
     }
 
@@ -183,46 +193,6 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
     }
 
-    private void fillLinksByChanges(ProjectTaskData projectTaskData) {
-
-        if (projectTaskData.getLinksChangedTableData() == null && projectTaskData.getLinks() != null) return;
-
-        linkService.fillLinksByChanges(projectTaskData);
-
-    }
-
-    private ProjectTaskData saveData(ProjectTaskData projectTaskData) {
-
-        ProjectTask projectTask = projectTaskData.getProjectTask();
-        boolean isNew = projectTask.isNew();
-        if (isNew) {
-            projectTask = projectTaskService.save(projectTask, false, false);
-            projectTaskData.setProjectTask(projectTask);
-        }
-
-        fillMainFields(projectTaskData);
-
-        saveChanges(projectTaskData, isNew);
-
-        projectTask = projectTaskRepository.save(projectTask);
-        //projectTask = projectTaskService.save(projectTask, false, true);
-        projectTaskData.setProjectTask(projectTask);
-        calculateTerms(projectTaskData);
-
-        return getProjectTaskDateRespond(projectTaskData);
-
-    }
-
-    private ProjectTaskData getProjectTaskDateRespond(ProjectTaskData projectTaskData) {
-
-        ProjectTask projectTask = projectTaskData.getProjectTask();
-        List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
-        //projectTaskService.fillParent(projectTask);
-
-        return getProjectTaskData(projectTask, links);
-
-    }
-
     private ProjectTaskData getProjectTaskData(ProjectTask projectTask, List<Link> links) {
 
         Link sampleLink = applicationContext.getBean(Link.class);
@@ -236,6 +206,95 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         fillAdditionalData(projectTaskData);
 
         return projectTaskData;
+
+    }
+
+    private ProjectTaskData getProjectTaskDateRespond(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
+        //projectTaskService.fillParent(projectTask);
+
+        return getProjectTaskData(projectTask, links);
+
+    }
+
+    private record AdditionalData(Calendar calendar, LocalDateTime defaultStartDate, TimeUnit timeUnit) {}
+
+}
+
+record SaveTransactionalRespond(ProjectTaskData projectTaskData, TermCalculationRespond respond) {}
+
+@Service
+class SaveProjectDataTransactional {
+
+    private ProjectTaskService projectTaskService;
+    private LinkService linkService;
+    private ProjectTaskRepository projectTaskRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
+    void setProjectTaskService(ProjectTaskService projectTaskService) {
+        this.projectTaskService = projectTaskService;
+    }
+
+    @Autowired
+    void setLinkService(LinkService linkService) {
+        this.linkService = linkService;
+    }
+
+    @Autowired
+    void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository) {
+        this.projectTaskRepository = projectTaskRepository;
+    }
+
+    @Transactional
+    public SaveTransactionalRespond save(ProjectTaskData projectTaskData) {
+
+        var emptyRespond = new SaveTransactionalRespond(projectTaskData,
+                TermCalculationRespondImpl.getEmptyInstance());
+
+        boolean validationPass = projectTaskService.validate(projectTaskData.getProjectTask());
+        if (!validationPass) return emptyRespond;
+
+        fillLinksByChanges(projectTaskData);
+
+        validationPass = linkService.validate(projectTaskData);
+        if (!validationPass) return emptyRespond;
+
+        return saveData(projectTaskData);
+
+    }
+
+    private void fillLinksByChanges(ProjectTaskData projectTaskData) {
+
+        if (projectTaskData.getLinksChangedTableData() == null || projectTaskData.getLinks() != null) return;
+
+        linkService.fillLinksByChanges(projectTaskData);
+
+    }
+
+    private SaveTransactionalRespond saveData(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        boolean isNew = projectTask.isNew();
+        if (isNew) {
+            projectTask = projectTaskRepository.save(projectTask);
+            projectTaskData.setProjectTask(projectTask);
+        }
+
+        fillMainFields(projectTaskData);
+
+        saveChanges(projectTaskData, isNew);
+
+        projectTask = projectTaskRepository.save(projectTask);
+
+        projectTaskData.setProjectTask(projectTask);
+        var respond = calculateTerms(projectTaskData);
+
+        return new SaveTransactionalRespond(projectTaskData, respond);
 
     }
 
@@ -299,19 +358,19 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
     }
 
-    private void calculateTerms(ProjectTaskData projectTaskData) {
+    private TermCalculationRespond calculateTerms(ProjectTaskData projectTaskData) {
 
         Set<Object> ids = new HashSet<>(1);
         ids.add(projectTaskData.getProjectTask().getId());
-        List<ProjectTask> changedTasks = projectTaskService.recalculateTerms(this.entityManager, ids);
+        var respond = projectTaskService.recalculateTerms(this.entityManager, ids);
         ProjectTask projectTask = projectTaskData.getProjectTask();
-        for (ProjectTask changedTask: changedTasks) {
+        for (ProjectTask changedTask: respond.getChangedTasks()) {
             if (changedTask.equals(projectTask)) {
                 projectTaskData.setProjectTask(changedTask);
                 break;
             }
         }
-
+        return respond;
     }
 
     private void renewLinksCheckSum(ProjectTaskData projectTaskData) {
@@ -377,7 +436,5 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
                 && Objects.equals(link.getSort(), equaledLink.getSort()));
 
     }
-
-    private record AdditionalData(Calendar calendar, LocalDateTime defaultStartDate, TimeUnit timeUnit) {}
 
 }

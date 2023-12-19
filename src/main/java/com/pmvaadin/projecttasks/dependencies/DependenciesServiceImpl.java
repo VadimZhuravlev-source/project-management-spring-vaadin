@@ -1,6 +1,8 @@
 package com.pmvaadin.projecttasks.dependencies;
 
 import com.pmvaadin.AppConfiguration;
+import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.terms.calculation.TermCalculationData;
 import com.pmvaadin.terms.calculation.TermCalculationDataImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
@@ -136,7 +138,9 @@ public class DependenciesServiceImpl implements DependenciesService {
         }
 
         var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
-        var links = linkRepository.findAllById(linkIds);
+        List<Link> links = new ArrayList<>();
+        if (!isCycle)
+            links = linkRepository.findAllById(linkIds);
 
         return new DependenciesSetImpl(projectTasks, links, isCycle);
 
@@ -195,9 +199,12 @@ public class DependenciesServiceImpl implements DependenciesService {
             linkIds.clear();
         }
 
-        var projectTasks = projectTaskRepository.findAllById(projectTaskIds);
+        var query = entityManager.createQuery("from ProjectTaskImpl where id IN(:ids)");
+        query.setParameter("ids", projectTaskIds);
+        query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+        var projectTasks = (List<ProjectTask>) query.getResultList();
         projectTasks.forEach(projectTask -> {
-            Integer childrenCount = childrenCountMap.getOrDefault(projectTask.getId(), 0);
+            var childrenCount = childrenCountMap.getOrDefault(projectTask.getId(), 0);
             projectTask.setAmountOfChildren(childrenCount);
         });
         var links = linkRepository.findAllById(linkIds);

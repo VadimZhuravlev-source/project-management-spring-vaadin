@@ -121,7 +121,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
         UNION
         SELECT
         	NULL id,
-            COUNT(p.id) children_count
+            CAST(COUNT(p.id) AS INT) children_count
         FROM project_tasks p
         WHERE p.parent_id IS NULL
         """;
@@ -144,7 +144,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
         for (Object[] row: rows) {
             I id = (I) row[idIndex];
-            Integer count = ((BigInteger) row[countIndex]).intValue();
+            Integer count = ((Number) row[countIndex]).intValue();
             map.put(id, count);
         }
 

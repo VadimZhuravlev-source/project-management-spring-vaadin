@@ -2,6 +2,8 @@ package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 
+import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.terms.calculation.TermCalculationRespond;
 import jakarta.persistence.EntityManager;
 import java.util.Collection;
 import java.util.List;
@@ -17,6 +19,6 @@ public interface ProjectTaskService extends ProjectTreeService {
     Map<?, ProjectTask> getProjectTasksByIdWithFilledWbs(Collection<?> ids);
     <I> void fillParent(ProjectTask projectTask);
     //List<ProjectTask> recalculateTerms(Set<?> taskIds);
-    List<ProjectTask> recalculateTerms(EntityManager entityManager, Set<?> taskIds);
+    TermCalculationRespond recalculateTerms(EntityManager entityManager, Set<?> taskIds);
 
 }

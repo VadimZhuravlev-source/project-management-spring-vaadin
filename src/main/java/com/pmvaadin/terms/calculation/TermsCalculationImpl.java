@@ -169,7 +169,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         // It is a condition that this task is the last one in the chain of dependencies.
         var notProceedCalculation = treeItem.getChildren().isEmpty() && treeItem.links.isEmpty()
                 || currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY);
-        if (!notProceedCalculation) {
+        if (notProceedCalculation) {
             treeItem.isCalculated = true;
             return;
         }

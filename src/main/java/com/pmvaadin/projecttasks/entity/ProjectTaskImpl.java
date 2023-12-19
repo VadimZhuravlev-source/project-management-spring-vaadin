@@ -162,6 +162,20 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
         return 0;
     }
 
+    @Override
+    public void setUniqueValueIfParentIdNull() {
+        if (this.parentId == null)
+            this.parentId = Integer.MIN_VALUE;
+    }
+
+    @Override
+    public void revertParentIdNull() {
+        if (this.parentId != null && this.parentId.equals(Integer.MIN_VALUE))
+            this.parentId = null;
+    }
+
+
+
 //    @PrePersist
 //    public void prePersist() {
 //        childrenCount = 0;
