@@ -281,7 +281,7 @@ class SaveProjectDataTransactional {
         ProjectTask projectTask = projectTaskData.getProjectTask();
         boolean isNew = projectTask.isNew();
         if (isNew) {
-            projectTask = projectTaskRepository.save(projectTask);
+            projectTask = projectTaskService.save(projectTask, true, false);
             projectTaskData.setProjectTask(projectTask);
         }
 

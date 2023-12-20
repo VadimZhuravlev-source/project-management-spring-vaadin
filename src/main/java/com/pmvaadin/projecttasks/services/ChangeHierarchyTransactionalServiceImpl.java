@@ -1,11 +1,14 @@
 package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.AppConfiguration;
+import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
+import com.pmvaadin.projectstructure.TreeProjectTasksImpl;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.dependencies.DependenciesSet;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.projecttasks.entity.ProjectTaskOrderedHierarchy;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.terms.calculation.TermCalculationData;
 import com.pmvaadin.terms.calculation.TermCalculationRespond;
@@ -33,9 +36,8 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
 
     private ProjectTaskRepository projectTaskRepository;
     private HierarchyService hierarchyService;
-    private TreeProjectTasks treeProjectTasks;
     private DependenciesService dependenciesService;
-    private TermCalculationService calendarService;
+    private TermCalculationService termCalculationService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -51,23 +53,18 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
     }
 
     @Autowired
-    public void setTreeProjectTasks(TreeProjectTasks treeProjectTasks){
-        this.treeProjectTasks = treeProjectTasks;
-    }
-
-    @Autowired
     public void setDependenciesService(DependenciesService dependenciesService){
         this.dependenciesService = dependenciesService;
     }
 
     @Autowired
     public void setTermCalculationService(TermCalculationService calendarService){
-        this.calendarService = calendarService;
+        this.termCalculationService = calendarService;
     }
 
     @Override
     @Transactional
-    public TermCalculationRespond changeLocation(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
+    public TermCalculationRespond moveTasksInHierarchy(Set<ProjectTask> projectTasks, ProjectTask target, GridDropLocation dropLocation) {
 
         var taskIdsForRecalculate = changeHierarchy(projectTasks, target, dropLocation);
 
@@ -82,18 +79,19 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
 
     @Override
     @Transactional
-    public TermCalculationRespond changeLocation(Set<ProjectTask> projectTasks, ProjectTreeService.Direction direction) {
+    public TermCalculationRespond moveTasksInHierarchy(Set<ProjectTask> projectTasks, ProjectTreeService.Direction direction) {
 
         validateVersion(projectTasks);
 
         if (direction == ProjectTreeService.Direction.UP)
-            return changeLocationUp(projectTasks);
+            return moveTasksUpHierarchy(projectTasks);
         else
-            return changeLocationDown(projectTasks);
+            return moveTasksDownHierarchy(projectTasks);
 
     }
 
     @Override
+    @Transactional
     public TermCalculationRespond recalculateTerms(EntityManager entityManager, Set<?> taskIds) {
 
         var newTaskIds = taskIds.stream().filter(Objects::nonNull).collect(Collectors.toSet());
@@ -103,13 +101,13 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
         entityManager.flush();
         TermCalculationData termCalculationData = dependenciesService.getAllDependenciesForTermCalc(entityManager, newTaskIds);
 
-        calendarService.fillCalendars(termCalculationData);
+        termCalculationService.fillCalendars(termCalculationData);
 
         ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
         TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
         TermCalculationRespond respond = termsCalculation.calculate(termCalculationData);
 
-        List<ProjectTask> savedTasks = projectTaskRepository.saveAll(respond.getChangedTasks());
+        projectTaskRepository.saveAll(respond.getChangedTasks());
 
         //projectRecalculation.recalculate(respond.getRecalculatedProjects());
 
@@ -118,8 +116,8 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
     }
 
     @Override
-    public TermCalculationRespond recalculateTerms(ProjectTask projectTask) {
-        return recalculateTermsProjectTask(projectTask);
+    public void recalculateTerms(ProjectTask projectTask) {
+        recalculateTermsProjectTask(projectTask);
     }
 
     @Override
@@ -130,6 +128,7 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
         ids = ids.stream().distinct().toList();
 
         var projectTasks = hierarchyService.getParentsOfParent(ids);
+        var treeProjectTasks = new TreeProjectTasksImpl();
         treeProjectTasks.populateTreeByList(projectTasks);
         treeProjectTasks.fillWbs();
         Map<?, ?> filter = ids.stream().collect(Collectors.toMap(id -> id, id -> false));
@@ -139,9 +138,35 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
 
     }
 
-    private TermCalculationRespond changeLocationUp(Set<ProjectTask> projectTasks) {
+    @Override
+    @Transactional
+    public void changeSortOrder(Set<ProjectTask> projectTasks, ProjectTreeService.Direction direction) {
+        changedSortOrderPrivateMethod(projectTasks, direction);
+    }
 
+    @Override
+    @Transactional
+    public TermCalculationRespond delete(List<? extends ProjectTask> projectTasks) {
 
+        List<?> parentIds = projectTasks.stream().map(ProjectTask::getParentId).toList();
+        List<ProjectTask> projectTaskForDeletion = getProjectTasksToDeletion(projectTasks);
+        Map<?, Boolean> parentIdsForDeletion =
+                projectTaskForDeletion.stream().collect(Collectors.toMap(ProjectTask::getId, projectTask -> true));
+        parentIds = parentIds.stream().filter(parentId -> Objects.isNull(parentIdsForDeletion.get(parentId))).collect(Collectors.toList());
+        List<?> projectTaskIds = projectTaskForDeletion.stream()
+                .sorted(Comparator.comparing(ProjectTaskOrderedHierarchy::getWbs).reversed())
+                .map(ProjectTask::getId).toList();
+
+        projectTaskRepository.deleteAllById(projectTaskIds);
+        List<ProjectTask> savedElements = recalculateLevelOrderByParentIds(parentIds);
+        projectTaskRepository.saveAll(savedElements);
+
+        var parentIdsSet = new HashSet<>(parentIds);
+        return recalculateTerms(this.entityManager, parentIdsSet);
+
+    }
+
+    private TermCalculationRespond moveTasksUpHierarchy(Set<ProjectTask> projectTasks) {
 
         List<ProjectTask> changeableTasks = projectTasks.stream().filter(p -> p.getParentId() != null)
                 .toList();
@@ -198,7 +223,7 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
         return respond;
     }
 
-    private TermCalculationRespond changeLocationDown(Set<ProjectTask> tasks) {
+    private TermCalculationRespond moveTasksDownHierarchy(Set<ProjectTask> tasks) {
 
         List<?> ids = tasks.stream().map(ProjectTask::getId).toList();
 
@@ -258,9 +283,8 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
         // Take back previous values to parent_id
         currentTasks.forEach(propertiesPT -> propertiesPT.value.revertParentIdNull());
 
-        var respond = changeLocation(newParentsOfMovedTasks);
+        return changeLocation(newParentsOfMovedTasks);
 
-        return respond;
     }
 
     private TermCalculationRespond changeLocation(Map<ProjectTask, List<ProjectTask>> newParentsOfMovedTasks) {
@@ -361,6 +385,67 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
         parentIds.add(newParentId);
 
         return parentIds;
+
+    }
+
+    private void changedSortOrderPrivateMethod(Set<ProjectTask> tasks, ProjectTreeService.Direction direction) {
+
+        validateVersion(tasks);
+
+        List<?> ids = tasks.stream().map(ProjectTask::getId).toList();
+
+        int directionNumber = 1;
+        if (direction == ProjectTreeService.Direction.UP) directionNumber = -1;
+
+        List<ProjectTask> foundTasks = projectTaskRepository.findTasksThatFollowToGivenDirection(ids, directionNumber);
+
+        if (foundTasks.isEmpty()) return;
+
+        List<PropertiesPT> persistedTasks =
+                foundTasks.stream()
+                        .map(projectTask -> new PropertiesPT(projectTask, true))
+                        .toList();
+
+        List<PropertiesPT> currentTasks = tasks.stream()
+                .map(projectTask -> new PropertiesPT(projectTask, false))
+                .collect(toList());
+
+        currentTasks.addAll(persistedTasks);
+        if (direction == ProjectTreeService.Direction.UP)
+            currentTasks.sort(PropertiesPT::compareByPIDAndLevelOrder);
+        else
+            currentTasks.sort(PropertiesPT::compareByPIDAndLevelOrderReverse);
+
+        Object previousParent = currentTasks.get(0);
+        PropertiesPT persistedElement = null;
+        HashSet<ProjectTask> savedTasks = new HashSet<>(currentTasks.size());
+        for (PropertiesPT pw: currentTasks) {
+            ProjectTask projectTask = pw.value;
+            if (!Objects.equals(projectTask.getParentId(), previousParent)) {
+                previousParent = projectTask.getParentId();
+                persistedElement = null;
+            }
+            if (pw.inBase) {
+                persistedElement = pw;
+                continue;
+            }
+
+            if (persistedElement == null) continue;
+
+            int levelOrderOfCurrentTask = projectTask.getLevelOrder();
+            ProjectTask previousTask = persistedElement.value;
+            int levelOrderOfPreviousTask = previousTask.getLevelOrder();
+
+            projectTask.setLevelOrder(levelOrderOfPreviousTask);
+            previousTask.setLevelOrder(levelOrderOfCurrentTask);
+            savedTasks.add(projectTask);
+            savedTasks.add(previousTask);
+
+        }
+
+        projectTaskRepository.saveAll(savedTasks);
+
+//        savedTasks.retainAll(tasks);
 
     }
 
@@ -473,8 +558,38 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
             foundProjectTasks = projectTaskRepository.findByParentIdInOrderByLevelOrderAsc(parentIds);
         }
 
-        //TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+        var treeProjectTasks = new TreeProjectTasksImpl();
         return treeProjectTasks.recalculateLevelOrderForProjectTasks(foundProjectTasks);
+
+    }
+
+    private List<ProjectTask> getProjectTasksToDeletion(List<? extends ProjectTask> projectTasks) {
+
+        projectTasks = projectTasks.stream().distinct().collect(Collectors.toList());
+
+        if (projectTasks.size() == 0) {
+            return new ArrayList<>();
+        }
+
+        List<ProjectTask> allHierarchyElements = hierarchyService.getElementsChildrenInDepth(projectTasks);
+        TreeProjectTasks treeProjectTasks = new TreeProjectTasksImpl();
+        treeProjectTasks.populateTreeByList(allHierarchyElements);
+        treeProjectTasks.fillWbs();
+        TreeItem<ProjectTask> rootItem = treeProjectTasks.getRootItem();
+
+        List<ProjectTask> projectTaskIds = new ArrayList<>(allHierarchyElements.size());
+        fillDeletedProjectTasksRecursively(rootItem, projectTaskIds);
+
+        return projectTaskIds;
+
+    }
+
+    private void fillDeletedProjectTasksRecursively(TreeItem<ProjectTask> treeItem, List<ProjectTask> projectTaskIds) {
+
+        for (TreeItem<ProjectTask> currentTreeItem: treeItem.getChildren()) {
+            fillDeletedProjectTasksRecursively(currentTreeItem, projectTaskIds);
+            projectTaskIds.add(currentTreeItem.getValue());
+        }
 
     }
 
@@ -484,10 +599,10 @@ public class ChangeHierarchyTransactionalServiceImpl implements ChangeHierarchyT
 
     }
 
-    private TermCalculationRespond recalculateTermsProjectTask(ProjectTask projectTask) {
+    private void recalculateTermsProjectTask(ProjectTask projectTask) {
         HashSet<Object> ids = new HashSet<>(1);
         ids.add(projectTask.getId());
-        return recalculateTerms(ids);
+        recalculateTerms(ids);
     }
 
 }

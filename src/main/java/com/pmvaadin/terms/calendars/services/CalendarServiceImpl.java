@@ -28,6 +28,8 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     private CalendarRepository calendarRepository;
     private ProjectRecalculation projectRecalculation;
 
+    private TermCalculationService termCalculationService;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -44,6 +46,11 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
         this.projectRecalculation = projectRecalculation;
     }
 
+    @Autowired
+    public void setTermCalculationService(TermCalculationService termCalculationService) {
+        this.termCalculationService = termCalculationService;
+    }
+
     @Override
     public <I> Calendar getCalendarById(I id) {
 
@@ -57,7 +64,7 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
     @Override
     public Calendar getDefaultCalendar() {
-        return calendarRepository.findById(1).orElse(defaultCalendar);
+        return termCalculationService.getDefaultCalendar();
     }
 
     @Override
@@ -134,9 +141,9 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
     @Override
     public Calendar copy(CalendarRepresentation reps) {
 
-        Calendar calendar = calendarRepository.findById(reps.getId()).orElse(defaultCalendar.getDefaultCalendar());
-        if (calendar instanceof HasIdentifyingFields)
-            ((HasIdentifyingFields) calendar).nullIdentifyingFields();
+        var calendar = calendarRepository.findById(reps.getId()).orElse(defaultCalendar.getDefaultCalendar());
+        if (calendar instanceof HasIdentifyingFields hasIdentifyingFields)
+            hasIdentifyingFields.nullIdentifyingFields();
 
         return calendar;
 
@@ -188,7 +195,7 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
 
     private String getQueryTextForDetectionOfUndeletableCalendars() {
 
-        var text = """
+        return """
             WITH predefined_calendars AS(
             SELECT
             	id,
@@ -230,8 +237,6 @@ public class CalendarServiceImpl implements CalendarService, ListService<Calenda
             	*
             FROM used_calendars
             """;
-
-        return text;
 
     }
 

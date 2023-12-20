@@ -1,0 +1,67 @@
+{
+  "name": "gantt",
+  "version": "3.1.1",
+  "description": "Gantt chart library using jsx support SVG, Canvas and SSR",
+  "main": "lib/index.js",
+  "module": "es/index.js",
+  "jsnext:main": "es/index.js",
+  "files": [
+    "lib",
+    "es",
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "lint": "eslint src",
+    "clean": "rimraf lib es dist",
+    "build:lib": "cross-env BABEL_ENV=cjs babel src -d lib",
+    "build:es": "cross-env BABEL_ENV=es babel src -d es",
+    "build:dist": "cross-env NODE_ENV=production rollup -c && uglifyjs -o dist/gantt.min.js dist/gantt.js",
+    "build": "npm run clean && npm run build:lib && npm run build:es && npm run build:dist",
+    "prepare": "npm run build",
+    "pages": "cd demo && dool build && gh-pages -d ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/d-band/gantt.git"
+  },
+  "keywords": [
+    "gantt",
+    "chart",
+    "jsx",
+    "svg",
+    "canvas",
+    "vdom",
+    "ssr"
+  ],
+  "author": "d-band",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/d-band/gantt/issues"
+  },
+  "homepage": "https://github.com/d-band/gantt#readme",
+  "devDependencies": {
+    "@babel/cli": "^7.10.5",
+    "@babel/core": "^7.11.4",
+    "@babel/plugin-external-helpers": "^7.10.4",
+    "@babel/plugin-transform-react-jsx": "^7.10.4",
+    "@babel/plugin-transform-runtime": "^7.11.0",
+    "@babel/preset-env": "^7.11.0",
+    "@babel/runtime": "^7.11.2",
+    "@rollup/plugin-babel": "^5.2.0",
+    "@rollup/plugin-commonjs": "^15.0.0",
+    "@rollup/plugin-node-resolve": "^9.0.0",
+    "babel-eslint": "^10.1.0",
+    "cross-env": "^7.0.2",
+    "eslint": "^7.7.0",
+    "eslint-config-airbnb": "^18.2.0",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-jsx-a11y": "^6.3.1",
+    "eslint-plugin-react": "^7.20.6",
+    "eslint-plugin-react-hooks": "^4.1.0",
+    "gh-pages": "^3.1.0",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.0.0",
+    "uglify-js": "^3.10.3"
+  }
+}

@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.*;
 
@@ -453,7 +452,7 @@ LEFT JOIN durations
 
             if (!columns.contains(propertyNames.getPropertyLinks())) {
                 var resField = """
-                        ,'' link_rep
+                        ,'' links_rep
                         &result_field
                         """;
                 return getDefaultTableInfo(resField);
@@ -603,7 +602,7 @@ LEFT JOIN links_rep
                   		result_query.calendar_rep,
                         result_query.time_rep,
                         result_query.dur_rep,
-                        result_query.link_rep
+                        result_query.links_rep
                 	FROM result_query
                         
                         """;

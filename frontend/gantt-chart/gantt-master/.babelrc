@@ -1,0 +1,27 @@
+{
+  "plugins": [
+    [
+      "@babel/plugin-transform-react-jsx",
+      {
+        "pragma": "h"
+      }
+    ]
+  ],
+  "env": {
+    "cjs": {
+      "presets": [
+        "@babel/preset-env"
+      ]
+    },
+    "es": {
+      "presets": [
+        [
+          "@babel/preset-env",
+          {
+            "modules": false
+          }
+        ]
+      ]
+    }
+  }
+}

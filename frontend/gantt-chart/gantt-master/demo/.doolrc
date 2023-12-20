@@ -1,0 +1,11 @@
+{
+  entry: {
+    bundle: './index.js'
+  },
+  outputPath: '.',
+  babelPlugins: [
+    ['@babel/plugin-transform-react-jsx', {
+      'pragma': 'h'
+    }]
+  ]
+}

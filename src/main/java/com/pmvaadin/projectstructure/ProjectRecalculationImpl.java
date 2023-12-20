@@ -4,7 +4,6 @@ import com.pmvaadin.AppConfiguration;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
-import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.projecttasks.services.HierarchyService;
 import com.pmvaadin.terms.calculation.TermCalculationData;
@@ -26,8 +25,7 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
 
     private ProjectTaskRepository projectTaskRepository;
     private HierarchyService hierarchyService;
-    private LinkRepository linkRepository;
-    private TermCalculationService calendarService;
+    private TermCalculationService termCalculationService;
     private DependenciesService dependenciesService;
     private EntityManagerFactory entityManagerFactory;
 
@@ -42,13 +40,8 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
     }
 
     @Autowired
-    public void setLinkRepository(LinkRepository linkRepository) {
-        this.linkRepository = linkRepository;
-    }
-
-    @Autowired
     public void setTermCalculationService(TermCalculationService calendarService) {
-        this.calendarService = calendarService;
+        this.termCalculationService = calendarService;
     }
 
     @Autowired
@@ -109,7 +102,7 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
 
         if (termCalculationData == null) return new HashSet<>(0);
 
-        calendarService.fillCalendars(termCalculationData);
+        termCalculationService.fillCalendars(termCalculationData);
 
         ApplicationContext context = new AnnotationConfigApplicationContext(AppConfiguration.class);
         TermsCalculation termsCalculation = context.getBean(TermsCalculation.class);
@@ -129,7 +122,7 @@ public class ProjectRecalculationImpl implements ProjectRecalculation {
         }
 
         if (termCalculationData2 == null) return new HashSet<>(0);
-        calendarService.fillCalendars(termCalculationData2);
+        termCalculationService.fillCalendars(termCalculationData2);
 
         var respond2 = termsCalculation.calculate(termCalculationData2);
         projectTaskRepository.saveAll(respond2.getChangedTasks());
