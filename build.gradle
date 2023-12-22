@@ -51,6 +51,7 @@ dependencies {
 	testImplementation 'org.springframework.security:spring-security-test'
 	implementation 'com.vaadin:vaadin-spring-boot-starter'
 	implementation 'org.vaadin.addons.flowingcode:year-month-calendar:4.1.0'
+	implementation 'org.vaadin.addons.tltv.gantt:gantt-flow-addon:24.0.0'
 }
 
 dependencyManagement {

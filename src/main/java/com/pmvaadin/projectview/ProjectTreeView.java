@@ -11,6 +11,7 @@ import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.pmvaadin.projecttasks.views.ProjectTaskForm;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.grid.Grid;
@@ -26,13 +27,20 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.splitlayout.SplitLayout;
+import com.vaadin.flow.component.splitlayout.SplitLayoutVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
+import com.vaadin.flow.data.provider.DataChangeEvent;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 import jakarta.annotation.security.PermitAll;
+import org.vaadin.tltv.gantt.Gantt;
+import org.vaadin.tltv.gantt.model.Step;
+import org.vaadin.tltv.gantt.model.SubStep;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
@@ -53,6 +61,10 @@ public class ProjectTreeView extends VerticalLayout {
     private boolean isEditingFormOpen;
     private final List<String> chosenColumns;
     private final ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
+    private boolean isGanttDisplayed;
+    private final Button displayGantt = new Button("Gantt chart display");
+    private final Gantt ganttChart = new Gantt();
+    private final HorizontalLayout treeGridContainer = new HorizontalLayout();
 
     public ProjectTreeView(ProjectTreeService projectTreeService, TreeHierarchyChangeService treeHierarchyChangeService, ProjectTaskForm projectTaskForm) {
 
@@ -61,15 +73,36 @@ public class ProjectTreeView extends VerticalLayout {
         this.projectTaskForm = projectTaskForm;
         chosenColumns = projectTaskPropertyNames.getTreeDefaultColumns();
         dataProvider = new MainTreeProvider(this.treeHierarchyChangeService, chosenColumns, treeGrid);
+        dataProvider.addDataProviderListener(this::dataProviderListener);
         addClassName("project-tasks-view");
         setSizeFull();
         configureTreeGrid();
 
         Component toolBar = getToolbar();
-        add(toolBar, treeGrid);
+        treeGridContainer.add(treeGrid);
+        add(toolBar, treeGridContainer);
 
         updateTreeGrid();
 
+    }
+
+    private void dataProviderListener(DataChangeEvent<ProjectTask> event) {
+        if (!isGanttDisplayed) {
+            return;
+        }
+        fillGantt();
+    }
+
+    private void fillGantt() {
+        var tempTree = dataProvider.getTempTree();
+        var mapSteps = new HashMap<ProjectTask, Step>();
+        tempTree.forEach();
+        var step = new Step();
+        var subStep = new SubStep();
+        step.
+        while() {
+            ganttChart.
+        }
     }
 
     private void configureTreeGrid() {
@@ -193,13 +226,16 @@ public class ProjectTreeView extends VerticalLayout {
         Button createTestCase = new Button("Create test case");
         createTestCase.addClickListener(this::createTestCase);
 
+        displayGantt.addClickListener(this::displayGanttListener);
+
         HorizontalLayout toolbar = new HorizontalLayout(
                 //filterText,
                 addProjectTask, deleteProjectTask, updateTreeData,
                 changeLevelUp,
                 changeLevelDown,
                 createTestCase,
-                moveUp, moveDown);
+                moveUp, moveDown,
+                displayGantt);
         toolbar.addClassName("toolbar");
 
         MenuBar menuBar = new MenuBar();
@@ -219,6 +255,27 @@ public class ProjectTreeView extends VerticalLayout {
         toolbar.add(menuBar);
 
         return toolbar;
+
+    }
+
+    private void displayGanttListener(ClickEvent<Button> clickEvent) {
+
+        if (isGanttDisplayed) {
+            isGanttDisplayed = false;
+            displayGantt.removeThemeVariants(ButtonVariant.LUMO_ERROR);
+            treeGridContainer.removeAll();
+            treeGridContainer.add(treeGrid);
+            dataProvider.setFormTempTree(false);
+        } else {
+            isGanttDisplayed = true;
+            displayGantt.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            treeGridContainer.removeAll();
+            var splitLayout = new SplitLayout(treeGrid, ganttChart);
+            splitLayout.addThemeVariants(SplitLayoutVariant.LUMO_MINIMAL);
+            treeGridContainer.add(splitLayout);
+            dataProvider.setFormTempTree(true);
+            dataProvider.refreshAll();
+        }
 
     }
 

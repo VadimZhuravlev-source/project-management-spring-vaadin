@@ -1,6 +1,6 @@
 package com.pmvaadin;
 
-import com.pmvaadin.charts.GanttChart;
+import com.pmvaadin.charts.TreeGridGanttLayout;
 import com.pmvaadin.terms.calendars.view.CalendarsView;
 import com.pmvaadin.projectview.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;
@@ -59,7 +59,7 @@ public class MainLayout extends AppLayout {
         RouterLink usersLink = new RouterLink("Users", AdminUsersView.class);
         calendarsLink.setHighlightCondition(HighlightConditions.sameLocation());
 
-        RouterLink chartLink = new RouterLink("Chart", GanttChart.class);
+        RouterLink chartLink = new RouterLink("Chart", TreeGridGanttLayout.class);
         chartLink.setHighlightCondition(HighlightConditions.sameLocation());
 
 //        RouterLink tests = new RouterLink("Tests", TestElementsView.class);

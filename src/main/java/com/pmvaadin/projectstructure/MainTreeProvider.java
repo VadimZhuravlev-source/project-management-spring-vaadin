@@ -5,9 +5,7 @@ import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,6 +14,9 @@ public class MainTreeProvider extends ProjectHierarchicalDataProvider {
     private final List<String> chosenColumns;
     private final TreeGrid<ProjectTask> treeGrid;
     private Set<ProjectTask> selectedItems;
+    private final HashMap<ProjectTask, List<ProjectTask>> tempTree = new HashMap<>();
+    private boolean formTempTree;
+
 
     public MainTreeProvider(TreeHierarchyChangeService hierarchyService, List<String> chosenColumns, TreeGrid<ProjectTask> treeGrid) {
         super(hierarchyService);
@@ -27,6 +28,14 @@ public class MainTreeProvider extends ProjectHierarchicalDataProvider {
         this.selectedItems = selectedItems;
     }
 
+    public Map<ProjectTask, List<ProjectTask>> getTempTree() {
+        return tempTree;
+    }
+
+    public void setFormTempTree(boolean formTempTree) {
+        this.formTempTree = formTempTree;
+    }
+
     @Override
     public int getChildCount(HierarchicalQuery<ProjectTask, Void> query) {
         return super.getChildCount(query);
@@ -35,6 +44,12 @@ public class MainTreeProvider extends ProjectHierarchicalDataProvider {
     @Override
     public boolean hasChildren(ProjectTask item) {
         return super.hasChildren(item);
+    }
+
+    @Override
+    public void refreshAll() {
+        tempTree.clear();
+        super.refreshAll();
     }
 
     @Override
@@ -67,7 +82,12 @@ public class MainTreeProvider extends ProjectHierarchicalDataProvider {
                 multiSelect.setValue(newSet);
             }
         }
+
+        if (formTempTree)
+            tempTree.put(parent, children);
+
         return children.stream();
 
     }
+
 }
