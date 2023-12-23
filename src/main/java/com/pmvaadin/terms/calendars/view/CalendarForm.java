@@ -81,6 +81,7 @@ public class CalendarForm extends Dialog {
         createButtons();
         customizeBinder();
         customizeElements();
+        addClassName("dialog-padding-1");
 
     }
 

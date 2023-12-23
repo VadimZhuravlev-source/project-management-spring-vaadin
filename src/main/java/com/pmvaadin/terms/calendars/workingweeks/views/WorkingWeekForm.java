@@ -63,6 +63,7 @@ public class WorkingWeekForm extends Dialog {
         start.setValue(this.workingWeek.getStart());
         finish.setValue(this.workingWeek.getFinish());
         days.select(DayOfWeek.MONDAY);
+        addClassName("dialog-padding-1");
     }
 
     private void fillMapIntervalChanges() {

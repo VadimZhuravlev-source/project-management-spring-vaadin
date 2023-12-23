@@ -106,6 +106,7 @@ public class CalendarExceptionForm extends Dialog {
         intervals.setItems(this.calendarException.getCopyOfIntervals());
         binder.readBean(this.calendarException);
         isFirstInit = false;
+        addClassName("dialog-padding-1");
     }
 
     private void customizeBinder() {

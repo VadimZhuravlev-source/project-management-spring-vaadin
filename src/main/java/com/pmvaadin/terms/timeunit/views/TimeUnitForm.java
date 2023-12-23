@@ -39,6 +39,7 @@ public class TimeUnitForm extends Dialog {
         add(name, numberOfHours);
         customizeHeader();
         createButtons();
+        addClassName("dialog-padding-1");
     }
 
     private void customizeHeader() {

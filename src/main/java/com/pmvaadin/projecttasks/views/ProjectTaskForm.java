@@ -95,6 +95,8 @@ public class ProjectTaskForm extends Dialog {
         this.calendarSelectionForm = calendarSelectionForm;
         this.timeUnitService = timeUnitService;
 
+        addClassName("dialog-padding-1");
+
         customizeForm();
         customizeHeader();
         customizeTabs();

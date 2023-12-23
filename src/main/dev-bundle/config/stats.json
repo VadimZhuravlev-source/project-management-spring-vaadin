@@ -67,7 +67,9 @@
   "@vaadin/virtual-list": "24.2.4",
   "construct-style-sheets-polyfill": "3.1.0",
   "date-fns": "2.29.3",
-  "lit": "2.8.0"
+  "lit": "2.8.0",
+  "tltv-gantt-element": "1.0.27",
+  "tltv-timeline-element": "1.0.20"
  },
  "npmModules": {
   "@lit/reactive-element": "1.6.3",
@@ -137,9 +139,12 @@
   "@webcomponents/shadycss": "1.11.0",
   "construct-style-sheets-polyfill": "3.1.0",
   "date-fns": "2.29.3",
+  "date-fns-tz": "2.0.0",
   "lit-element": "3.3.3",
   "lit-html": "2.8.0",
   "strip-css-comments": "5.0.0",
+  "tltv-gantt-element": "1.0.27",
+  "tltv-timeline-element": "1.0.20",
   "tslib": "2.4.0"
  },
  "bundleImports": [
@@ -223,6 +228,7 @@
   "Frontend/generated/jar-resources/fc-year-calendar/fc-year-calendar.js",
   "Frontend/generated/jar-resources/fc-year-month-field/fc-year-month-field.js",
   "Frontend/generated/jar-resources/flow-component-renderer.js",
+  "Frontend/generated/jar-resources/gantt-grid.css",
   "Frontend/generated/jar-resources/gridConnector.js",
   "Frontend/generated/jar-resources/lit-renderer.ts",
   "Frontend/generated/jar-resources/menubarConnector.js",
@@ -234,7 +240,8 @@
   "Frontend/generated/jar-resources/vaadin-grid-flow-selection-column.js",
   "Frontend/generated/jar-resources/vaadin-time-picker/timepickerConnector.js",
   "Frontend/generated/jar-resources/virtualListConnector.js",
-  "Frontend/styles/year-month-calendar-colors.css"
+  "Frontend/styles/year-month-calendar-colors.css",
+  "tltv-gantt-element/dist/src/gantt-element.js"
  ],
  "frontendHashes": {
   "styles/year-month-calendar-colors.css": "790e24c013675795d750cb18af4adb3183ba46d96382a47cba02dff79f0f61de",
@@ -250,6 +257,7 @@
   "fc-year-calendar/fc-year-calendar.js": "1e065ab855b25fd2657871625ce38a76cdc7bff94e4c93f74a0a1615fd0f3da5",
   "fc-year-month-field/fc-year-month-field.js": "24087ebbb1a207d3fcd3825596e3354a4a5020e914311a3d0d8bd040f37a5e9b",
   "flow-component-renderer.js": "5f6ffff53686c476927e0a6c0fe0dac51ddc01a5240831221e4d9a00772d7833",
+  "gantt-grid.css": "78a6676317488828db59814f7c3eea5e97008b9fd4d68e2a2be3a183b28eba04",
   "gridConnector.js": "8c50e6b738bd6028c37253090efade68bfcdef7e96e023ea7c912e31d7979e6f",
   "lit-renderer.ts": "afefa9f5fcb38260a0ff08bc044a5f591f242689ca3c7905130ad32df0476e7c",
   "menubarConnector.js": "8ddac5a87155632c516fd16c9402bd9a2fe6d965998169743744842aacdfd412",
@@ -266,12 +274,12 @@
   "myapp": "{\n  \"lumoImports\" : [ \"typography\", \"color\", \"spacing\", \"badge\", \"utility\" ]\n}"
  },
  "entryScripts": [
-  "VAADIN/build/indexhtml-5d97bb51.js"
+  "VAADIN/build/indexhtml-17230dc3.js"
  ],
  "webComponents": [],
  "cvdlModules": {},
- "packageJsonHash": "56cec735c12cec056dbe0eca5fb34acc96a8c5afd2f5ee2d60603a02a80a9167",
+ "packageJsonHash": "7732423118bc4bd1666dbb45151543b15c9d3e4b98c668909dd09f96bdfc71f6",
  "indexHtmlGenerated": [
-  "  <script type=\"module\" crossorigin src=\"./VAADIN/build/indexhtml-5d97bb51.js\"></script>"
+  "  <script type=\"module\" crossorigin src=\"./VAADIN/build/indexhtml-17230dc3.js\"></script>"
  ]
 }

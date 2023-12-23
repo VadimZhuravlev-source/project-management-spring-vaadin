@@ -2,7 +2,7 @@ package com.pmvaadin.projectview;
 
 import com.pmvaadin.MainLayout;
 import com.pmvaadin.commonobjects.ConfirmDialog;
-import com.pmvaadin.projectstructure.MainTreeProvider;
+import com.pmvaadin.projectstructure.TaskTreeProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.services.ProjectTreeService;
@@ -38,8 +38,8 @@ import com.vaadin.flow.router.Route;
 
 import jakarta.annotation.security.PermitAll;
 import org.vaadin.tltv.gantt.Gantt;
+import org.vaadin.tltv.gantt.model.Resolution;
 import org.vaadin.tltv.gantt.model.Step;
-import org.vaadin.tltv.gantt.model.SubStep;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -57,7 +57,7 @@ public class ProjectTreeView extends VerticalLayout {
     private final TextField filterText = new TextField();
     private final ProjectTaskForm projectTaskForm;
     private ProjectTaskForm editingForm;
-    private final MainTreeProvider dataProvider;
+    private final TaskTreeProvider dataProvider;
     private boolean isEditingFormOpen;
     private final List<String> chosenColumns;
     private final ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
@@ -65,6 +65,7 @@ public class ProjectTreeView extends VerticalLayout {
     private final Button displayGantt = new Button("Gantt chart display");
     private final Gantt ganttChart = new Gantt();
     private final HorizontalLayout treeGridContainer = new HorizontalLayout();
+    private final Button updateTreeData = new Button("Update");
 
     public ProjectTreeView(ProjectTreeService projectTreeService, TreeHierarchyChangeService treeHierarchyChangeService, ProjectTaskForm projectTaskForm) {
 
@@ -72,16 +73,17 @@ public class ProjectTreeView extends VerticalLayout {
         this.treeHierarchyChangeService = treeHierarchyChangeService;
         this.projectTaskForm = projectTaskForm;
         chosenColumns = projectTaskPropertyNames.getTreeDefaultColumns();
-        dataProvider = new MainTreeProvider(this.treeHierarchyChangeService, chosenColumns, treeGrid);
+        dataProvider = new TaskTreeProvider(this.treeHierarchyChangeService, chosenColumns, treeGrid);
         dataProvider.addDataProviderListener(this::dataProviderListener);
-        addClassName("project-tasks-view");
         setSizeFull();
         configureTreeGrid();
 
         Component toolBar = getToolbar();
         treeGridContainer.add(treeGrid);
+        treeGridContainer.setSizeFull();
         add(toolBar, treeGridContainer);
 
+        ganttChart.setHeightFull();
         updateTreeGrid();
 
     }
@@ -90,25 +92,50 @@ public class ProjectTreeView extends VerticalLayout {
         if (!isGanttDisplayed) {
             return;
         }
-        fillGantt();
+//        fillGantt();
     }
 
     private void fillGantt() {
+        ganttChart.removeSteps(ganttChart.getSteps());
         var tempTree = dataProvider.getTempTree();
-        var mapSteps = new HashMap<ProjectTask, Step>();
-        tempTree.forEach();
+        var rootTasks = tempTree.get(null);
+        if (rootTasks == null || rootTasks.isEmpty()) return;
+        fillGanttRecursively(rootTasks, tempTree);
+        ganttChart.setResolution(Resolution.Day);
+        var minStart = ganttChart.getSteps().map(Step::getStartDate).min(Comparator.naturalOrder());
+        var maxStart = ganttChart.getSteps().map(Step::getStartDate).max(Comparator.naturalOrder());
+        ganttChart.setStartDate(minStart.get().toLocalDate());
+        ganttChart.setEndDate(maxStart.get().toLocalDate());
+        ganttChart.setTimeZone(TimeZone.getDefault());
+    }
+    
+    private void fillGanttRecursively(List<ProjectTask> tasks, Map<ProjectTask, List<ProjectTask>> tempTree) {
+        for (var task: tasks) {
+            var step = getStep(task);
+            ganttChart.addStep(step);
+            var children = tempTree.get(task);
+            if (children == null) continue;
+            fillGanttRecursively(children, tempTree);
+        }   
+    }
+    
+    private Step getStep(ProjectTask projectTask) {
         var step = new Step();
-        var subStep = new SubStep();
-        step.
-        while() {
-            ganttChart.
-        }
+        step.setResizable(false);
+        step.setMovable(false);
+        step.setShowProgress(false);
+        step.setSubstep(false);
+        step.setCaption(projectTask.getName());
+        step.setIdentifier(projectTask.getId().longValue());
+        step.setStartDate(projectTask.getStartDate());
+        step.setEndDate(projectTask.getFinishDate());
+        return step;
     }
 
     private void configureTreeGrid() {
 
         treeGrid.setDataProvider(dataProvider);
-        treeGrid.addClassNames("project-tasks-grid");
+        treeGrid.addClassNames("tree-gantt");
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
@@ -145,7 +172,7 @@ public class ProjectTreeView extends VerticalLayout {
         var columnCustomizations = projectTaskPropertyNames.getAvailableColumnProps();
         for (String name: chosenColumns) {
             if (name.equals(projectTaskPropertyNames.getPropertyWbs())) {
-                treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setWidth("5em");
+                treeGrid.addColumn(ProjectTask::getWbs).setHeader(projectTaskPropertyNames.getHeaderWbs()).setResizable(true).setWidth("5em");
                 continue;
             }
             var colProp = columnCustomizations.get(name);
@@ -197,7 +224,7 @@ public class ProjectTreeView extends VerticalLayout {
         Button addProjectTask = new Button("Add");
         addProjectTask.addClickListener(click -> addProjectTask());
 
-        Button updateTreeData = new Button("Update");
+//        Button updateTreeData = new Button("Update");
         updateTreeData.addClickListener(click -> updateTreeGrid());
         updateTreeData.addClickShortcut(Key.F5);
 
@@ -270,11 +297,14 @@ public class ProjectTreeView extends VerticalLayout {
             isGanttDisplayed = true;
             displayGantt.addThemeVariants(ButtonVariant.LUMO_ERROR);
             treeGridContainer.removeAll();
-            var splitLayout = new SplitLayout(treeGrid, ganttChart);
+            var splitLayout = new SplitLayout(treeGrid, new HorizontalLayout(ganttChart));
+            splitLayout.setSizeFull();
             splitLayout.addThemeVariants(SplitLayoutVariant.LUMO_MINIMAL);
             treeGridContainer.add(splitLayout);
-            dataProvider.setFormTempTree(true);
-            dataProvider.refreshAll();
+//            treeGridContainer.add(treeGrid, ganttChart);
+//            dataProvider.setFormTempTree(true);
+//            updateTreeData.click();
+            fillGantt();
         }
 
     }

@@ -44,7 +44,7 @@ public class CalendarSelectionForm extends Dialog {
         //grid.setSizeFull();
         setDraggable(true);
         setResizable(true);
-        addClassName("calendar-selection-form");
+        addClassName("dialog-padding-1");
         addThemeVariants(DialogVariant.LUMO_NO_PADDING);
 
         selectionButton.addClickListener(event -> {

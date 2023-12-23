@@ -69,8 +69,9 @@
     "@vaadin/virtual-list": "24.2.4",
     "construct-style-sheets-polyfill": "3.1.0",
     "date-fns": "2.29.3",
-    "gantt": "3.1.1",
-    "lit": "2.8.0"
+    "lit": "2.8.0",
+    "tltv-gantt-element": "1.0.27",
+    "tltv-timeline-element": "1.0.20"
   },
   "devDependencies": {
     "@rollup/plugin-replace": "5.0.2",
@@ -158,8 +159,9 @@
       "@vaadin/virtual-list": "24.2.4",
       "construct-style-sheets-polyfill": "3.1.0",
       "date-fns": "2.29.3",
-      "gantt": "3.1.1",
-      "lit": "2.8.0"
+      "lit": "2.8.0",
+      "tltv-gantt-element": "1.0.27",
+      "tltv-timeline-element": "1.0.20"
     },
     "devDependencies": {
       "@rollup/plugin-replace": "5.0.2",
@@ -178,7 +180,7 @@
       "workbox-core": "7.0.0",
       "workbox-precaching": "7.0.0"
     },
-    "hash": "91893100dc9688b94f6b16c8e1b38547b2e12bdf592022d57d7f9fd0e41f8d34"
+    "hash": "7732423118bc4bd1666dbb45151543b15c9d3e4b98c668909dd09f96bdfc71f6"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -249,6 +251,7 @@
     "@vaadin/overlay": "$@vaadin/overlay",
     "@vaadin/side-nav": "$@vaadin/side-nav",
     "@polymer/iron-a11y-keys-behavior": "$@polymer/iron-a11y-keys-behavior",
-    "gantt": "$gantt"
+    "tltv-timeline-element": "$tltv-timeline-element",
+    "tltv-gantt-element": "$tltv-gantt-element"
   }
 }
