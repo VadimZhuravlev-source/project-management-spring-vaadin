@@ -5,8 +5,15 @@ vaadin-dialog-overlay.dialog-padding-1::part(header) {
   /*border: 1px solid black;*/
 }
 
-/*
+
 vaadin-grid.tree-gantt::part(header-cell) {
-    height: 50px;
+    height: 44px;
 }
-*/
+
+vaadin-grid.tree-gantt {
+    overflow-y: hidden;
+}
+
+vaadin-grid.tree-gantt::part(body-cell) {
+    height: 29px;
+}

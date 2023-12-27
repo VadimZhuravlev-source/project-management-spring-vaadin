@@ -22,10 +22,12 @@ import com.vaadin.flow.component.grid.dnd.GridDragStartEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayoutVariant;
@@ -63,7 +65,7 @@ public class ProjectTreeView extends VerticalLayout {
     private final ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
     private boolean isGanttDisplayed;
     private final Button displayGantt = new Button("Gantt chart display");
-    private final Gantt ganttChart = new Gantt();
+    private Gantt ganttChart = new Gantt();
     private final HorizontalLayout treeGridContainer = new HorizontalLayout();
     private final Button updateTreeData = new Button("Update");
 
@@ -83,7 +85,6 @@ public class ProjectTreeView extends VerticalLayout {
         treeGridContainer.setSizeFull();
         add(toolBar, treeGridContainer);
 
-        ganttChart.setHeightFull();
         updateTreeGrid();
 
     }
@@ -96,16 +97,18 @@ public class ProjectTreeView extends VerticalLayout {
     }
 
     private void fillGantt() {
-        ganttChart.removeSteps(ganttChart.getSteps());
+        ganttChart = new Gantt();
+        ganttChart.setHeightFull();
         var tempTree = dataProvider.getTempTree();
         var rootTasks = tempTree.get(null);
         if (rootTasks == null || rootTasks.isEmpty()) return;
         fillGanttRecursively(rootTasks, tempTree);
+
         ganttChart.setResolution(Resolution.Day);
         var minStart = ganttChart.getSteps().map(Step::getStartDate).min(Comparator.naturalOrder());
-        var maxStart = ganttChart.getSteps().map(Step::getStartDate).max(Comparator.naturalOrder());
-        ganttChart.setStartDate(minStart.get().toLocalDate());
-        ganttChart.setEndDate(maxStart.get().toLocalDate());
+        var maxStart = ganttChart.getSteps().map(Step::getEndDate).max(Comparator.naturalOrder());
+        ganttChart.setStartDate(minStart.get().toLocalDate().minusDays(1));
+        ganttChart.setEndDate(maxStart.get().toLocalDate().plusDays(1));
         ganttChart.setTimeZone(TimeZone.getDefault());
     }
     
@@ -158,6 +161,7 @@ public class ProjectTreeView extends VerticalLayout {
 
         treeGrid.addItemClickListener(this::onMouseClick);
         treeGrid.addItemDoubleClickListener(this::onMouseDoubleClick);
+        treeGrid.setId("treeGrid");
 
         customizeColumns();
 
@@ -297,14 +301,19 @@ public class ProjectTreeView extends VerticalLayout {
             isGanttDisplayed = true;
             displayGantt.addThemeVariants(ButtonVariant.LUMO_ERROR);
             treeGridContainer.removeAll();
+            fillGantt();
+
             var splitLayout = new SplitLayout(treeGrid, new HorizontalLayout(ganttChart));
             splitLayout.setSizeFull();
             splitLayout.addThemeVariants(SplitLayoutVariant.LUMO_MINIMAL);
+
+            ganttChart.getElement().executeJs("this.registerScrollElement($0.$.table)", treeGrid);
             treeGridContainer.add(splitLayout);
+            treeGrid.getStyle().set("overflow-y", "hidden");
 //            treeGridContainer.add(treeGrid, ganttChart);
 //            dataProvider.setFormTempTree(true);
 //            updateTreeData.click();
-            fillGantt();
+//            fillGantt();
         }
 
     }
