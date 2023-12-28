@@ -12,6 +12,9 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.PersistenceUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,6 +26,8 @@ public class LinkServiceImpl implements LinkService {
     private LinkRepository linkRepository;
     private ProjectTaskService projectTaskService;
     private DependenciesService dependenciesService;
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Autowired
     public void setLinkRepository(LinkRepository linkRepository) {
@@ -120,6 +125,39 @@ public class LinkServiceImpl implements LinkService {
         List<Link> links = getLinks(projectTask);
         fillRepresentation(links);
         return links;
+    }
+
+    @Override
+    public Map<Object, List<Object>> getPredecessorsIds(List<?> ids) {
+
+        var queryText = """
+                SELECT\s
+                	project_task,\s
+                	linked_project_task
+                FROM
+                	links
+                WHERE
+                	links.project_task IN(:ids) --= ANY('{2,3,4,5,6}')
+                	AND links.linked_project_task IN(:ids) --= ANY('{2,3,4,5,6}')
+                """;
+
+        var query = entityManager.createNativeQuery(queryText);
+        query.setParameter("ids", ids);
+
+        var result = (List<Object[]>) query.getResultList();
+
+        var map = new HashMap<Object, List<Object>>();
+
+        result.forEach(o -> {
+            var projectTaskId = o[0];
+            var linkedPTId = o[1];
+            var linkedTasks = map.getOrDefault(projectTaskId, new ArrayList<>());
+            linkedTasks.add(linkedPTId);
+            map.put(projectTaskId, linkedTasks);
+        });
+
+        return map;
+
     }
 
     private void fillRepresentation(List<? extends Link> links) {

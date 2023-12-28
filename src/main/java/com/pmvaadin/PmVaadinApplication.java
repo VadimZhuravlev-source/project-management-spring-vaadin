@@ -11,7 +11,7 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
 
 @SpringBootApplication
 @PWA(name = "PM with Spring+Vaadin", shortName = "PM")
-@Theme(value = "myapp", variant = Lumo.DARK)
+@Theme(value = "myapp")
 public class PmVaadinApplication extends SpringBootServletInitializer implements AppShellConfigurator {
 
 	public static void main(String[] args) {
