@@ -5,7 +5,7 @@ import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -26,21 +26,21 @@ public class HierarchyServiceImpl implements HierarchyService {
     public List<ProjectTask> getElementsChildrenInDepth(List<? extends ProjectTask> projectTasks) {
 
         if (projectTasks.size() == 0) return new ArrayList<>();
-        List<?> projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
+        var projectTaskIds = projectTasks.stream().map(ProjectTask::getId).toList();
 
         var isNullElement = projectTaskIds.stream().anyMatch(Objects::isNull);
         if (isNullElement) throw new IllegalArgumentException();
 
-        String parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
+        var parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
         parameterValue = "'" + parameterValue + "'";
 
-        String queryText = getQueryTextForChildrenInDepth();
+        var queryText = getQueryTextForChildrenInDepth();
         queryText = queryText.replace(":ids", parameterValue);
 
         List<ProjectTask> projectTasksList;
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        var entityManager = entityManagerFactory.createEntityManager();
         try {
-            Query query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class);
+            var query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class);
             projectTasksList = (List<ProjectTask>) query.getResultList();
 
         }finally {
@@ -59,16 +59,16 @@ public class HierarchyServiceImpl implements HierarchyService {
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
         if (isNullElement) throw new IllegalArgumentException();
 
-        String parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
+        var parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
         parameterValue = "'" + parameterValue + "'";
 
-        String queryText = getQueryTextForParentsInDepth();
+        var queryText = getQueryTextForParentsInDepth();
         queryText = queryText.replace(":ids", parameterValue);
 
         List<ProjectTask> projectTasks;
-        EntityManager entityManager = entityManagerFactory.createEntityManager();
+        var entityManager = entityManagerFactory.createEntityManager();
         try {
-            Query query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class);
+            var query = entityManager.createNativeQuery(queryText,  ProjectTaskImpl.class);
             projectTasks = (List<ProjectTask>) query.getResultList();
 
         }finally {
@@ -82,7 +82,7 @@ public class HierarchyServiceImpl implements HierarchyService {
     @Override
     public List<ProjectTask> getParentsOfParent(ProjectTask projectTask) {
 
-        List<Object> ids = new ArrayList<>(1);
+        var ids = new ArrayList<>(1);
         ids.add(projectTask.getId());
         return getParentsOfParent(ids);
 

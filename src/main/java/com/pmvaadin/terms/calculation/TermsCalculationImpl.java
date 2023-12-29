@@ -90,7 +90,8 @@ public class TermsCalculationImpl implements TermsCalculation {
             }
 
             if (parentTreeItem == null)
-                throw new StandardError("The passed list of project tasks does not include tasks that have matching IDs.");
+                continue;
+//                throw new StandardError("The passed list of project tasks does not include tasks that have matching IDs.");
 
             treeItem.setParent(parentTreeItem);
             parentTreeItem.getChildren().add(treeItem);
@@ -166,12 +167,9 @@ public class TermsCalculationImpl implements TermsCalculation {
         fillFinish(currentTask);
 
         // It is a condition that this task is the last one in the chain of dependencies.
-        if (treeItem.getChildren().isEmpty() && treeItem.links.isEmpty()) {
-            treeItem.isCalculated = true;
-            return;
-        }
-
-        if (currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY)) {
+        var notProceedCalculation = treeItem.getChildren().isEmpty() && treeItem.links.isEmpty()
+                || currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY);
+        if (notProceedCalculation) {
             treeItem.isCalculated = true;
             return;
         }
@@ -179,7 +177,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         //LocalDateTime nullTime = getNullDateTime();
         LocalDateTime minStartDate = LocalDateTime.MAX;
         LocalDateTime maxFinishDate = LocalDateTime.MIN;
-        boolean isChildren = currentTask.getChildrenCount() != 0;
+        boolean isChildren = currentTask.getAmountOfChildren() != 0;
         boolean isSumTask = !treeItem.getChildren().isEmpty() || isChildren;
         for (SimpleLinkedTreeItem item: treeItem.getChildren()) {
             // a method below are also called in the method calculateStartDateFromLinks
@@ -199,7 +197,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         if (!treeItem.getChildren().isEmpty() &&
                 minStartDate != LocalDateTime.MAX && maxFinishDate != LocalDateTime.MIN
                 && (!minStartDate.equals(currentTask.getStartDate()) || !maxFinishDate.equals(currentTask.getFinishDate()))) {
-            if (currentTask.getParentId() == null || currentTask.isProject()) {
+            if (currentTask.isProject()) {
                 projectsForRecalculation.add(currentTask);
             }
             currentTask.setStartDate(minStartDate);
@@ -271,7 +269,7 @@ public class TermsCalculationImpl implements TermsCalculation {
         }
 
         if (currentTask.getScheduleMode().equals(ScheduleMode.MANUALLY)) return;
-        if (currentTask.getChildrenCount() != 0) return;
+        if (currentTask.getAmountOfChildren() != 0) return;
         if (currentTask.getStartDate().equals(newDate)) return;
 
         currentTask.setStartDate(newDate);

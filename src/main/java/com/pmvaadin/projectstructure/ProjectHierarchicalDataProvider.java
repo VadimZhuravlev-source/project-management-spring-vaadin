@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchicalDataProvider<ProjectTask, Void> {
 
-    private final TreeHierarchyChangeService hierarchyService;
+    protected final TreeHierarchyChangeService hierarchyService;
 
 //    private int cacheChildrenCountUpperLevel;
 //    private boolean receiveRootChildrenCount;
@@ -41,7 +41,7 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     @Override
     public boolean hasChildren(ProjectTask item) {
 
-        return item.getChildrenCount() != 0;
+        return item.getAmountOfChildren() != 0;
 
 //        if (isRefresh) return item.getChildrenCount() != 0;
 //

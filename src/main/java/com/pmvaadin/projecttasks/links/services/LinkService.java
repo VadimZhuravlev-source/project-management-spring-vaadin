@@ -5,6 +5,7 @@ import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 
 import java.util.List;
+import java.util.Map;
 
 public interface LinkService {
 
@@ -19,5 +20,7 @@ public interface LinkService {
     List<Link> getLinksWithProjectTaskRepresentation(ProjectTask projectTask);
 
     void fillLinksByChanges(ProjectTaskData projectTaskData);
+
+    Map<Object, List<Object>> getPredecessorsIds(List<?> ids);
 
 }

@@ -13,9 +13,9 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import jakarta.annotation.security.RolesAllowed;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.annotation.security.RolesAllowed;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 

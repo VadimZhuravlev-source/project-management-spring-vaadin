@@ -1,7 +1,14 @@
 @import url('./main-layout.css');
 
-/* there is a need for a check if next expression will be work for one element vaadin-dialog-overlay.project-task-form::part(header)*/
-vaadin-dialog-overlay::part(header) {
+vaadin-dialog-overlay.dialog-padding-1::part(header) {
   padding: 1px;
   /*border: 1px solid black;*/
+}
+
+vaadin-grid.tree-gantt::part(header-cell) {
+    height: 44px;
+}
+
+vaadin-grid.tree-gantt::part(body-cell) {
+    height: 29px;
 }

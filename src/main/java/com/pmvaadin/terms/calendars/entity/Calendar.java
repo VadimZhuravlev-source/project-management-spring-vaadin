@@ -1,16 +1,18 @@
 package com.pmvaadin.terms.calendars.entity;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.List;
 
-import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
+import com.pmvaadin.terms.calendars.exceptions.CalendarException;
+import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 
 public interface Calendar {
 
-    static long DAY_DURATION_SECONDS = 8 * 3600;
+    long DAY_DURATION_SECONDS = 8 * 3600;
+
+    int FULL_DAY_SECONDS = 24 * 3600;
 
     static String getHeaderName() {
         return "Name";
@@ -21,6 +23,7 @@ public interface Calendar {
     void setId(Integer id);
 
     Integer getVersion();
+    void setVersion(Integer version);
 
     String getName();
 
@@ -29,17 +32,6 @@ public interface Calendar {
     CalendarSettings getSetting();
 
     void setSetting(CalendarSettings calendarSettings);
-
-    List<DayOfWeekSettings> getDaysOfWeekSettings();
-
-    void setDaysOfWeekSettings(List<DayOfWeekSettings> daysOfWeekSettings);
-
-    List<ExceptionDays> getCalendarException();
-
-    void setCalendarException(List<ExceptionDays> exceptionDaysList);
-
-    LocalTime getStartTime();
-    void setStartTime(LocalTime time);
 
     Calendar getDefaultCalendar();
 
@@ -58,5 +50,25 @@ public interface Calendar {
     LocalDateTime getClosestWorkingDayWithoutInitiateCache(LocalDateTime date);
 
     LocalDateTime getEndOfWorkingDay(LocalDate day);
+
+    boolean isPredefined();
+    void setPredefined(boolean isPredefined);
+
+    DayOfWeek getEndOfWeek();
+    void setEndOfWeek(DayOfWeek dayOfWeek);
+
+    boolean isNew();
+
+    WorkingWeek getWorkingWeekInstance();
+    CalendarException getCalendarExceptionInstance();
+
+    List<CalendarException> getCalendarExceptions();
+    void setCalendarExceptions(List<CalendarException> calendarExceptions);
+
+    List<WorkingWeek> getWorkingWeeks();
+    void setWorkingWeeks(List<WorkingWeek> workingWeeks);
+
+    void fillWorkingWeekSort();
+    void fillExceptionSort();
 
 }

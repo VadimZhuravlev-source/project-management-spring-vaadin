@@ -8,10 +8,17 @@ import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.terms.calculation.TermsCalculationImpl;
 import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversion;
 import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversionWrapper;
+import com.pmvaadin.terms.calendars.validators.CalendarValidation;
+import com.pmvaadin.terms.calendars.validators.CalendarValidationImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.concurrent.Executor;
 
 @Configuration
+@EnableAsync
 public class AppConfiguration {
 
     @Bean
@@ -30,8 +37,24 @@ public class AppConfiguration {
     }
 
     @Bean
+    public CalendarValidation calendarValidation() {
+        return new CalendarValidationImpl();
+    }
+
+    @Bean
     public Link getLink() {
         return new LinkImpl();
+    }
+
+    @Bean
+    public Executor taskExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(4);
+        executor.setMaxPoolSize(4);
+        executor.setQueueCapacity(500);
+        executor.setThreadNamePrefix("Async-");
+        executor.initialize();
+        return executor;
     }
 
 }

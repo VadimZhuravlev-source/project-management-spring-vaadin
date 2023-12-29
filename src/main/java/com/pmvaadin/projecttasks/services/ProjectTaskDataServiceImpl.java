@@ -1,12 +1,15 @@
 package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.commonobjects.ChangedTableData;
+import com.pmvaadin.projectstructure.ProjectRecalculation;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.data.ProjectTaskDataImpl;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.terms.calculation.TermCalculationRespond;
+import com.pmvaadin.terms.calculation.TermCalculationRespondImpl;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.services.CalendarService;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
@@ -16,10 +19,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -32,6 +37,8 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     private TimeUnitService timeUnitService;
     private ProjectTaskRepository projectTaskRepository;
     private ApplicationContext applicationContext;
+    private SaveProjectDataTransactional saveProjectDataTransactional;
+    private ProjectRecalculation projectRecalculation;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -66,20 +73,25 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         this.applicationContext = applicationContext;
     }
 
+    @Autowired
+    public void setSaveProjectDataTransactional(SaveProjectDataTransactional saveProjectDataTransactional) {
+        this.saveProjectDataTransactional = saveProjectDataTransactional;
+    }
+
+    @Autowired
+    public void setProjectRecalculation(ProjectRecalculation projectRecalculation){
+        this.projectRecalculation = projectRecalculation;
+    }
+
     @Override
-    @Transactional
+    //@Transactional
     public ProjectTaskData save(ProjectTaskData projectTaskData) {
 
         // validation
-        boolean validationPass = projectTaskService.validate(projectTaskData.getProjectTask());
-        if (!validationPass) return projectTaskData;
-
-        fillLinksByChanges(projectTaskData);
-
-        validationPass = linkService.validate(projectTaskData);
-        if (!validationPass) return projectTaskData;
-
-        return saveData(projectTaskData);
+        var saveRespond = saveProjectDataTransactional.save(projectTaskData);
+        var returnedValue = getProjectTaskDateRespond(saveRespond.projectTaskData());
+        projectRecalculation.recalculate(saveRespond.respond().getRecalculatedProjects());
+        return returnedValue;
 
     }
 
@@ -163,7 +175,9 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         if (defaultStartDate == null) {
             LocalDateTime nowDate = LocalDateTime.now();
-            defaultStartDate = LocalDateTime.of(nowDate.toLocalDate(), calendar.getStartTime());
+            var date = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
+            defaultStartDate = calendar.getClosestWorkingDay(date);
+            //defaultStartDate = LocalDateTime.of(nowDate.toLocalDate(), calendar.getStartTime());
         }
 
         Integer timeUnitId = projectTask.getTimeUnitId();
@@ -176,46 +190,6 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         else timeUnit = timeUnitService.getPredefinedTimeUnit();
 
         return new AdditionalData(calendar, defaultStartDate, timeUnit);
-
-    }
-
-    private void fillLinksByChanges(ProjectTaskData projectTaskData) {
-
-        if (projectTaskData.getLinksChangedTableData() == null && projectTaskData.getLinks() != null) return;
-
-        linkService.fillLinksByChanges(projectTaskData);
-
-    }
-
-    private ProjectTaskData saveData(ProjectTaskData projectTaskData) {
-
-        ProjectTask projectTask = projectTaskData.getProjectTask();
-        boolean isNew = projectTask.isNew();
-        if (isNew) {
-            projectTask = projectTaskService.save(projectTask, false, false);
-            projectTaskData.setProjectTask(projectTask);
-        }
-
-        fillMainFields(projectTaskData);
-
-        saveChanges(projectTaskData, isNew);
-
-        projectTask = projectTaskRepository.save(projectTask);
-        //projectTask = projectTaskService.save(projectTask, false, true);
-        projectTaskData.setProjectTask(projectTask);
-        calculateTerms(projectTaskData);
-
-        return getProjectTaskDateRespond(projectTaskData);
-
-    }
-
-    private ProjectTaskData getProjectTaskDateRespond(ProjectTaskData projectTaskData) {
-
-        ProjectTask projectTask = projectTaskData.getProjectTask();
-        List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
-        //projectTaskService.fillParent(projectTask);
-
-        return getProjectTaskData(projectTask, links);
 
     }
 
@@ -232,6 +206,95 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         fillAdditionalData(projectTaskData);
 
         return projectTaskData;
+
+    }
+
+    private ProjectTaskData getProjectTaskDateRespond(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
+        //projectTaskService.fillParent(projectTask);
+
+        return getProjectTaskData(projectTask, links);
+
+    }
+
+    private record AdditionalData(Calendar calendar, LocalDateTime defaultStartDate, TimeUnit timeUnit) {}
+
+}
+
+record SaveTransactionalRespond(ProjectTaskData projectTaskData, TermCalculationRespond respond) {}
+
+@Service
+class SaveProjectDataTransactional {
+
+    private ProjectTaskService projectTaskService;
+    private LinkService linkService;
+    private ProjectTaskRepository projectTaskRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    @Autowired
+    void setProjectTaskService(ProjectTaskService projectTaskService) {
+        this.projectTaskService = projectTaskService;
+    }
+
+    @Autowired
+    void setLinkService(LinkService linkService) {
+        this.linkService = linkService;
+    }
+
+    @Autowired
+    void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository) {
+        this.projectTaskRepository = projectTaskRepository;
+    }
+
+    @Transactional
+    public SaveTransactionalRespond save(ProjectTaskData projectTaskData) {
+
+        var emptyRespond = new SaveTransactionalRespond(projectTaskData,
+                TermCalculationRespondImpl.getEmptyInstance());
+
+        boolean validationPass = projectTaskService.validate(projectTaskData.getProjectTask());
+        if (!validationPass) return emptyRespond;
+
+        fillLinksByChanges(projectTaskData);
+
+        validationPass = linkService.validate(projectTaskData);
+        if (!validationPass) return emptyRespond;
+
+        return saveData(projectTaskData);
+
+    }
+
+    private void fillLinksByChanges(ProjectTaskData projectTaskData) {
+
+        if (projectTaskData.getLinksChangedTableData() == null || projectTaskData.getLinks() != null) return;
+
+        linkService.fillLinksByChanges(projectTaskData);
+
+    }
+
+    private SaveTransactionalRespond saveData(ProjectTaskData projectTaskData) {
+
+        ProjectTask projectTask = projectTaskData.getProjectTask();
+        boolean isNew = projectTask.isNew();
+        if (isNew) {
+            projectTask = projectTaskService.save(projectTask, true, false);
+            projectTaskData.setProjectTask(projectTask);
+        }
+
+        fillMainFields(projectTaskData);
+
+        saveChanges(projectTaskData, isNew);
+
+        projectTask = projectTaskRepository.save(projectTask);
+
+        projectTaskData.setProjectTask(projectTask);
+        var respond = calculateTerms(projectTaskData);
+
+        return new SaveTransactionalRespond(projectTaskData, respond);
 
     }
 
@@ -295,19 +358,19 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
     }
 
-    private void calculateTerms(ProjectTaskData projectTaskData) {
+    private TermCalculationRespond calculateTerms(ProjectTaskData projectTaskData) {
 
         Set<Object> ids = new HashSet<>(1);
         ids.add(projectTaskData.getProjectTask().getId());
-        List<ProjectTask> changedTasks = projectTaskService.recalculateTerms(this.entityManager, ids);
+        var respond = projectTaskService.recalculateTerms(this.entityManager, ids);
         ProjectTask projectTask = projectTaskData.getProjectTask();
-        for (ProjectTask changedTask: changedTasks) {
+        for (ProjectTask changedTask: respond.getChangedTasks()) {
             if (changedTask.equals(projectTask)) {
                 projectTaskData.setProjectTask(changedTask);
                 break;
             }
         }
-
+        return respond;
     }
 
     private void renewLinksCheckSum(ProjectTaskData projectTaskData) {
@@ -324,14 +387,18 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         var links= projectTaskData.getLinks();
         var projectTask = projectTaskData.getProjectTask();
+        if (projectTask.getCalendarId() == null) projectTask.setCalendarId(projectTaskData.getCalendar().getId());
+        if (projectTask.getTimeUnitId() == null) projectTask.setTimeUnitId(projectTaskData.getTimeUnit().getId());
 
         if (links.size() == 0) return;
 
-        int maxSort = links.stream().map(Link::getSort).filter(Objects::nonNull).max(Integer::compare).orElse(0);
+        //int maxSort = links.stream().map(Link::getSort).filter(Objects::nonNull).max(Integer::compare).orElse(0);
 
+        int sort = 0;
         for (Link link:links) {
             if (link.getProjectTaskId() == null) link.setProjectTaskId(projectTask.getId());
-            if (Objects.isNull(link.getSort())) link.setSort(++maxSort);
+            //if (Objects.isNull(link.getSort())) link.setSort(++maxSort);
+            link.setSort(++sort);
         }
 
     }
@@ -369,7 +436,5 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
                 && Objects.equals(link.getSort(), equaledLink.getSort()));
 
     }
-
-    private record AdditionalData(Calendar calendar, LocalDateTime defaultStartDate, TimeUnit timeUnit) {}
 
 }

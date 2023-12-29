@@ -85,8 +85,8 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
         return getName() + " 'wbs:' " + getWbs();
     }
 
-    int getChildrenCount();
-    void setChildrenCount(int childrenCount);
+    int getAmountOfChildren();
+    void setAmountOfChildren(int amountOfChildren);
 
     ProjectTask getParent();
     void setParent(ProjectTask parent);
@@ -96,5 +96,11 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     BigDecimal getDurationRepresentation();
     void setDurationRepresentation(BigDecimal durationRepresentation);
+
+    String getTimeUnitRepresentation();
+    void setTimeUnitRepresentation(String timeUnitRepresentation);
+
+    String getLinkRepresentation();
+    void setLinkRepresentation(String linkRepresentation);
 
 }

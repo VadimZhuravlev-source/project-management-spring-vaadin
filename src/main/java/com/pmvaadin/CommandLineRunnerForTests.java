@@ -1,7 +1,7 @@
 package com.pmvaadin;
 
-import com.pmvaadin.terms.calculation.LinkedProjectTaskDTO;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.terms.calculation.LinkedProjectTaskDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -23,10 +23,13 @@ public class CommandLineRunnerForTests implements CommandLineRunner {
     public void run(String...args) throws Exception {
         //Optional<ProjectTask> projectTask = projectTaskRepository.findById(3);
 //        ArrayList<Integer> ids = new ArrayList<>(2);
+//        ids.add(1);
 //        ids.add(2);
-//        ids.add(10000);
+//        ids.add(3);
+//
 //        List<LinkedProjectTaskDTO> linkedProjectTasks = projectTaskRepository.findAllByIdIn(ids, LinkedProjectTaskDTO.class);
-//        linkedProjectTasks = null;
+        //List<BaseProjectItem> list = linkedProjectTasks.stream().map(b -> (BaseProjectItem) b).toList();
+        //        linkedProjectTasks = null;
     }
 
 }

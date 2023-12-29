@@ -74,14 +74,6 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     }
 
-    public boolean isEditing() {
-        return editor.isOpen();
-    }
-
-    public void endEditing() {
-        editor.closeEditor();
-    }
-
     private void customizeLinks() {
 
         setDeletable(true);
@@ -227,16 +219,6 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
         return true;
 
-    }
-
-    private static void addCloseHandler(Component textField,
-                                        Editor<? extends Link> editor) {
-        textField.getElement().addEventListener("keydown", e -> editor.cancel())
-                .setFilter("event.code === 'Escape'");
-        textField.getElement().addEventListener("keydown", e -> {
-            editor.save();
-            editor.closeEditor();
-        }).setFilter("event.code === 'Enter'");
     }
 
     private String getTextErrorDuplicatedTasks() {

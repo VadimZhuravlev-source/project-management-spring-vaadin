@@ -9,6 +9,8 @@ public interface TreeHierarchyChangeService {
     FetchedData getFetchedData(ProjectTask projectTask);
     int getChildrenCount(ProjectTask projectTask);
 
+    List<ProjectTask> getChildren(ProjectTask projectTask, List<String> chosenColumns);
+
     interface FetchedData {
 
         int getChildrenCountOfUpperLevel();

@@ -7,6 +7,8 @@ public interface HierarchyElement<T> {
     Integer getVersion();
     T getParentId();
     void setParentId(T parentId);
+    void setUniqueValueIfParentIdNull();
+    void revertParentIdNull();
     T getNullId();
 
 }

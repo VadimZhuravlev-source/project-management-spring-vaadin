@@ -1,8 +1,13 @@
 package com.pmvaadin.terms.calendars.entity;
 
-import javax.persistence.AttributeConverter;
+import org.springframework.stereotype.Component;
+
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
 import java.util.stream.Stream;
 
+@Component
+@Converter(autoApply = true)
 public class CalendarSettingsConverter implements AttributeConverter<CalendarSettings, Integer> {
 
     @Override

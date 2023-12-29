@@ -70,7 +70,7 @@ public class ProjectSelectionForm extends Dialog {
         treeGrid.setSizeFull();
         setDraggable(true);
         setResizable(true);
-        addClassName("project-tasks-selection-form");
+        addClassName("dialog-padding-1");
         addThemeVariants(DialogVariant.LUMO_NO_PADDING);
 
         selectionAction.addClickListener(event -> {

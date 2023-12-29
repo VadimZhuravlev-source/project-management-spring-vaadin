@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.views;
 
 import com.pmvaadin.projecttasks.commonobjects.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.entity.ScheduleMode;
+import com.pmvaadin.projectview.ProjectTaskPropertyNames;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.view.CalendarSelectionForm;
@@ -15,6 +16,7 @@ import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.ComboBoxVariant;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -54,12 +56,14 @@ public class ProjectTaskForm extends Dialog {
     private final CalendarSelectionForm calendarSelectionForm;
     private final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 
-    private final TextField id = new TextField(ProjectTask.getHeaderId());
-    private final TextField version = new TextField(ProjectTask.getHeaderVersion());
-    private final TextField dateOfCreation = new TextField(ProjectTask.getHeaderDateOfCreation());
-    private final TextField updateDate = new TextField(ProjectTask.getHeaderUpdateDate());
+    private final TextField id = new TextField();
+    private final TextField version = new TextField();
+    private final TextField dateOfCreation = new TextField();
+    private final TextField updateDate = new TextField();
     private final TextField name = new TextField();
     private final TextField wbs = new TextField();
+
+    private final Checkbox checkbox = new Checkbox();
 
     // Term fields
     private final SelectableTextField<Calendar> calendarField = new SelectableTextField<>();
@@ -80,6 +84,8 @@ public class ProjectTaskForm extends Dialog {
 
     // this need to stretch a grid in a tab
     private final VerticalLayout linksGridContainer = new VerticalLayout();
+    private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
+
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
                            CalendarSelectionForm calendarSelectionForm, TimeUnitService timeUnitService) {
@@ -88,6 +94,8 @@ public class ProjectTaskForm extends Dialog {
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
         this.timeUnitService = timeUnitService;
+
+        addClassName("dialog-padding-1");
 
         customizeForm();
         customizeHeader();
@@ -161,15 +169,16 @@ public class ProjectTaskForm extends Dialog {
     private void customizeMainDataLayout() {
 
         FormLayout formLayout = new FormLayout();
-        formLayout.addFormItem(name, ProjectTask.getHeaderName());
-        formLayout.addFormItem(wbs, ProjectTask.getHeaderWbs());
+        formLayout.addFormItem(name, propertyNames.getHeaderName());
+        formLayout.addFormItem(wbs, propertyNames.getHeaderWbs());
+        formLayout.addFormItem(checkbox, propertyNames.getHeaderIsProject());
         FormLayout termsLayout = new FormLayout();
-        termsLayout.addFormItem(startDate, ProjectTask.getHeaderStartDate());
-        termsLayout.addFormItem(finishDate, ProjectTask.getHeaderFinishDate());
-        termsLayout.addFormItem(scheduleMode, ProjectTask.getHeaderScheduleMode());
-        termsLayout.addFormItem(calendarField, ProjectTask.getHeaderCalendar());
-        termsLayout.addFormItem(durationRepresentation, ProjectTask.getHeaderDurationRepresentation());
-        termsLayout.addFormItem(timeUnitComboBox, ProjectTask.getHeaderTimeUnit());
+        termsLayout.addFormItem(startDate, propertyNames.getHeaderStartDate());
+        termsLayout.addFormItem(finishDate, propertyNames.getHeaderFinishDate());
+        termsLayout.addFormItem(scheduleMode, propertyNames.getHeaderScheduleMode());
+        termsLayout.addFormItem(calendarField, propertyNames.getHeaderCalendar());
+        termsLayout.addFormItem(durationRepresentation, propertyNames.getHeaderDurationRepresentation());
+        termsLayout.addFormItem(timeUnitComboBox, propertyNames.getHeaderTimeUnit());
 
         VerticalLayout verticalLayout = new VerticalLayout(formLayout, termsLayout);
         tabSheet.add(mainDataTab, verticalLayout);
@@ -178,20 +187,23 @@ public class ProjectTaskForm extends Dialog {
 
     private void customizeFields() {
 
-        wbs.setEnabled(false);
-        dateOfCreation.setEnabled(false);
-        updateDate.setEnabled(false);
-        name.setAutofocus(true);
-        calendarField.setSelectable(true);
-        calendarField.addSelectionListener(event -> calendarSelectionForm.open());
-        calendarField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        calendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
-        dateOfCreation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        updateDate.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        version.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         id.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        version.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        wbs.setEnabled(false);
         wbs.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        dateOfCreation.setEnabled(false);
+        dateOfCreation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        updateDate.setEnabled(false);
+        updateDate.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        name.setAutofocus(true);
+        name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+        calendarField.setSelectable(true);
+        calendarField.addSelectionListener(event -> {
+            var currentInstanceOfCalendarSelectionForm = calendarSelectionForm.newInstance();
+            currentInstanceOfCalendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
+            currentInstanceOfCalendarSelectionForm.open();
+        });
+        calendarField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         startDate.addValueChangeListener(this::startDateChangeListener);
         finishDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
@@ -207,6 +219,11 @@ public class ProjectTaskForm extends Dialog {
         timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
         timeUnitComboBox.addValueChangeListener(this::TimeUnitChangeListener);
 
+        id.setLabel(propertyNames.getHeaderId());
+        version.setLabel(propertyNames.getHeaderVersion());
+        dateOfCreation.setLabel(propertyNames.getHeaderDateOfCreation());
+        updateDate.setLabel(propertyNames.getHeaderUpdateDate());
+
     }
 
     private void startDateChangeListener(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> component) {
@@ -221,7 +238,7 @@ public class ProjectTaskForm extends Dialog {
         if (projectTaskData.getProjectStartDate().toLocalDate().equals(selectedDate))
             newStartDate = projectTaskData.getProjectStartDate();
         else
-            newStartDate = calendar.getClosestWorkingDay(LocalDateTime.of(selectedDate, calendar.getStartTime()));
+            newStartDate = calendar.getClosestWorkingDay(LocalDateTime.of(selectedDate, LocalTime.MIN));
         if (!newStartDate.toLocalDate().equals(selectedDate)) startDate.setValue(newStartDate.toLocalDate());
 
         projectTaskData.getProjectTask().setStartDate(newStartDate);
@@ -241,10 +258,10 @@ public class ProjectTaskForm extends Dialog {
 
         Calendar calendar = calendarField.getValue();
         LocalDateTime newFinishDate = calendar.getEndOfWorkingDay(selectedDate);
-        if (newFinishDate.toLocalTime().equals(calendar.getStartTime())) {
-            newFinishDate = calendar.getClosestWorkingDay(newFinishDate);
-            newFinishDate = calendar.getEndOfWorkingDay(newFinishDate.toLocalDate());
-        }
+//        if (newFinishDate.toLocalTime().equals(calendar.getStartTime())) {
+//        newFinishDate = calendar.getClosestWorkingDay(newFinishDate);
+//        newFinishDate = calendar.getEndOfWorkingDay(newFinishDate);
+//        }
 
         if (newFinishDate.compareTo(projectTask.getStartDate()) <= 0) {
             String message = "The selected date can not be less than the start date of the task";
@@ -269,7 +286,7 @@ public class ProjectTaskForm extends Dialog {
         calendarField.setValue(selectedItem);
         calendarField.refreshTextValue();
         calendarField.setReadOnly(true);
-        //projectTaskData.getProjectTask().setCalendarId(selectedItem.getId());
+        projectTaskData.getProjectTask().setCalendarId(selectedItem.getId());
     }
 
     private void scheduleModeAddListener(AbstractField.ComponentValueChangeEvent<ComboBox<ScheduleMode>, ScheduleMode> component) {
@@ -423,6 +440,7 @@ public class ProjectTaskForm extends Dialog {
 
     private void readData(ProjectTaskData projectTaskData) {
 
+        this.projectTaskData = projectTaskData;
         linksGrid.setProjectTask(projectTaskData);
         refreshHeader();
         calendarField.setValue(projectTaskData.getCalendar());
@@ -537,6 +555,12 @@ public class ProjectTaskForm extends Dialog {
     }
 
     // Events
+
+    public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType,
+                                                                  ComponentEventListener<T> listener) {
+        return getEventBus().addListener(eventType, listener);
+    }
+
     public static abstract class ProjectTaskFormEvent extends ComponentEvent<ProjectTaskForm> {
         private ProjectTask projectTask;
 
@@ -560,11 +584,6 @@ public class ProjectTaskForm extends Dialog {
         CloseEvent(ProjectTaskForm source) {
             super(source, null);
         }
-    }
-
-    public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType,
-                                                                  ComponentEventListener<T> listener) {
-        return getEventBus().addListener(eventType, listener);
     }
 
 }

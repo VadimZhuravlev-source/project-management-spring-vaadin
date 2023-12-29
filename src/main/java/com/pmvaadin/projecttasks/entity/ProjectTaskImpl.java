@@ -1,15 +1,12 @@
 package com.pmvaadin.projecttasks.entity;
 
-import com.pmvaadin.terms.timeunit.entity.TimeUnit;
-import com.pmvaadin.terms.timeunit.entity.TimeUnitImpl;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.*;
 
-import javax.persistence.*;
-import javax.persistence.Entity;
-import javax.persistence.Table;
+import jakarta.persistence.*;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -99,7 +96,7 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     // The field is not intended to store data
     @Setter
     @Transient
-    private int childrenCount;
+    private int amountOfChildren;
 
     @Setter
     @Transient
@@ -112,6 +109,14 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Setter
     @Transient
     private BigDecimal durationRepresentation;
+
+    @Setter
+    @Transient
+    private String timeUnitRepresentation;
+
+    @Setter
+    @Transient
+    private String linkRepresentation;
 
 //    @ManyToOne
 //    @JoinColumn(name = "time_unit_id", nullable = false)
@@ -156,6 +161,20 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     public Integer getNullId() {
         return 0;
     }
+
+    @Override
+    public void setUniqueValueIfParentIdNull() {
+        if (this.parentId == null)
+            this.parentId = Integer.MIN_VALUE;
+    }
+
+    @Override
+    public void revertParentIdNull() {
+        if (this.parentId != null && this.parentId.equals(Integer.MIN_VALUE))
+            this.parentId = null;
+    }
+
+
 
 //    @PrePersist
 //    public void prePersist() {

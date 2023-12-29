@@ -1,281 +1,429 @@
 package com.pmvaadin.terms.calendars.view;
 
-import com.pmvaadin.terms.calendars.dayofweeksettings.DayOfWeekSettings;
+import com.pmvaadin.commonobjects.ObjectGrid;
+import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.entity.Calendar;
-import com.pmvaadin.terms.calendars.entity.CalendarImpl;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
-import com.pmvaadin.terms.calendars.exceptiondays.ExceptionDays;
-
-import com.vaadin.flow.component.ComponentEvent;
-import com.vaadin.flow.component.ComponentEventListener;
-import com.vaadin.flow.component.Key;
+import com.pmvaadin.terms.calendars.exceptions.CalendarException;
+import com.pmvaadin.terms.calendars.validators.CalendarValidation;
+import com.pmvaadin.terms.calendars.validators.CalendarValidationImpl;
+import com.pmvaadin.terms.calendars.workingweeks.views.WorkingWeekForm;
+import com.pmvaadin.terms.calendars.services.CalendarService;
+import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
+import com.pmvaadin.terms.calendars.exceptions.views.CalendarExceptionForm;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.editor.Editor;
+import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.textfield.BigDecimalField;
-import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.select.SelectVariant;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
-import org.springframework.transaction.annotation.Transactional;
+import com.vaadin.flow.spring.annotation.SpringComponent;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.TextStyle;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-@Transactional
-public class CalendarForm extends FormLayout {
+@SpringComponent
+public class CalendarForm extends Dialog {
+
     private Calendar calendar;
-    private List<ExceptionDays> exceptionDaysList;
-    private List<DayOfWeekSettings> workDaysList;
+    private final CalendarService calendarService;
+    private final CalendarValidation calendarValidation = new CalendarValidationImpl();
 
-    private DatePicker dateOfException = new DatePicker(ExceptionDays.getExceptionDaysName());
-    private IntegerField dayOfWeek = new IntegerField(DayOfWeekSettings.getWorkDaysName());
-    private BigDecimalField hourOfWork = new BigDecimalField(DayOfWeekSettings.getHourOfWorkName());
-    private TextField calendarName = new TextField(CalendarImpl.getHeaderName());
-    private ComboBox<CalendarSettings> calendarSetting = new ComboBox<CalendarSettings>(CalendarImpl.getSettingName());
-    private Grid<ExceptionDays> exceptionDaysGrid = new Grid<>(ExceptionDays.class, false);
-    private Grid<DayOfWeekSettings> workDaysGrid = new Grid<>(DayOfWeekSettings.class, false);
+    private final TextField name = new TextField();
+    private final ComboBox<CalendarSettings> setting = new ComboBox<>();
 
-    private Binder<Calendar> binder = new BeanValidationBinder<>(Calendar.class);
-    private Binder<ExceptionDays> binderExceptionDays = new BeanValidationBinder<>(ExceptionDays.class);
-    private Binder<DayOfWeekSettings> binderWorkDays = new BeanValidationBinder<>(DayOfWeekSettings.class);
+    private final Binder<Calendar> binder = new BeanValidationBinder<>(Calendar.class);
 
+    private final Button sync = new Button("Refresh", new Icon("lumo", "reload"));
 
-    private final Button save = new Button("Save");
-    private final Button delete = new Button("Delete");
-    private final Button addException = new Button("Add exception day");
-    private final Button deleteException = new Button("Delete exception day");
-    private final Button addDayOfWeek = new Button("Add day of week");
-    private final Button deleteDayOfWeek = new Button("Delete day of week");
-    private final Button fillDayOfWeek = new Button("Fill days of week");
+//    private final Map<DayOfWeek, NumberField> dayOfWeekMap = new LinkedHashMap<>(7);
 
-    public CalendarForm() {
-        if (calendar == null) calendar = new CalendarImpl();
-        exceptionDaysList = calendar.getCalendarException();
-        if (null == exceptionDaysList) exceptionDaysList = new ArrayList<>();
-        workDaysList = calendar.getDaysOfWeekSettings();
-        if (null == workDaysList) workDaysList = new ArrayList<>();
-        calendarSetting.setItems(CalendarSettings.values());
-        add(
-                calendarName,
-                calendarSetting,
-                createExceptionsTable(),
-                createExceptionButtonsLayout(),
-                createWorkDaysTable(),
-                createDayButtonsLayout(),
-                createButtonsLayout())
-        ;
-        calendarName.setAutofocus(true);
+    private final Select<DayOfWeek> endOfWeek = new Select<>();
+
+    // Working week
+    private final WorkingWeeks workingWeeks = new WorkingWeeks();
+
+    // Exceptions
+    private final Exceptions exceptions = new Exceptions();
+    private final Map<LocalDate, LocalDate> exceptionsMap = new HashMap<>();
+    // tabs
+    private final Tab exceptionsTab = new Tab("Exceptions");
+    private final Tab workWeeksTab = new Tab("Work Weeks");
+    private final TabSheet tabSheet = new TabSheet();
+    private final YearCalendar yearCalendar = new YearCalendar(this);
+
+    public CalendarForm(CalendarService calendarService) {
+
+        this.calendarService = calendarService;
+        //fillDayOfWeekMap();
+        customizeHeader();
+        customizeForm();
+        customizeDataLayout();
+        createButtons();
+        customizeBinder();
+        customizeElements();
+        addClassName("dialog-padding-1");
+
     }
 
-    private Grid<ExceptionDays> createExceptionsTable() {
-        Editor<ExceptionDays> editor = exceptionDaysGrid.getEditor();
-        Grid.Column<ExceptionDays> dateColumn = exceptionDaysGrid
-                .addColumn(ExceptionDays::getDate).setHeader("Date")
-                .setWidth("120px").setFlexGrow(0);
-        Grid.Column<ExceptionDays> editColumn = exceptionDaysGrid.addComponentColumn(day -> {
-            Button editButton = new Button("Edit");
-            editButton.addClickListener(e -> {
-                if (editor.isOpen())
-                    editor.cancel();
-                exceptionDaysGrid.getEditor().editItem(day);
-            });
-            return editButton;
-        }).setWidth("150px").setFlexGrow(0);
-        editor.setBinder(binderExceptionDays);
-        editor.setBuffered(true);
-
-        binderExceptionDays.forField(dateOfException).bind(ExceptionDays::getDate, ExceptionDays::setDate);
-        dateColumn.setEditorComponent(dateOfException);
-        Button saveButton = new Button("Save", e -> editor.save());
-        Button cancelButton = new Button(VaadinIcon.CLOSE.create(),
-                e -> editor.cancel());
-        cancelButton.addThemeVariants(ButtonVariant.LUMO_ICON,
-                ButtonVariant.LUMO_ERROR);
-        HorizontalLayout actions = new HorizontalLayout(saveButton,
-                cancelButton);
-        actions.setPadding(false);
-        editColumn.setEditorComponent(actions);
-        exceptionDaysGrid.setItems(exceptionDaysList);
-
-
-        return exceptionDaysGrid;
+    public CalendarForm newInstance() {
+        return new CalendarForm(calendarService);
     }
 
-    private Grid<DayOfWeekSettings> createWorkDaysTable() {
-        Editor<DayOfWeekSettings> editor = workDaysGrid.getEditor();
-        Grid.Column<DayOfWeekSettings> dayOfWeekColumn = workDaysGrid
-                .addColumn(DayOfWeekSettings::getDayOfWeek).setHeader("Day")
-                .setWidth("120px").setFlexGrow(0);
-        Grid.Column<DayOfWeekSettings> countHoursColumn = workDaysGrid
-                .addColumn(DayOfWeekSettings::getCountHours).setHeader("Hours")
-                .setWidth("120px").setFlexGrow(0);
-        Grid.Column<DayOfWeekSettings> editColumn = workDaysGrid.addComponentColumn(day -> {
-            Button editButton = new Button("Edit");
-            editButton.addClickListener(e -> {
-                if (editor.isOpen())
-                    editor.cancel();
-                workDaysGrid.getEditor().editItem(day);
-            });
-            return editButton;
-        }).setWidth("150px").setFlexGrow(0);
-        editor.setBinder(binderWorkDays);
-        editor.setBuffered(true);
+    public void read(Calendar calendar) {
 
-        binderWorkDays.forField(dayOfWeek).bind(DayOfWeekSettings::getDayOfWeek, DayOfWeekSettings::setDayOfWeek);
-        dayOfWeekColumn.setEditorComponent(dayOfWeek);
-       // binderWorkDays.forField(hourOfWork).bind(DayOfWeekSettings::getCountHours, DayOfWeekSettings::setCountHours);
-        countHoursColumn.setEditorComponent(hourOfWork);
-        Button saveButton = new Button("Save", e -> editor.save());
-        Button cancelButton = new Button(VaadinIcon.CLOSE.create(),
-                e -> editor.cancel());
-        cancelButton.addThemeVariants(ButtonVariant.LUMO_ICON,
-                ButtonVariant.LUMO_ERROR);
-        HorizontalLayout actions = new HorizontalLayout(saveButton,
-                cancelButton);
-        actions.setPadding(false);
-        editColumn.setEditorComponent(actions);
-        workDaysGrid.setItems(workDaysList);
+        this.calendar = calendar;
+        read();
 
-
-        return workDaysGrid;
     }
 
-    private HorizontalLayout createDayButtonsLayout() {
-        addDayOfWeek.addClickListener(e -> addDayOfWeek());
-        deleteDayOfWeek.addClickListener(e -> deleteDayOfWeek());
-        fillDayOfWeek.addClickListener(e -> fillDayOfWeek());
-        return new HorizontalLayout(addDayOfWeek, deleteDayOfWeek, fillDayOfWeek);
+    public Map<LocalDate, LocalDate> getExceptionsDate() {
+        return exceptionsMap;
     }
 
-    private HorizontalLayout createExceptionButtonsLayout() {
-        addException.addClickListener(e -> addExceptionDate());
-        deleteException.addClickListener(e -> deleteExceptionDate());
-        return new HorizontalLayout(addException, deleteException);
+    public Stream<WorkingWeek> getWorkingWeeks() {
+        return workingWeeks.getWorkingWeeksSteam();
     }
 
-    private HorizontalLayout createButtonsLayout() {
-        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        delete.addThemeVariants(ButtonVariant.LUMO_ERROR);
+    public List<DayOfWeek> getWeekends() {
+        var weekends = new ArrayList<DayOfWeek>();
+        if (setting.getValue() == CalendarSettings.STANDARD) {
+            weekends.add(DayOfWeek.SATURDAY);
+            weekends.add(DayOfWeek.SUNDAY);
+        } else if (setting.getValue() == CalendarSettings.NIGHT_SHIFT) {
+            weekends.add(DayOfWeek.SUNDAY);
+        }
+        return weekends;
+    }
 
-        save.addClickShortcut(Key.ENTER);
+    private void customizeElements() {
 
-        save.addClickListener(event -> validateAndSave());
-        delete.addClickListener(event -> fireEvent(new CalendarForm.DeleteEvent(this, calendar)));
+        endOfWeek.setItems(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
+        endOfWeek.addThemeVariants(SelectVariant.LUMO_SMALL);
+        endOfWeek.setRenderer(new ComponentRenderer<>(dayOfWeek -> new Text(dayOfWeek.getDisplayName(TextStyle.FULL, Locale.getDefault()))));
+        setting.addValueChangeListener(event -> yearCalendar.refreshAll());
 
+        tabSheet.setSizeFull();
+
+        this.setting.setItems(CalendarSettings.values());
+
+    }
+
+    private void customizeBinder() {
+
+        binder.bindInstanceFields(this);
+
+    }
+
+    private void read() {
+
+        binder.readBean(this.calendar);
+        refreshHeader();
+        workingWeeks.setWorkingWeeks(calendar.getWorkingWeeks());
+        exceptions.setInstantiatable(this::getCalendarExceptionInstance);
+        exceptions.setCalendarExceptions(this.calendar.getCalendarExceptions());
+        exceptionsMap.clear();
+        exceptions.getItems().forEach(e ->
+                e.getExceptionAsDayConstraint().forEach((k, v) -> exceptionsMap.put(k, k))
+        );
+        if (this.calendar.isNew()) sync.setEnabled(false);
+
+    }
+
+    private CalendarException getCalendarExceptionInstance() {
+        var instance = this.calendar.getCalendarExceptionInstance();
+        instance.setEndOfWeek(this.endOfWeek.getValue());
+        return instance;
+    }
+
+    private void customizeForm() {
+
+        setDraggable(true);
+        setResizable(true);
+        addClassName("calendar-form");
+        addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+        setModal(false);
+        setCloseOnEsc(false);
+        //this.addListener(Class<ProjectTaskForm>, )
+
+    }
+
+    private void customizeDataLayout() {
+
+        var mainLayout = new FormLayout();
+        mainLayout.addFormItem(name, "Name");
+        mainLayout.addFormItem(setting, "Setting");
+
+        var vertLayout = new VerticalLayout(endOfWeek, exceptions);
+
+        tabSheet.add(exceptionsTab, vertLayout);
+        tabSheet.add(workWeeksTab, workingWeeks);
+
+        var verticalLayout = new VerticalLayout(yearCalendar, mainLayout, tabSheet);
+        super.add(verticalLayout);
+
+    }
+
+    private void refreshHeader() {
+        var calendarName = calendar.getName();
+        if (calendarName == null) calendarName = "";
+        var title = Calendar.getHeaderName();
+        setHeaderTitle(title + ": " + calendarName);
+    }
+
+    private void customizeHeader() {
+
+        Button closeButton = new Button(new Icon("lumo", "cross"),
+                e -> fireEvent(new CloseEvent(this))
+        );
+        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        closeButton.addClickShortcut(Key.ESCAPE);
+
+        getHeader().add(closeButton);
+
+    }
+
+    private void createButtons() {
+
+        Button saveAndClose = new Button("Save and close");
+        saveAndClose.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        saveAndClose.addClickListener(event -> {
+
+            boolean validationDone = validateAndSave();
+            if (!validationDone) return;
+            fireEvent(new SaveEvent(this));
+
+        });
+        binder.addStatusChangeListener(e -> saveAndClose.setEnabled(binder.isValid()));
+
+        sync.addClickListener(event -> syncData());
+        sync.getStyle().set("margin-right", "auto");
+
+        Button close = new Button("Close");
+        close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+        close.addClickListener(event -> fireEvent(new CloseEvent(this)));
+
+        Button save = new Button("Save");
+        save.addClickListener(event -> {
+            validateAndSave();
+            read();
+        });
         binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
 
-        return new HorizontalLayout(save, delete);
+        getFooter().add(saveAndClose, save, sync, close);
+
     }
 
-    public void setCalendar(Calendar calendar) {
-        this.calendar = calendar;
-        calendarName.setValue(calendar.getId() == null ? "" : calendar.getName());
-        calendarSetting.setValue(calendar.getId() == null ? CalendarSettings.EIGHTHOURWORKINGDAY : calendar.getSetting());
-        exceptionDaysGrid.setItems(calendar.getId() == null ? new ArrayList<>() : calendar.getCalendarException());
-        workDaysGrid.setItems(calendar.getId() == null ? new ArrayList<>() : calendar.getDaysOfWeekSettings());
-        binder.readBean(calendar);
-        calendarName.focus();
-    }
-
-    private void addExceptionDate() {
-        ExceptionDays exceptionDay = new ExceptionDays();
-        exceptionDay.setCalendar((CalendarImpl) calendar);
-        exceptionDaysList.add(exceptionDay);
-        exceptionDaysGrid.setItems(exceptionDaysList);
-    }
-
-    private void deleteExceptionDate() {
-        ExceptionDays exceptionDay = (ExceptionDays) exceptionDaysGrid.getSelectionModel().getSelectedItems()
-                .stream().findFirst().orElseThrow();
-        exceptionDaysList.remove(exceptionDay);
-        exceptionDaysGrid.setItems(exceptionDaysList);
-    }
-
-    private void addDayOfWeek() {
-        DayOfWeekSettings dayOfWeek = new DayOfWeekSettings();
-        dayOfWeek.setCalendar((CalendarImpl) calendar);
-        workDaysList.add(dayOfWeek);
-        workDaysGrid.setItems(workDaysList);
-    }
-
-    private void deleteDayOfWeek() {
-        DayOfWeekSettings weekDay = (DayOfWeekSettings) workDaysGrid.getSelectionModel().getSelectedItems()
-                .stream().findFirst().orElseThrow();
-        workDaysList.remove(weekDay);
-        workDaysGrid.setItems(workDaysList);
-    }
-
-    private void fillDayOfWeek() {
-        CalendarSettings value = calendarSetting.getValue();
-        List<DayOfWeekSettings> daysOfWeekSettings = value.getDaysOfWeekSettings();
-        daysOfWeekSettings.forEach(e -> e.setCalendar((CalendarImpl) calendar));
-        workDaysList.addAll(daysOfWeekSettings);
-        workDaysGrid.setItems(workDaysList);
-    }
-
-    private void validateAndSave() {
+    private boolean validateAndSave() {
         try {
-            calendar.setName(calendarName.getValue());
-            calendar.setSetting(calendarSetting.getValue());
-            calendar.setCalendarException(exceptionDaysList);
-            calendar.setDaysOfWeekSettings(workDaysList);
-            binder.writeBean(calendar);
-            fireEvent(new CalendarForm.SaveEvent(this, calendar));
-        } catch (ValidationException e) {
-            e.printStackTrace();
-        }
-    }
-
-    // Events
-    public static abstract class CalendarFormEvent extends ComponentEvent<CalendarForm> {
-        private Calendar calendar;
-
-        protected CalendarFormEvent(CalendarForm source, Calendar calendar) {
-            super(source, false);
-            this.calendar = calendar;
+            binder.writeBean(this.calendar);
+            calendarValidation.validate(this.calendar);
+            //this.calendar.setCalendarException(exceptionDays.getItems());
+            this.calendar.setWorkingWeeks(workingWeeks.getWorkingWeeks());
+            this.calendar.setCalendarExceptions(exceptions.getCalendarExceptions());
+            this.calendar = calendarService.save(this.calendar);
+        } catch (Throwable e) {
+            NotificationDialogs.notifyValidationErrors(e.getMessage());
+            return false;
         }
 
-        public Calendar getCalendar() {
-            return calendar;
-        }
-    }
-
-    public static class EditEvent extends CalendarForm.CalendarFormEvent {
-        EditEvent(CalendarForm source, Calendar calendar) {
-            super(source, calendar);
-        }
-    }
-
-    public static class SaveEvent extends CalendarForm.CalendarFormEvent {
-        SaveEvent(CalendarForm source, Calendar calendar) {
-            super(source, calendar);
-        }
-    }
-
-    public static class DeleteEvent extends CalendarForm.CalendarFormEvent {
-        DeleteEvent(CalendarForm source, Calendar calendar) {
-            super(source, calendar);
-        }
+        return true;
 
     }
 
-    public static class CloseEvent extends CalendarForm.CalendarFormEvent {
-        CloseEvent(CalendarForm source) {
-            super(source, null);
-        }
+    private void syncData() {
+        if (this.calendar.isNew()) return;
+        this.calendar = calendarService.getCalendarById(this.calendar.getId());
+        read();
     }
 
     public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType,
                                                                   ComponentEventListener<T> listener) {
         return getEventBus().addListener(eventType, listener);
     }
+
+    public static abstract class CalendarFormEvent extends ComponentEvent<CalendarForm> {
+
+        protected CalendarFormEvent(CalendarForm source) {
+            super(source, false);
+        }
+
+    }
+
+    public static class CloseEvent extends CalendarFormEvent {
+        CloseEvent(CalendarForm source) {
+            super(source);
+        }
+    }
+
+    public static class SaveEvent extends CalendarFormEvent {
+        SaveEvent(CalendarForm source) {
+            super(source);
+        }
+    }
+
+    private class Exceptions extends ObjectGrid<CalendarException> {
+
+        Exceptions() {
+            this.addColumns();
+            this.customizeGrid();
+        }
+
+        public void setCalendarExceptions(List<CalendarException> exceptions) {
+            this.grid.setItems(exceptions);
+        }
+
+        public List<CalendarException> getCalendarExceptions() {
+            return this.grid.getListDataView().getItems().collect(Collectors.toList());
+        }
+
+        private void addColumns() {
+
+            this.grid.addColumn(CalendarException::getName).setHeader("Name");
+            this.grid.addColumn(CalendarException::getStart).setHeader("Start");
+            this.grid.addColumn(CalendarException::getFinish).setHeader("Finish");
+
+        }
+
+        private void customizeGrid() {
+            this.setDeletable(true);
+            this.grid.addItemDoubleClickListener(event -> {
+                var exception = event.getItem();
+                if (exception == null) return;
+                var calendarExceptionForm = new CalendarExceptionForm(exception);
+                calendarExceptionForm.addListener(CalendarExceptionForm.SaveEvent.class, this::saveCalendarExceptionListener);
+                calendarExceptionForm.open();
+            });
+        }
+
+        private void saveCalendarExceptionListener(CalendarExceptionForm.SaveEvent event) {
+            var calendarException = event.getCalendarException();
+            if (calendarException == null) return;
+            exceptionsMap.clear();
+            this.grid.getListDataView().getItems().forEach(e ->
+                e.getExceptionAsDayConstraint().forEach((k, v) -> exceptionsMap.put(k, k))
+            );
+            this.grid.getListDataView().refreshItem(calendarException);
+            yearCalendar.refreshAll();
+        }
+
+    }
+
+    private class WorkingWeeks extends VerticalLayout {
+
+        private final Grid<WorkingWeek> grid = new Grid<>();
+        private final HorizontalLayout toolbar = new HorizontalLayout();
+
+        WorkingWeeks() {
+            this.addColumns();
+            this.addButtonToToolbar();
+            this.customizeGrid();
+            this.add(toolbar, grid);
+        }
+
+        public void setWorkingWeeks(List<WorkingWeek> workingWeeks) {
+            this.grid.setItems(workingWeeks);
+        }
+
+        public List<WorkingWeek> getWorkingWeeks() {
+            return this.grid.getListDataView().getItems().collect(Collectors.toList());
+        }
+
+        public Stream<WorkingWeek> getWorkingWeeksSteam() {
+            return this.grid.getListDataView().getItems();
+        }
+
+        private void addColumns() {
+
+            grid.addColumn(WorkingWeek::getName).setHeader("Name");
+            grid.addColumn(this::getStartRep).setHeader("Start");
+            grid.addColumn(this::getFinishRep).setHeader("Finish");
+
+        }
+
+        private String getStartRep(WorkingWeek workingWeek) {
+            if (!workingWeek.isDefault()) return workingWeek.getStart().toString();
+            return "NA";
+        }
+
+        private String getFinishRep(WorkingWeek workingWeek) {
+            if (!workingWeek.isDefault()) return workingWeek.getFinish().toString();
+            return "NA";
+        }
+
+        private void addButtonToToolbar() {
+
+            var addButton = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
+            addButton.addClickListener(this::addWorkingWeek);
+            var deleteButton = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));
+            deleteButton.addClickListener(this::deleteWorkingWeek);
+            toolbar.add(addButton, deleteButton);
+
+        }
+
+        private void customizeGrid() {
+            this.grid.addItemDoubleClickListener(event -> {
+                var workingWeek = event.getItem();
+                if (workingWeek == null) return;
+                var workingWeekForm = new WorkingWeekForm(workingWeek);
+                workingWeekForm.addListener(WorkingWeekForm.SaveEvent.class, this::saveWorkingWeekListener);
+                workingWeekForm.open();
+            });
+        }
+
+        private void saveWorkingWeekListener(WorkingWeekForm.SaveEvent event) {
+            var workingWeek = event.getWorkingWeek();
+            if (workingWeek == null) return;
+            grid.getListDataView().refreshItem(workingWeek);
+            yearCalendar.refreshAll();
+        }
+
+        private void addWorkingWeek(ClickEvent<Button> event) {
+
+            var workingWeek = calendar.getWorkingWeekInstance();
+            var start = this.grid.getListDataView().getItems()
+                    .filter(w -> !w.isDefault()).map(WorkingWeek::getFinish)
+                    .max(LocalDate::compareTo)
+                    .orElse(null);
+            if (start == null) start = LocalDate.now();
+            else start = start.plusDays(1);
+            workingWeek.setStart(start);
+            workingWeek.setFinish(start);
+            this.grid.getListDataView().addItem(workingWeek);
+
+        }
+
+        private void deleteWorkingWeek(ClickEvent<Button> event) {
+
+            var selectedWeeks = this.grid.getSelectedItems();
+            var weeksToDeletion = new ArrayList<WorkingWeek>();
+            selectedWeeks.forEach(workingWeek -> {
+                if (workingWeek.isDefault()) return;
+                weeksToDeletion.add(workingWeek);
+            });
+            this.grid.getListDataView().removeItems(weeksToDeletion);
+
+        }
+
+    }
+
 }

@@ -4,6 +4,7 @@ import com.pmvaadin.terms.calendars.view.CalendarsView;
 import com.pmvaadin.projectview.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;
 import com.pmvaadin.security.AdminUsersView;
+import com.pmvaadin.terms.timeunit.views.TimeUnitsView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
@@ -51,6 +52,9 @@ public class MainLayout extends AppLayout {
         RouterLink calendarsLink = new RouterLink("Calendars", CalendarsView.class);
         calendarsLink.setHighlightCondition(HighlightConditions.sameLocation());
 
+        RouterLink timeUnitLink = new RouterLink("Time units", TimeUnitsView.class);
+        timeUnitLink.setHighlightCondition(HighlightConditions.sameLocation());
+
         RouterLink usersLink = new RouterLink("Users", AdminUsersView.class);
         calendarsLink.setHighlightCondition(HighlightConditions.sameLocation());
 
@@ -60,7 +64,9 @@ public class MainLayout extends AppLayout {
         addToDrawer(new VerticalLayout(
                 projectTasksLink,
                 calendarsLink,
+                timeUnitLink,
                 usersLink
+
                 //,
                 //tests
         ));

@@ -2,7 +2,7 @@ package com.pmvaadin.projecttasks.dependencies;
 
 import com.pmvaadin.terms.calculation.TermCalculationData;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 import java.util.List;
 import java.util.Set;
 

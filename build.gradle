@@ -1,8 +1,15 @@
+buildscript {
+	repositories {
+		mavenCentral()
+		maven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }
+		maven { setUrl("https://repo.spring.io/milestone") }
+	}
+}
 plugins {
-	id 'org.springframework.boot' version '2.7.8-SNAPSHOT'//2.7.2-SNAPSHOT'
-	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
-	id 'com.vaadin' version '23.3.3'
-	id "org.flywaydb.flyway" version "8.5.13"
+	id 'org.springframework.boot' version '3.1.5'//2.7.2-SNAPSHOT'
+	id 'io.spring.dependency-management' version '1.1.4'//1.0.15.RELEASE
+	id 'com.vaadin' version "24.2.5"
+	id "org.flywaydb.flyway" version "10.2.0"
 	id 'java'
 }
 
@@ -18,12 +25,13 @@ configurations {
 
 repositories {
 	mavenCentral()
-	maven { url 'https://repo.spring.io/milestone' }
-	maven { url 'https://repo.spring.io/snapshot' }
+	maven { setUrl("https://maven.vaadin.com/vaadin-prereleases") }
+	maven { setUrl("https://repo.spring.io/milestone") }
+	maven { setUrl("https://maven.vaadin.com/vaadin-addons") }
 }
 
 ext {
-	set('vaadinVersion', "23.3.3")
+	set('vaadinVersion', "24.2.5")
 }
 
 dependencies {
@@ -42,12 +50,18 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	implementation 'com.vaadin:vaadin-spring-boot-starter'
+	implementation 'org.vaadin.addons.flowingcode:year-month-calendar:4.1.0'
+	implementation 'org.vaadin.addons.tltv.gantt:gantt-flow-addon:24.0.0'
 }
 
 dependencyManagement {
 	imports {
-		mavenBom "com.vaadin:vaadin-bom:${vaadinVersion}"
+		mavenBom "com.vaadin:vaadin-bom:$vaadinVersion"
 	}
+}
+
+tasks.named('bootBuildImage') {
+	builder = 'paketobuildpacks/builder-jammy-base:latest'
 }
 
 tasks.named('test') {

@@ -2,17 +2,19 @@ package com.pmvaadin.projectview;
 
 import com.pmvaadin.MainLayout;
 import com.pmvaadin.commonobjects.ConfirmDialog;
-import com.pmvaadin.projectstructure.ProjectHierarchicalDataProvider;
+import com.pmvaadin.projectstructure.TaskTreeProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.services.ProjectTreeService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
 import com.pmvaadin.projecttasks.views.ProjectTaskForm;
-import com.vaadin.flow.component.ClickEvent;
-import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.ItemClickEvent;
@@ -21,18 +23,31 @@ import com.vaadin.flow.component.grid.dnd.GridDragStartEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropEvent;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.splitlayout.SplitLayout;
+import com.vaadin.flow.component.splitlayout.SplitLayoutVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
-import javax.annotation.security.PermitAll;
+import jakarta.annotation.security.PermitAll;
+import org.vaadin.tltv.gantt.Gantt;
+import org.vaadin.tltv.gantt.model.Resolution;
+import org.vaadin.tltv.gantt.model.Step;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.List;
 
 @Route(value="", layout = MainLayout.class)
 @PageTitle("Projects | PM")
@@ -40,49 +55,122 @@ import java.util.*;
 public class ProjectTreeView extends VerticalLayout {
 
     private final ProjectTreeService projectTreeService;
-    private final TreeHierarchyChangeService treeHierarchyChangeService;
+//    private final TreeHierarchyChangeService treeHierarchyChangeService;
+    private final LinkService linkService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
     private final TextField filterText = new TextField();
     private final ProjectTaskForm projectTaskForm;
     private ProjectTaskForm editingForm;
-    private final ProjectHierarchicalDataProvider dataProvider;
+    private final TaskTreeProvider dataProvider;
     private boolean isEditingFormOpen;
+    private final List<String> chosenColumns;
+    private final ProjectTaskPropertyNames projectTaskPropertyNames = new ProjectTaskPropertyNames();
+    private boolean isGanttDisplayed;
+    private final Button displayGantt = new Button();
+    private Gantt ganttChart = new Gantt();
+    private final HorizontalLayout resolutionSelectContainer = new HorizontalLayout();
+    private final Select<Resolution> resolutionSelect = new Select<>();
+    private final HorizontalLayout treeGridContainer = new HorizontalLayout();
+    private final Button updateTreeData = new Button(new Icon("lumo", "reload"));
 
-    public ProjectTreeView(ProjectTreeService projectTreeService, TreeHierarchyChangeService treeHierarchyChangeService, ProjectTaskForm projectTaskForm) {
+    public ProjectTreeView(ProjectTreeService projectTreeService,
+                           TreeHierarchyChangeService treeHierarchyChangeService,
+                           ProjectTaskForm projectTaskForm,
+                           LinkService linkService) {
 
         this.projectTreeService = projectTreeService;
-        this.treeHierarchyChangeService = treeHierarchyChangeService;
+//        this.treeHierarchyChangeService = treeHierarchyChangeService;
+        this.linkService = linkService;
         this.projectTaskForm = projectTaskForm;
-        dataProvider = new ProjectHierarchicalDataProvider(treeHierarchyChangeService);
-        addClassName("project-tasks-view");
+        chosenColumns = projectTaskPropertyNames.getTreeDefaultColumns();
+        dataProvider = new TaskTreeProvider(treeHierarchyChangeService, chosenColumns, treeGrid);
         setSizeFull();
         configureTreeGrid();
 
         Component toolBar = getToolbar();
-        add(toolBar, treeGrid);
+        treeGridContainer.add(treeGrid);
+        treeGridContainer.setSizeFull();
+        add(toolBar, treeGridContainer);
+
+        resolutionSelect.setItems(Resolution.Hour, Resolution.Day, Resolution.Week);
+        resolutionSelect.setValue(Resolution.Day);
 
         updateTreeGrid();
 
     }
 
+    private void fillGantt() {
+        ganttChart = new Gantt();
+        ganttChart.setHeightFull();
+        var tempTree = dataProvider.getTempTree();
+        var rootTasks = tempTree.get(null);
+        if (rootTasks == null || rootTasks.isEmpty()) return;
+        Map<Object, Step> mapSteps = new HashMap<>();
+        fillGanttRecursively(rootTasks, tempTree, mapSteps);
+        fillPredecessors(mapSteps);
+        ganttChart.setResolution(Resolution.Day);
+        var minStart = ganttChart.getSteps().map(Step::getStartDate).map(LocalDateTime::toLocalDate)
+                .min(Comparator.naturalOrder()).orElse(LocalDate.now());
+        var maxStart = ganttChart.getSteps().map(Step::getEndDate).map(LocalDateTime::toLocalDate)
+                .max(Comparator.naturalOrder()).orElse(LocalDate.now());
+        ganttChart.setStartDate(minStart.minusDays(1));
+        ganttChart.setEndDate(maxStart.plusDays(1));
+        ganttChart.setTimeZone(TimeZone.getDefault());
+        resolutionSelect.addValueChangeListener(event -> ganttChart.setResolution(event.getValue()));
+//        ganttChart.setMovableStepsBetweenRows(false);
+    }
+
+    private void fillGanttRecursively(List<ProjectTask> tasks, Map<ProjectTask, List<ProjectTask>> tempTree, Map<Object, Step> mapSteps) {
+        for (var task: tasks) {
+            var step = getStep(task);
+            mapSteps.put(task.getId(), step);
+            ganttChart.addStep(step);
+            var children = tempTree.get(task);
+            if (children == null) continue;
+            fillGanttRecursively(children, tempTree, mapSteps);
+        }   
+    }
+
+    private void fillPredecessors(Map<Object, Step> mapSteps) {
+
+        var ids = mapSteps.keySet().stream().toList();
+        var mapIds = linkService.getPredecessorsIds(ids);
+        mapSteps.forEach((k, v) -> {
+            var linkedIds = mapIds.get(k);
+            if (linkedIds == null)
+                return;
+            for (var linkedId: linkedIds) {
+                var linkedStep = mapSteps.get(linkedId);
+                if (linkedStep == null)
+                    return;
+                linkedStep.setPredecessor(v);
+            }
+        });
+
+    }
+
+    private Step getStep(ProjectTask projectTask) {
+        var step = new Step();
+        step.setResizable(false);
+        step.setMovable(false);
+        step.setShowProgress(false);
+        step.setSubstep(false);
+        step.setCaption(projectTask.getName());
+        step.setDescription(projectTask.getName());
+        step.setUid(projectTask.getId().toString());
+        step.setStartDate(projectTask.getStartDate());
+        step.setEndDate(projectTask.getFinishDate());
+        return step;
+    }
+
     private void configureTreeGrid() {
 
         treeGrid.setDataProvider(dataProvider);
-        var hierarchicalDataCommunicator = treeGrid.getDataCommunicator();
-        hierarchicalDataCommunicator.reset();
-
-        treeGrid.addClassNames("project-tasks-grid");
+        treeGrid.addClassNames("tree-gantt");
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
         treeGrid.setSelectionMode(Grid.SelectionMode.MULTI);
-        treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(ProjectTask.getHeaderName()).setFrozen(true)
-                .setResizable(true).setSortable(false).setWidth("25em");
-        treeGrid.addColumn(ProjectTask::getWbs).setHeader(ProjectTask.getHeaderWbs()).setResizable(true).setWidth("5em");
-        treeGrid.addColumn(ProjectTask::getStartDate).setHeader(ProjectTask.getHeaderStartDate()).setResizable(true).setAutoWidth(true);
-        treeGrid.addColumn(ProjectTask::getFinishDate).setHeader(ProjectTask.getHeaderFinishDate()).setResizable(true).setAutoWidth(true);
-        treeGrid.getColumns().forEach(col -> col.setAutoWidth(true));
-        //treeGrid.setDataProvider(new TreeDataProvider<>(new TreeData<>()));
 
         // hide checkbox column
         treeGrid.getElement().getNode().runWhenAttached(ui ->
@@ -101,7 +189,46 @@ public class ProjectTreeView extends VerticalLayout {
 
         treeGrid.addItemClickListener(this::onMouseClick);
         treeGrid.addItemDoubleClickListener(this::onMouseDoubleClick);
+        treeGrid.setId("treeGrid");
 
+        customizeColumns();
+
+    }
+
+    private void customizeColumns() {
+
+        treeGrid.removeAllColumns();
+
+        treeGrid.addHierarchyColumn(ProjectTask::getName).setHeader(projectTaskPropertyNames.getHeaderName()).setFrozen(true)
+                .setResizable(true).setSortable(false).setWidth("25em");
+        var columnCustomizations = projectTaskPropertyNames.getAvailableColumnProps();
+        for (String name: chosenColumns) {
+            if (name.equals(projectTaskPropertyNames.getPropertyWbs())) {
+                treeGrid.addColumn(ProjectTask::getWbs).setHeader(projectTaskPropertyNames.getHeaderWbs()).setResizable(true).setWidth("5em");
+                continue;
+            }
+            var colProp = columnCustomizations.get(name);
+            if (colProp == null) continue;
+            Grid.Column<ProjectTask> column;
+            if (name.equals(projectTaskPropertyNames.getPropertyIsProject())) {
+                column = addIsProjectColumn();
+            } else {
+                column = treeGrid.addColumn(colProp.valueProvider());
+            }
+            column.setHeader(colProp.representation()).setResizable(true).setAutoWidth(true);
+        }
+
+    }
+
+    private Grid.Column<ProjectTask> addIsProjectColumn() {
+        return treeGrid.addComponentColumn((item) -> {
+            Icon icon = null;
+            if(item.isProject()){
+                icon = VaadinIcon.CHECK.create();
+                icon.setColor("green");
+            }
+            return icon;
+        }).setHeader(projectTaskPropertyNames.getHeaderIsProject());
     }
 
     private void updateTreeGrid() {
@@ -109,6 +236,8 @@ public class ProjectTreeView extends VerticalLayout {
         if (isEditingFormOpen) return;
 
         try {
+            var selectedItems = treeGrid.getSelectedItems();
+            dataProvider.setSelectedItems(selectedItems);
             treeGrid.asMultiSelect().clear();
             treeGrid.getDataProvider().refreshAll();
         } catch (Throwable e) {
@@ -124,22 +253,27 @@ public class ProjectTreeView extends VerticalLayout {
         filterText.setValueChangeMode(ValueChangeMode.LAZY);
         //filterText.addValueChangeListener(e -> updateProject());
 
-        Button addProjectTask = new Button("Add");
+        Button addProjectTask = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
         addProjectTask.addClickListener(click -> addProjectTask());
+        addProjectTask.setTooltipText("Add");
 
-        Button updateTreeData = new Button("Update");
+//        Button updateTreeData = new Button("Update");
         updateTreeData.addClickListener(click -> updateTreeGrid());
         updateTreeData.addClickShortcut(Key.F5);
+        addProjectTask.setTooltipText("Update");
 
-        Button deleteProjectTask = new Button("Delete");
+        Button deleteProjectTask = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));
         deleteProjectTask.addClickListener(this::deleteProjectTaskClick);
         deleteProjectTask.addClickShortcut(Key.DELETE);
+        deleteProjectTask.setTooltipText("Delete");
 
-        Button moveUp = new Button("Move up");
+        Button moveUp = new Button(new Icon(VaadinIcon.ARROW_UP));
         moveUp.addClickListener(event -> moveTasks(ProjectTreeService.Direction.UP));
+        moveUp.setTooltipText("Move up");
 
-        Button moveDown = new Button("Move down");
+        Button moveDown = new Button(new Icon(VaadinIcon.ARROW_DOWN));
         moveDown.addClickListener(event -> moveTasks(ProjectTreeService.Direction.DOWN));
+        moveDown.setTooltipText("Move down");
 
         Button expandAll = new Button("Expand all");
         expandAll.addClickListener(this::expandAll);
@@ -147,25 +281,88 @@ public class ProjectTreeView extends VerticalLayout {
         Button collapseAll = new Button("Collapse all");
         collapseAll.addClickListener(this::collapseAll);
 
-        Button changeLevelUp = new Button("Increase task level");
+        Button changeLevelUp = new Button(new Icon(VaadinIcon.DEINDENT));
         changeLevelUp.addClickListener(this::increaseTaskLevel);
+        changeLevelUp.setTooltipText("Indent task");
 
-        Button changeLevelDown = new Button("Decrease task level");
+        Button changeLevelDown = new Button(new Icon(VaadinIcon.INDENT));
         changeLevelDown.addClickListener(this::decreaseTaskLevel);
+        changeLevelDown.setTooltipText("Outdent task");
 
         Button createTestCase = new Button("Create test case");
         createTestCase.addClickListener(this::createTestCase);
 
-        HorizontalLayout toolbar = new HorizontalLayout(
+        displayGantt.setIcon(new Icon(VaadinIcon.BAR_CHART_V));
+        displayGantt.addClickListener(this::displayGanttListener);
+        displayGantt.setTooltipText("Gantt chart display");
+
+        resolutionSelectContainer.add(new Text("Resolution"), resolutionSelect);
+        resolutionSelectContainer.setVisible(false);
+        resolutionSelectContainer.setPadding(false);
+        resolutionSelectContainer.setSpacing(false);
+
+        HorizontalLayout toolbarButtons = new HorizontalLayout(
                 //filterText,
                 addProjectTask, deleteProjectTask, updateTreeData,
                 changeLevelUp,
                 changeLevelDown,
-                createTestCase,
-                moveUp, moveDown, expandAll, collapseAll);
+//                createTestCase,
+                moveUp, moveDown,
+                displayGantt, resolutionSelectContainer);
+        toolbarButtons.setAlignItems(Alignment.START);
+        toolbarButtons.setWidthFull();
 
-        toolbar.addClassName("toolbar");
+        MenuBar menuBar = new MenuBar();
+        MenuItem settingsItem = menuBar.addItem("Settings");
+
+        SubMenu subMenu = settingsItem.getSubMenu();
+
+        ComponentEventListener<ClickEvent<MenuItem>> listener = e -> {
+            ColumnSelectionForm columnSelectionForm = new ColumnSelectionForm(chosenColumns);
+            columnSelectionForm.setOnCloseEvent(chosenColumns -> {
+                this.chosenColumns.clear();
+                this.chosenColumns.addAll(chosenColumns);
+                customizeColumns();
+            });
+            columnSelectionForm.open();
+        };
+        subMenu.addItem("Column settings", listener);
+
+        HorizontalLayout toolbarMenu = new HorizontalLayout();
+        toolbarMenu.setWidthFull();
+
+        var toolbar = new HorizontalLayout(toolbarButtons, toolbarMenu, menuBar);
+        toolbar.setWidthFull();
         return toolbar;
+
+    }
+
+    private void displayGanttListener(ClickEvent<Button> clickEvent) {
+
+        if (isGanttDisplayed) {
+            isGanttDisplayed = false;
+            displayGantt.removeThemeVariants(ButtonVariant.LUMO_ERROR);
+            treeGridContainer.removeAll();
+            treeGridContainer.add(treeGrid);
+            dataProvider.setFormTempTree(false);
+            treeGrid.getElement().executeJs("document.querySelector('vaadin-grid').$.table.style = 'overflow-y: auto'");
+            resolutionSelectContainer.setVisible(false);
+        } else {
+            isGanttDisplayed = true;
+            displayGantt.addThemeVariants(ButtonVariant.LUMO_ERROR);
+            treeGridContainer.removeAll();
+            fillGantt();
+
+            var splitLayout = new SplitLayout(treeGrid, new HorizontalLayout(ganttChart));
+            splitLayout.setSizeFull();
+            splitLayout.addThemeVariants(SplitLayoutVariant.LUMO_MINIMAL);
+
+            ganttChart.getElement().executeJs("this.registerScrollElement($0.$.table)", treeGrid);
+            treeGridContainer.add(splitLayout);
+            treeGrid.getStyle().set("overflow-y", "hidden");
+            treeGrid.getElement().executeJs("document.querySelector('vaadin-grid').$.table.style = 'overflow-y: hidden'");
+            resolutionSelectContainer.setVisible(true);
+        }
 
     }
 

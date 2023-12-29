@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface LinkRepository extends Repository<LinkImpl, Integer> {
@@ -23,5 +24,7 @@ public interface LinkRepository extends Repository<LinkImpl, Integer> {
 
     @Query(value = "SELECT * FROM links WHERE project_task = :projectTaskId AND id NOT IN (:ids) ORDER BY row_order ASC", nativeQuery = true)
     <I> List<Link> findAllByProjectTaskIdAndIdNotInIds(@Param("projectTaskId") I projectTaskId, @Param("ids") Iterable<?> ids);
+
+    List<Link> findDistinctByProjectTaskIdIn(Collection<Integer> projectTaskIds);
 
 }

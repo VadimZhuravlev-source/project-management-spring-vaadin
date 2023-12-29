@@ -1,17 +1,10 @@
 package com.pmvaadin.commonobjects;
 
 import com.vaadin.flow.component.*;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.editor.Editor;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.Query;
-import com.vaadin.flow.data.renderer.Renderer;
-import com.vaadin.flow.function.ValueProvider;
-import net.bytebuddy.implementation.bind.annotation.Super;
 
 import java.util.*;
 import java.util.function.Supplier;
@@ -168,7 +161,7 @@ public class LazyLoadObjectGrid<T> extends ObjectGrid<T> {
     }
 
     private void initializeObjectGrid() {
-        toolBar.add(addButton, copyButton, deleteButton);
+        //toolBar.add(addButton, copyButton, deleteButton);
         add(toolBar, grid);
         customizeButtons();
     }
