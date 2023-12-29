@@ -173,6 +173,8 @@ public class CalendarForm extends Dialog {
         mainLayout.addFormItem(name, "Name");
         mainLayout.addFormItem(setting, "Setting");
 
+        var endOfWeek = new FormLayout();
+        endOfWeek.addFormItem(this.endOfWeek, "End of week");
         var vertLayout = new VerticalLayout(endOfWeek, exceptions);
 
         tabSheet.add(exceptionsTab, vertLayout);
