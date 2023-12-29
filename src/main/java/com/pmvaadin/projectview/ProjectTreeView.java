@@ -15,7 +15,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
-import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.ItemClickEvent;
@@ -34,7 +33,6 @@ import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayoutVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.treegrid.TreeGrid;
-import com.vaadin.flow.data.provider.DataChangeEvent;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -57,7 +55,7 @@ import java.util.List;
 public class ProjectTreeView extends VerticalLayout {
 
     private final ProjectTreeService projectTreeService;
-    private final TreeHierarchyChangeService treeHierarchyChangeService;
+//    private final TreeHierarchyChangeService treeHierarchyChangeService;
     private final LinkService linkService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
     private final TextField filterText = new TextField();
@@ -70,7 +68,7 @@ public class ProjectTreeView extends VerticalLayout {
     private boolean isGanttDisplayed;
     private final Button displayGantt = new Button();
     private Gantt ganttChart = new Gantt();
-    private final FormLayout resolutionSelectLayout = new FormLayout();
+    private final HorizontalLayout resolutionSelectContainer = new HorizontalLayout();
     private final Select<Resolution> resolutionSelect = new Select<>();
     private final HorizontalLayout treeGridContainer = new HorizontalLayout();
     private final Button updateTreeData = new Button(new Icon("lumo", "reload"));
@@ -81,12 +79,11 @@ public class ProjectTreeView extends VerticalLayout {
                            LinkService linkService) {
 
         this.projectTreeService = projectTreeService;
-        this.treeHierarchyChangeService = treeHierarchyChangeService;
+//        this.treeHierarchyChangeService = treeHierarchyChangeService;
         this.linkService = linkService;
         this.projectTaskForm = projectTaskForm;
         chosenColumns = projectTaskPropertyNames.getTreeDefaultColumns();
-        dataProvider = new TaskTreeProvider(this.treeHierarchyChangeService, chosenColumns, treeGrid);
-        dataProvider.addDataProviderListener(this::dataProviderListener);
+        dataProvider = new TaskTreeProvider(treeHierarchyChangeService, chosenColumns, treeGrid);
         setSizeFull();
         configureTreeGrid();
 
@@ -95,17 +92,11 @@ public class ProjectTreeView extends VerticalLayout {
         treeGridContainer.setSizeFull();
         add(toolBar, treeGridContainer);
 
+        resolutionSelect.setItems(Resolution.Hour, Resolution.Day, Resolution.Week);
         resolutionSelect.setValue(Resolution.Day);
 
         updateTreeGrid();
 
-    }
-
-    private void dataProviderListener(DataChangeEvent<ProjectTask> event) {
-        if (!isGanttDisplayed) {
-            return;
-        }
-//        fillGantt();
     }
 
     private void fillGantt() {
@@ -125,9 +116,7 @@ public class ProjectTreeView extends VerticalLayout {
         ganttChart.setStartDate(minStart.minusDays(1));
         ganttChart.setEndDate(maxStart.plusDays(1));
         ganttChart.setTimeZone(TimeZone.getDefault());
-        resolutionSelect.addValueChangeListener(event -> {
-            ganttChart.setResolution(event.getValue());
-        });
+        resolutionSelect.addValueChangeListener(event -> ganttChart.setResolution(event.getValue()));
 //        ganttChart.setMovableStepsBetweenRows(false);
     }
 
@@ -307,19 +296,21 @@ public class ProjectTreeView extends VerticalLayout {
         displayGantt.addClickListener(this::displayGanttListener);
         displayGantt.setTooltipText("Gantt chart display");
 
-        resolutionSelectLayout.addFormItem(resolutionSelect, "Resolution");
-        resolutionSelectLayout.setVisible(false);
+        resolutionSelectContainer.add(new Text("Resolution"), resolutionSelect);
+        resolutionSelectContainer.setVisible(false);
+        resolutionSelectContainer.setPadding(false);
+        resolutionSelectContainer.setSpacing(false);
 
         HorizontalLayout toolbarButtons = new HorizontalLayout(
                 //filterText,
                 addProjectTask, deleteProjectTask, updateTreeData,
                 changeLevelUp,
                 changeLevelDown,
-                createTestCase,
+//                createTestCase,
                 moveUp, moveDown,
-                displayGantt, resolutionSelectLayout);
-//        toolbarButtons.setAlignItems(Alignment.START);
-        toolbarButtons.setHeightFull();
+                displayGantt, resolutionSelectContainer);
+        toolbarButtons.setAlignItems(Alignment.START);
+        toolbarButtons.setWidthFull();
 
         MenuBar menuBar = new MenuBar();
         MenuItem settingsItem = menuBar.addItem("Settings");
@@ -336,16 +327,13 @@ public class ProjectTreeView extends VerticalLayout {
             columnSelectionForm.open();
         };
         subMenu.addItem("Column settings", listener);
-//        HorizontalLayout toolbarMenu = new HorizontalLayout(menuBar);
-//        toolbarMenu.setVerticalComponentAlignment(Alignment.END);
-//        toolbarMenu.setHeightFull();
 
-        toolbarButtons.add(menuBar);
-        toolbarButtons.setVerticalComponentAlignment(Alignment.END, menuBar);
+        HorizontalLayout toolbarMenu = new HorizontalLayout();
+        toolbarMenu.setWidthFull();
 
-//        var toolbar = new HorizontalLayout(toolbarButtons, toolbarMenu);
-//        toolbar.setHeightFull();
-        return toolbarButtons;
+        var toolbar = new HorizontalLayout(toolbarButtons, toolbarMenu, menuBar);
+        toolbar.setWidthFull();
+        return toolbar;
 
     }
 
@@ -358,7 +346,7 @@ public class ProjectTreeView extends VerticalLayout {
             treeGridContainer.add(treeGrid);
             dataProvider.setFormTempTree(false);
             treeGrid.getElement().executeJs("document.querySelector('vaadin-grid').$.table.style = 'overflow-y: auto'");
-            resolutionSelectLayout.setVisible(false);
+            resolutionSelectContainer.setVisible(false);
         } else {
             isGanttDisplayed = true;
             displayGantt.addThemeVariants(ButtonVariant.LUMO_ERROR);
@@ -373,7 +361,7 @@ public class ProjectTreeView extends VerticalLayout {
             treeGridContainer.add(splitLayout);
             treeGrid.getStyle().set("overflow-y", "hidden");
             treeGrid.getElement().executeJs("document.querySelector('vaadin-grid').$.table.style = 'overflow-y: hidden'");
-            resolutionSelectLayout.setVisible(true);
+            resolutionSelectContainer.setVisible(true);
         }
 
     }
