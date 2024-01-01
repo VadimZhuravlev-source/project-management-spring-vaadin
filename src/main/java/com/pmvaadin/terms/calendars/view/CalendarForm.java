@@ -1,6 +1,6 @@
 package com.pmvaadin.terms.calendars.view;
 
-import com.pmvaadin.commonobjects.ObjectGrid;
+import com.pmvaadin.common.ObjectGrid;
 import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;

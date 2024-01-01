@@ -1,12 +1,14 @@
 package com.pmvaadin.projecttasks.views;
 
-import com.pmvaadin.projecttasks.commonobjects.BigDecimalToDoubleConverter;
+import com.pmvaadin.common.IntegerToDoubleConverter;
+import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.entity.ScheduleMode;
+import com.pmvaadin.projecttasks.entity.Status;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.view.CalendarSelectionForm;
-import com.pmvaadin.commonobjects.SelectableTextField;
+import com.pmvaadin.common.SelectableTextField;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.links.views.LinksProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
@@ -63,7 +65,11 @@ public class ProjectTaskForm extends Dialog {
     private final TextField name = new TextField();
     private final TextField wbs = new TextField();
 
-    private final Checkbox checkbox = new Checkbox();
+    private final Checkbox isProject = new Checkbox();
+
+    private final Checkbox isMilestone = new Checkbox();
+    private final NumberField progress = new NumberField();
+    private final ComboBox<Status> status = new ComboBox<>();
 
     // Term fields
     private final SelectableTextField<Calendar> calendarField = new SelectableTextField<>();
@@ -171,7 +177,9 @@ public class ProjectTaskForm extends Dialog {
         FormLayout formLayout = new FormLayout();
         formLayout.addFormItem(name, propertyNames.getHeaderName());
         formLayout.addFormItem(wbs, propertyNames.getHeaderWbs());
-        formLayout.addFormItem(checkbox, propertyNames.getHeaderIsProject());
+        formLayout.addFormItem(progress, propertyNames.getHeaderProgress());
+        formLayout.addFormItem(status, propertyNames.getHeaderStatus());
+        formLayout.addFormItem(isProject, propertyNames.getHeaderIsProject());
         FormLayout termsLayout = new FormLayout();
         termsLayout.addFormItem(startDate, propertyNames.getHeaderStartDate());
         termsLayout.addFormItem(finishDate, propertyNames.getHeaderFinishDate());
@@ -179,6 +187,8 @@ public class ProjectTaskForm extends Dialog {
         termsLayout.addFormItem(calendarField, propertyNames.getHeaderCalendar());
         termsLayout.addFormItem(durationRepresentation, propertyNames.getHeaderDurationRepresentation());
         termsLayout.addFormItem(timeUnitComboBox, propertyNames.getHeaderTimeUnit());
+        FormLayout milestoneLayout = new FormLayout();
+        milestoneLayout.addFormItem(isMilestone, propertyNames.getHeaderIsMilestone());
 
         VerticalLayout verticalLayout = new VerticalLayout(formLayout, termsLayout);
         tabSheet.add(mainDataTab, verticalLayout);
@@ -223,6 +233,7 @@ public class ProjectTaskForm extends Dialog {
         version.setLabel(propertyNames.getHeaderVersion());
         dateOfCreation.setLabel(propertyNames.getHeaderDateOfCreation());
         updateDate.setLabel(propertyNames.getHeaderUpdateDate());
+        status.setItems(Status.values());
 
     }
 
@@ -502,6 +513,8 @@ public class ProjectTaskForm extends Dialog {
                 .bind(this::getFinishDate, this::setFinishDate);
         binder.forField(durationRepresentation).withConverter(new BigDecimalToDoubleConverter(durationRepresentation))
                 .bind(ProjectTask::getDurationRepresentation, ProjectTask::setDurationRepresentation);
+        binder.forField(progress).withConverter(new IntegerToDoubleConverter())
+                .bind(ProjectTask::getProgress, ProjectTask::setProgress);
 
         binder.bindInstanceFields(this);
 
@@ -562,7 +575,7 @@ public class ProjectTaskForm extends Dialog {
     }
 
     public static abstract class ProjectTaskFormEvent extends ComponentEvent<ProjectTaskForm> {
-        private ProjectTask projectTask;
+        private final ProjectTask projectTask;
 
         protected ProjectTaskFormEvent(ProjectTaskForm source, ProjectTask projectTask) {
             super(source, false);

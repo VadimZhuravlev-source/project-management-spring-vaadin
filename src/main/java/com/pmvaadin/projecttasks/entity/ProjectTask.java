@@ -94,6 +94,13 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     Integer getTimeUnitId();
     void setTimeUnitId(Integer timeUnitId);
 
+    Status getStatus();
+    void setStatus(Status status);
+    int getProgress();
+    void setProgress(int progress);
+    boolean isMilestone();
+    void setMilestone(boolean isMilestone);
+
     BigDecimal getDurationRepresentation();
     void setDurationRepresentation(BigDecimal durationRepresentation);
 

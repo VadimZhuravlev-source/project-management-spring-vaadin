@@ -1,7 +1,7 @@
 package com.pmvaadin.projectstructure;
 
-import com.pmvaadin.commonobjects.tree.SimpleTree;
-import com.pmvaadin.commonobjects.tree.Tree;
+import com.pmvaadin.common.tree.SimpleTree;
+import com.pmvaadin.common.tree.Tree;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import org.junit.jupiter.api.BeforeEach;

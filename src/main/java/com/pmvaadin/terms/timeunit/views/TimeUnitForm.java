@@ -1,7 +1,7 @@
 package com.pmvaadin.terms.timeunit.views;
 
 import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.projecttasks.commonobjects.BigDecimalToDoubleConverter;
+import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.vaadin.flow.component.ComponentEvent;
 import com.vaadin.flow.component.ComponentEventListener;

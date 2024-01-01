@@ -1,7 +1,7 @@
 package com.pmvaadin.terms.calendars.view;
 
-import com.pmvaadin.commonobjects.services.ItemService;
-import com.pmvaadin.commonobjects.vaadin.SearchableGrid;
+import com.pmvaadin.common.services.ItemService;
+import com.pmvaadin.common.vaadin.SearchableGrid;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.services.CalendarService;

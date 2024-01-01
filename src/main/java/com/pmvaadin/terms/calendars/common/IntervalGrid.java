@@ -1,6 +1,6 @@
 package com.pmvaadin.terms.calendars.common;
 
-import com.pmvaadin.commonobjects.ObjectGrid;
+import com.pmvaadin.common.ObjectGrid;
 import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.timepicker.TimePickerVariant;
 

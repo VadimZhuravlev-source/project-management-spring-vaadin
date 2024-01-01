@@ -1,7 +1,7 @@
 package com.pmvaadin.test_elements;
 
 import com.pmvaadin.MainLayout;
-import com.pmvaadin.commonobjects.SelectedComboBox;
+import com.pmvaadin.common.SelectedComboBox;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;

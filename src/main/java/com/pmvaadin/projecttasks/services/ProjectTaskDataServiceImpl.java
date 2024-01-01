@@ -1,6 +1,6 @@
 package com.pmvaadin.projecttasks.services;
 
-import com.pmvaadin.commonobjects.ChangedTableData;
+import com.pmvaadin.common.ChangedTableData;
 import com.pmvaadin.projectstructure.ProjectRecalculation;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.data.ProjectTaskDataImpl;

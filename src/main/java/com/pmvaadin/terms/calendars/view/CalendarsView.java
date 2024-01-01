@@ -1,7 +1,7 @@
 package com.pmvaadin.terms.calendars.view;
 
-import com.pmvaadin.commonobjects.services.ListService;
-import com.pmvaadin.commonobjects.vaadin.ItemList;
+import com.pmvaadin.common.services.ListService;
+import com.pmvaadin.common.vaadin.ItemList;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.services.CalendarService;
@@ -48,14 +48,14 @@ public class CalendarsView extends VerticalLayout {
             this.grid.addColumn(CalendarRepresentation::getName).setHeader("Name");
             this.grid.addColumn(CalendarRepresentation::getSettings).setHeader("Setting");
             this.addPredefinedColumn(CalendarRepresentation::isPredefined);
-            onMouseDoubleClick(this::openNewCalendar);
+            onMouseDoubleClick(this::openNewItem);
 
-            beforeAddition(this::openNewCalendar);
-            onCoping(this::openNewCalendar);
+            beforeAddition(this::openNewItem);
+            onCoping(this::openNewItem);
 
         }
 
-        private void openNewCalendar(Calendar calendar) {
+        private void openNewItem(Calendar calendar) {
             openEditingForm(calendar);
         }
 

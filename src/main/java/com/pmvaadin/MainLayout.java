@@ -1,5 +1,6 @@
 package com.pmvaadin;
 
+import com.pmvaadin.resources.views.LaborResourceView;
 import com.pmvaadin.terms.calendars.view.CalendarsView;
 import com.pmvaadin.projectview.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;
@@ -55,6 +56,9 @@ public class MainLayout extends AppLayout {
         RouterLink timeUnitLink = new RouterLink("Time units", TimeUnitsView.class);
         timeUnitLink.setHighlightCondition(HighlightConditions.sameLocation());
 
+        RouterLink laborResourceLink = new RouterLink("Labor resources", LaborResourceView.class);
+        laborResourceLink.setHighlightCondition(HighlightConditions.sameLocation());
+
         RouterLink usersLink = new RouterLink("Users", AdminUsersView.class);
         calendarsLink.setHighlightCondition(HighlightConditions.sameLocation());
 
@@ -65,6 +69,7 @@ public class MainLayout extends AppLayout {
                 projectTasksLink,
                 calendarsLink,
                 timeUnitLink,
+                laborResourceLink,
                 usersLink
 
                 //,

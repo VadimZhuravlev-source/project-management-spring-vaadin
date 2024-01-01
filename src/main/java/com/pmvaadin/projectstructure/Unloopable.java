@@ -1,6 +1,6 @@
 package com.pmvaadin.projectstructure;
 
-import com.pmvaadin.commonobjects.tree.TreeItem;
+import com.pmvaadin.common.tree.TreeItem;
 
 import java.util.List;
 import java.util.Set;

@@ -1,7 +1,7 @@
 package com.pmvaadin.projectview;
 
 import com.pmvaadin.MainLayout;
-import com.pmvaadin.commonobjects.ConfirmDialog;
+import com.pmvaadin.common.ConfirmDialog;
 import com.pmvaadin.projectstructure.TaskTreeProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;

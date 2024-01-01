@@ -1,9 +1,9 @@
 package com.pmvaadin.projecttasks.links.views;
 
-import com.pmvaadin.commonobjects.ObjectGrid;
-import com.pmvaadin.commonobjects.SelectableTextField;
+import com.pmvaadin.common.ObjectGrid;
+import com.pmvaadin.common.SelectableTextField;
 import com.pmvaadin.projectstructure.NotificationDialogs;
-import com.pmvaadin.projecttasks.commonobjects.BigDecimalToDoubleConverter;
+import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.links.LinkValidation;
 import com.pmvaadin.projecttasks.links.LinkValidationImpl;
@@ -15,10 +15,8 @@ import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.views.ProjectSelectionForm;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.services.TimeUnitService;
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.grid.editor.Editor;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.data.provider.Query;

@@ -1,6 +1,6 @@
 package com.pmvaadin.terms.calendars.services;
 
-import com.pmvaadin.commonobjects.services.ListService;
+import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.projectstructure.ProjectRecalculation;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;

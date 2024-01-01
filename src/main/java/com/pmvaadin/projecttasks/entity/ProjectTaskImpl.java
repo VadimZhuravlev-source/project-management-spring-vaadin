@@ -93,6 +93,18 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Column(name = "time_unit_id")
     private Integer timeUnitId;
 
+    @Setter
+    @Column(name = "status_id")
+    private Status status = Status.PLANNED;
+
+    @Setter
+    @Column(name = "progress")
+    private int progress;
+
+    @Setter
+    @Column(name = "is_milestone")
+    private boolean isMilestone;
+
     // The field is not intended to store data
     @Setter
     @Transient

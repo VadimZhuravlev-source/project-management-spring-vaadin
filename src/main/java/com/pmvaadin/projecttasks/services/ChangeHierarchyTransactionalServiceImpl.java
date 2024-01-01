@@ -1,7 +1,7 @@
 package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.AppConfiguration;
-import com.pmvaadin.commonobjects.tree.TreeItem;
+import com.pmvaadin.common.tree.TreeItem;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projectstructure.TreeProjectTasks;
 import com.pmvaadin.projectstructure.TreeProjectTasksImpl;

@@ -1,5 +1,6 @@
 package com.pmvaadin.terms.calendars.exceptions.views;
 
+import com.pmvaadin.common.IntegerToDoubleConverter;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.common.IntervalGrid;
@@ -805,21 +806,6 @@ public class CalendarExceptionForm extends Dialog {
 
         }
 
-    }
-
-    private static class IntegerToDoubleConverter implements Converter<Double, Integer> {
-
-        @Override
-        public Result<Integer> convertToModel(Double aDouble, ValueContext valueContext) {
-            if (aDouble == null) return Result.ok(0);
-            return Result.ok(aDouble.intValue());
-        }
-
-        @Override
-        public Double convertToPresentation(Integer integer, ValueContext valueContext) {
-            if (integer == null) return 0d;
-            return integer.doubleValue();
-        }
     }
 
     private static class ByteToDoubleConverter implements Converter<Double, Byte> {

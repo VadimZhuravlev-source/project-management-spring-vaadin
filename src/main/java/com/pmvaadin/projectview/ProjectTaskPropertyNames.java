@@ -79,6 +79,14 @@ public class ProjectTaskPropertyNames {
         return "links";
     }
 
+    public String getPropertyProgress() {
+        return "progress";
+    }
+
+    public String getPropertyStatus() {
+        return "status";
+    }
+
     public String getHeaderName() {
         return "Name";
     }
@@ -135,6 +143,19 @@ public class ProjectTaskPropertyNames {
         return "Project";
     }
 
+    public String getHeaderProgress() {
+        return "Progress";
+    }
+
+    public String getHeaderStatus() {
+        return "Status";
+    }
+
+    public String getHeaderIsMilestone() {
+        return "Milestone";
+    }
+
+
     private Map<String, String> getPropertiesMap() {
 
         Map<String, String> map = new HashMap<>();
@@ -168,6 +189,8 @@ public class ProjectTaskPropertyNames {
         map.put(getPropertyStart(), new ColumnProperties(getHeaderStartDate(), ProjectTask::getStartDate));
         map.put(getPropertyFinish(), new ColumnProperties(getHeaderFinishDate(), ProjectTask::getFinishDate));
         map.put(getPropertyLinks(), new ColumnProperties(getHeaderLinks(), ProjectTask::getLinkRepresentation));
+        map.put(getPropertyProgress(), new ColumnProperties(getHeaderProgress(), ProjectTask::getProgress));
+        map.put(getPropertyStatus(), new ColumnProperties(getHeaderStatus(), ProjectTask::getStatus));
 
         return Collections.unmodifiableMap(map);
 

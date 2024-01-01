@@ -21,10 +21,7 @@ public class ScheduleModeConverter implements AttributeConverter<ScheduleMode, I
             return null;
         }
 
-        return Stream.of(ScheduleMode.values())
-                .filter(c -> c.getCode().equals(code))
-                .findFirst()
-                .orElseThrow(IllegalArgumentException::new);
+        return ScheduleMode.of(code);
     }
 
 }

@@ -1,6 +1,6 @@
 package com.pmvaadin.projecttasks.data;
 
-import com.pmvaadin.commonobjects.ChangedTableData;
+import com.pmvaadin.common.ChangedTableData;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.terms.calendars.entity.Calendar;

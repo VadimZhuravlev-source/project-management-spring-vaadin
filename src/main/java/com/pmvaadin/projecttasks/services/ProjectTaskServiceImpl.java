@@ -1,7 +1,7 @@
 package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projectstructure.*;
-import com.pmvaadin.commonobjects.tree.TreeItem;
+import com.pmvaadin.common.tree.TreeItem;
 import com.pmvaadin.terms.calculation.TermCalculationRespond;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;

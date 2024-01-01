@@ -1,8 +1,8 @@
 package com.pmvaadin.terms.timeunit.views;
 
 import com.pmvaadin.MainLayout;
-import com.pmvaadin.commonobjects.services.ListService;
-import com.pmvaadin.commonobjects.vaadin.ItemList;
+import com.pmvaadin.common.services.ListService;
+import com.pmvaadin.common.vaadin.ItemList;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -41,14 +41,14 @@ public class TimeUnitsView extends VerticalLayout {
 
             this.grid.addColumn(TimeUnit::getName).setHeader("Name");
             this.addPredefinedColumn(TimeUnit::isPredefined);
-            onMouseDoubleClick(this::openNewCalendar);
+            onMouseDoubleClick(this::openNewItem);
 
-            beforeAddition(this::openNewCalendar);
-            onCoping(this::openNewCalendar);
+            beforeAddition(this::openNewItem);
+            onCoping(this::openNewItem);
 
         }
 
-        private void openNewCalendar(TimeUnit timeUnit) {
+        private void openNewItem(TimeUnit timeUnit) {
             openEditingForm(timeUnit);
         }
 

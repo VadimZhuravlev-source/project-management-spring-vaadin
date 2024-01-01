@@ -1,8 +1,6 @@
 package com.pmvaadin.Services;
 
-import com.pmvaadin.commonobjects.tree.TreeItem;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
