@@ -25,8 +25,6 @@ public class SearchableGrid<T> extends VerticalLayout {
 
     private final ItemFilter itemFilter = new ItemFilter();
 
-    private final DataProvider dataProvider;
-
     protected final ItemService<T> itemService;
 
     protected final Grid<T> grid = new Grid<>();
@@ -39,7 +37,7 @@ public class SearchableGrid<T> extends VerticalLayout {
     public SearchableGrid(ItemService<T> itemService) {
 
         this.itemService = itemService;
-        this.dataProvider = new DataProvider(itemService);
+        DataProvider<T> dataProvider = new DataProvider<>(itemService);
         this.filterDataProvider = dataProvider.withConfigurableFilter();
         grid.setItems(filterDataProvider);
 
@@ -128,7 +126,7 @@ public class SearchableGrid<T> extends VerticalLayout {
 
     }
 
-    private class DataProvider extends AbstractBackEndDataProvider<T, ItemFilter> {
+    private static class DataProvider<T> extends AbstractBackEndDataProvider<T, ItemFilter> {
 
         private final ItemService<T> itemService;
         private final ItemFilter emptyFilter = new ItemFilter();

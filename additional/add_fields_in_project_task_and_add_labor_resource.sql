@@ -1,21 +1,24 @@
 ALTER TABLE project_tasks
 DROP COLUMN IF EXISTS status_id;
-
-ALTER TABLE project_tasks
-DROP COLUMN IF EXISTS progress;
-
-ALTER TABLE project_tasks
-DROP COLUMN IF EXISTS is_milestone;
-
 ALTER TABLE project_tasks
 ADD status_id SMALLINT NOT NULL DEFAULT 0;
 
 ALTER TABLE project_tasks
+DROP COLUMN IF EXISTS progress;
+ALTER TABLE project_tasks
 ADD progress SMALLINT DEFAULT 0;
 
 ALTER TABLE project_tasks
+DROP COLUMN IF EXISTS is_milestone;
+ALTER TABLE project_tasks
 ADD is_milestone BOOLEAN NOT NULL DEFAULT FALSE;
 
+ALTER TABLE project_tasks
+DROP COLUMN IF EXISTS resources_check_sum;
+ALTER TABLE project_tasks
+ADD resources_check_sum INT DEFAULT 0;
+
+DROP TABLE IF EXISTS "task_labor_resources";
 DROP TABLE IF EXISTS "labor_resources";
 CREATE TABLE labor_resources(
 	id SERIAL,
@@ -24,7 +27,6 @@ CREATE TABLE labor_resources(
 	CONSTRAINT labor_resources_pkey PRIMARY KEY (id)
 );
 
-DROP TABLE IF EXISTS "task_labor_resources";
 CREATE TABLE task_labor_resources(
 	id SERIAL,
 	version INT,

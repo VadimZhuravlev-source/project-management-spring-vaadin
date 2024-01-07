@@ -5,6 +5,7 @@ import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.entity.ScheduleMode;
 import com.pmvaadin.projecttasks.entity.Status;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
+import com.pmvaadin.resources.frontend.elements.ProjectTaskLaborResources;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.view.CalendarSelectionForm;
@@ -86,20 +87,25 @@ public class ProjectTaskForm extends Dialog {
 
     private final Tab mainDataTab = new Tab("Main");
     private final Tab linksTab = new Tab("Predecessors");
+    private final Tab resourcesTab = new Tab("Predecessors");
     private final TabSheet tabSheet = new TabSheet();
 
     // this need to stretch a grid in a tab
     private final VerticalLayout linksGridContainer = new VerticalLayout();
+    private final VerticalLayout resourcesGridContainer = new VerticalLayout();
+    private final ProjectTaskLaborResources laborResources;
     private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
 
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
-                           CalendarSelectionForm calendarSelectionForm, TimeUnitService timeUnitService) {
+                           CalendarSelectionForm calendarSelectionForm, TimeUnitService timeUnitService,
+                           ProjectTaskLaborResources laborResources) {
 
         this.projectTaskDataService = projectTaskDataService;
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
         this.timeUnitService = timeUnitService;
+        this.laborResources = laborResources;
 
         addClassName("dialog-padding-1");
 
@@ -122,7 +128,7 @@ public class ProjectTaskForm extends Dialog {
 
     public ProjectTaskForm newInstance() {
         return new ProjectTaskForm(projectTaskDataService, linksGrid.newInstance(), calendarSelectionForm,
-                timeUnitService);
+                timeUnitService, laborResources);
     }
 
     public void setProjectTask(ProjectTask projectTask) {
@@ -162,6 +168,8 @@ public class ProjectTaskForm extends Dialog {
         tabSheet.add(linksTab, linksGridContainer);
         tabSheet.addSelectedChangeListener(this::selectedTabChangeListener);
 
+        tabSheet.add(resourcesTab, resourcesGridContainer);
+
     }
 
     private void selectedTabChangeListener(TabSheet.SelectedChangeEvent event) {
@@ -190,7 +198,7 @@ public class ProjectTaskForm extends Dialog {
         FormLayout milestoneLayout = new FormLayout();
         milestoneLayout.addFormItem(isMilestone, propertyNames.getHeaderIsMilestone());
 
-        VerticalLayout verticalLayout = new VerticalLayout(formLayout, termsLayout);
+        VerticalLayout verticalLayout = new VerticalLayout(formLayout, termsLayout, milestoneLayout);
         tabSheet.add(mainDataTab, verticalLayout);
 
     }
@@ -461,6 +469,8 @@ public class ProjectTaskForm extends Dialog {
         changeDuration = false;
         durationRepresentation.setValue(projectTaskData.getProjectTask().getDurationRepresentation().doubleValue());
         binder.readBean(projectTaskData.getProjectTask());
+
+        laborResources.setItems(projectTaskData.getTaskResources());
 
     }
 

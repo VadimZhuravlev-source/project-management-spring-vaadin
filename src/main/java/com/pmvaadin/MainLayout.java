@@ -1,6 +1,6 @@
 package com.pmvaadin;
 
-import com.pmvaadin.resources.views.LaborResourceView;
+import com.pmvaadin.resources.frontend.views.LaborResourceView;
 import com.pmvaadin.terms.calendars.view.CalendarsView;
 import com.pmvaadin.projectview.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;

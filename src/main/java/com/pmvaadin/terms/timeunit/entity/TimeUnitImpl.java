@@ -11,7 +11,7 @@ import java.util.Objects;
 
 @Entity
 @Getter
-@Table(name = "time_unit")
+@Table(name = "time_units")
 public class TimeUnitImpl implements TimeUnit, HasIdentifyingFields {
 
     private static final BigDecimal numberOfSecondsInHour = new BigDecimal(3600);

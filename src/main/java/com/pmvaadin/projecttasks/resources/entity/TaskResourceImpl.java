@@ -1,7 +1,9 @@
 package com.pmvaadin.projecttasks.resources.entity;
 
+import com.pmvaadin.resources.entity.LaborResource;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +13,7 @@ import java.math.BigDecimal;
 @Entity
 @Getter
 @NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "task_labor_resources")
 public class TaskResourceImpl implements TaskResource, HasIdentifyingFields {
 
@@ -39,7 +42,7 @@ public class TaskResourceImpl implements TaskResource, HasIdentifyingFields {
 
     @Setter
     @Transient
-    private String name;
+    private LaborResource laborResource;
 
     @Override
     public void nullIdentifyingFields() {

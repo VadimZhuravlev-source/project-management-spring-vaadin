@@ -110,4 +110,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     String getLinkRepresentation();
     void setLinkRepresentation(String linkRepresentation);
 
+    int getResourcesCheckSum();
+    void setResourcesCheckSum(int resourcesCheckSum);
+
 }

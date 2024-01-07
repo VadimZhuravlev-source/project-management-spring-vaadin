@@ -9,4 +9,6 @@ public interface ListService<T, I> extends ItemService<T> {
     boolean delete(Collection<T> items);
     I copy(T dTO);
 
+    I save(I item);
+
 }

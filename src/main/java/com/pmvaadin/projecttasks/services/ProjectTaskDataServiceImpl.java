@@ -8,6 +8,8 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.projecttasks.resources.entity.TaskResource;
+import com.pmvaadin.projecttasks.resources.services.TaskResourceService;
 import com.pmvaadin.terms.calculation.TermCalculationRespond;
 import com.pmvaadin.terms.calculation.TermCalculationRespondImpl;
 import com.pmvaadin.terms.calendars.entity.Calendar;
@@ -203,6 +205,9 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
                 additionalData.timeUnit,
                 sampleLink);
 
+        var taskResources = saveProjectDataTransactional.getTaskResources(projectTask);
+        projectTaskData.setTaskResources(taskResources);
+
         fillAdditionalData(projectTaskData);
 
         return projectTaskData;
@@ -231,6 +236,7 @@ class SaveProjectDataTransactional {
     private ProjectTaskService projectTaskService;
     private LinkService linkService;
     private ProjectTaskRepository projectTaskRepository;
+    private TaskResourceService taskResourceService;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -250,6 +256,11 @@ class SaveProjectDataTransactional {
         this.projectTaskRepository = projectTaskRepository;
     }
 
+    @Autowired
+    public void setTaskResourceService(TaskResourceService taskResourceService) {
+        this.taskResourceService = taskResourceService;
+    }
+
     @Transactional
     public SaveTransactionalRespond save(ProjectTaskData projectTaskData) {
 
@@ -264,8 +275,15 @@ class SaveProjectDataTransactional {
         validationPass = linkService.validate(projectTaskData);
         if (!validationPass) return emptyRespond;
 
+        validationPass = taskResourceService.validate(projectTaskData.getTaskResources());
+        if (!validationPass) return emptyRespond;
+
         return saveData(projectTaskData);
 
+    }
+
+    public List<TaskResource> getTaskResources(ProjectTask projectTask) {
+        return taskResourceService.getLaborResources(projectTask);
     }
 
     private void fillLinksByChanges(ProjectTaskData projectTaskData) {
@@ -292,6 +310,7 @@ class SaveProjectDataTransactional {
         projectTask = projectTaskRepository.save(projectTask);
 
         projectTaskData.setProjectTask(projectTask);
+        // TODO determination of the need for term calculation
         var respond = calculateTerms(projectTaskData);
 
         return new SaveTransactionalRespond(projectTaskData, respond);
@@ -343,6 +362,8 @@ class SaveProjectDataTransactional {
         }
 
         linkService.save(currentLinks);
+
+        taskResourceService.save(projectTaskData);
 
     }
 

@@ -105,6 +105,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Column(name = "is_milestone")
     private boolean isMilestone;
 
+    @Setter
+    @Column(name = "resources_check_sum")
+    private int resourcesCheckSum;
+
     // The field is not intended to store data
     @Setter
     @Transient

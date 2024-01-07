@@ -1,5 +1,7 @@
 package com.pmvaadin.projecttasks.resources.entity;
 
+import com.pmvaadin.resources.entity.LaborResource;
+
 import java.math.BigDecimal;
 
 public interface TaskResource {
@@ -22,8 +24,10 @@ public interface TaskResource {
 
     void setDuration(BigDecimal duration);
 
-    String getName();
+    int getSort();
 
-    void setName(String resourceName);
+    void setSort(int sort);
 
+    LaborResource getLaborResource();
+    void setLaborResource(LaborResource laborResource);
 }

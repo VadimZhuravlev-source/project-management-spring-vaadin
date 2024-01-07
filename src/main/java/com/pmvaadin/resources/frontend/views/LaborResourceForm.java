@@ -1,4 +1,4 @@
-package com.pmvaadin.resources.views;
+package com.pmvaadin.resources.frontend.views;
 
 import com.pmvaadin.resources.entity.LaborResource;
 import com.vaadin.flow.component.ComponentEvent;
@@ -13,29 +13,34 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.shared.Registration;
+import com.vaadin.flow.spring.annotation.SpringComponent;
+import jakarta.annotation.Nonnull;
 
+@SpringComponent
 public class LaborResourceForm extends Dialog {
 
-    private final LaborResource laborResource;
+    private LaborResource laborResource;
     private final TextField name = new TextField("Name");
     private final Binder<LaborResource> binder = new Binder<>(LaborResource.class);
 
-    public LaborResourceForm(LaborResource laborResource) {
-        this.laborResource = laborResource;
+    public LaborResourceForm() {
         binder.bindInstanceFields(this);
-        binder.readBean(this.laborResource);
         add(name);
         customizeHeader();
         createButtons();
         addClassName("dialog-padding-1");
     }
 
-    private void customizeHeader() {
-
+    public void read(@Nonnull LaborResource laborResource) {
+        this.laborResource = laborResource;
+        binder.readBean(this.laborResource);
         var laborResourceName = this.laborResource.getName();
         if (laborResourceName == null) laborResourceName = "";
         var title = "Labor resource: ";
         setHeaderTitle(title + laborResourceName);
+    }
+
+    private void customizeHeader() {
 
         Button closeButton = new Button(new Icon("lumo", "cross"),
                 e -> {

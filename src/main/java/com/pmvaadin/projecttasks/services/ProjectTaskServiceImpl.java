@@ -5,6 +5,7 @@ import com.pmvaadin.common.tree.TreeItem;
 import com.pmvaadin.terms.calculation.TermCalculationRespond;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -190,6 +193,15 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
         }
         if (levelOrder == null) levelOrder = 0;
         projectTask.setLevelOrder(++levelOrder);
+
+        if (projectTask.getStartDate() == null || projectTask.getFinishDate() == null) {
+            var now = LocalDateTime.now();
+            projectTask.setStartDate(now);
+            projectTask.setFinishDate(now.plusDays(1));
+        }
+
+        if (projectTask.getDuration() == 0)
+            projectTask.setDuration(Calendar.DAY_DURATION_SECONDS);
 
     }
 
