@@ -1,5 +1,7 @@
 package com.pmvaadin.projecttasks.entity;
 
+import com.pmvaadin.projecttasks.resources.entity.TaskResource;
+import com.pmvaadin.projecttasks.resources.entity.TaskResourceImpl;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +19,6 @@ import java.util.Objects;
 @Entity
 @NoArgsConstructor
 @Table(name = "project_tasks")
-//@EntityListeners(ProjectTaskImpl.class)
 public class ProjectTaskImpl implements ProjectTask, Serializable {
 
     // hierarchy and order fields
@@ -134,20 +135,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Transient
     private String linkRepresentation;
 
-//    @ManyToOne
-//    @JoinColumn(name = "time_unit_id", nullable = false)
-//    private TimeUnitImpl timeUnit;
-
-//    @Override
-//    public void setTimeUnit(TimeUnit timeUnit) {
-//        this.timeUnit = (TimeUnitImpl) timeUnit;
-//    };
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof ProjectTaskImpl that)) return false;
-        if (getId() == null && that.getId() == null) return false;
+        if (getId() == null || that.getId() == null) return false;
         return Objects.equals(getId(), that.getId());
     }
 
@@ -190,11 +182,11 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
             this.parentId = null;
     }
 
-
-
-//    @PrePersist
-//    public void prePersist() {
-//        childrenCount = 0;
-//    }
+    @Override
+    public TaskResource getTaskResourceInstance() {
+        var taskResource = new TaskResourceImpl();
+        taskResource.setProjectTaskId(this.id);
+        return taskResource;
+    }
 
 }

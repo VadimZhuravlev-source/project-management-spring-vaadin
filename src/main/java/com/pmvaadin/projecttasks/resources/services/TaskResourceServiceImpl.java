@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -34,7 +33,7 @@ public class TaskResourceServiceImpl implements TaskResourceService {
         var queryText = getProjectTaskLaborResourcesQueryText();
         var query = entityManager.createNativeQuery(queryText);//, Map.class);
         query.setParameter("id", projectTask.getId());
-        var result = (List<Map<String, Object>>) query.getResultList();
+        var result = (List<Object[]>) query.getResultList();
 
         return result.stream().map(this::getTaskResourceByMap).collect(Collectors.toList());
 
@@ -43,14 +42,16 @@ public class TaskResourceServiceImpl implements TaskResourceService {
     @Override
     public List<TaskResource> save(ProjectTaskData projectTaskData) {
 
-        fillSort(projectTaskData);
+        if (projectTaskData.getTaskResources().isEmpty()) return new ArrayList<>();
+
+        fillNecessaryFields(projectTaskData);
         var deletedRows = determineChanges(projectTaskData);
         if (!deletedRows.isEmpty()) {
             var ids = deletedRows.stream().map(TaskResource::getId).toList();
             taskResourceRepository.deleteAllById(ids);
         }
         var resources = projectTaskData.getTaskResources();
-        return taskResourceRepository.save(resources);
+        return taskResourceRepository.saveAll(resources);
 
     }
 
@@ -59,19 +60,19 @@ public class TaskResourceServiceImpl implements TaskResourceService {
         resources.forEach(resource -> {
             if (resource.getResourceId() == null)
                 throw new StandardError("The resource can not be null.");
-            if (resource.getProjectTaskId() == null)
-                throw new StandardError("The project task id can not be null.");
-            if (resource.getDuration() == null || resource.getDuration().compareTo(new BigDecimal(0)) < 0)
+            if (resource.getDuration() == null || resource.getDuration().compareTo(new BigDecimal(0)) <= 0)
                 throw new StandardError("The duration must be greater than 0.");
         });
         return true;
     }
 
-    private void fillSort(ProjectTaskData projectTaskData) {
+    private void fillNecessaryFields(ProjectTaskData projectTaskData) {
         var resources = projectTaskData.getTaskResources();
         var sort = 0;
+        var projectTaskId = projectTaskData.getProjectTask().getId();
         for (var resource: resources) {
             resource.setSort(sort++);
+            resource.setProjectTaskId(projectTaskId);
         }
     }
 
@@ -125,15 +126,15 @@ public class TaskResourceServiceImpl implements TaskResourceService {
                 && Objects.equals(resource1.getSort(), resource2.getSort());
     }
 
-    private TaskResource getTaskResourceByMap(Map<String, Object> mapRow) {
+    private TaskResource getTaskResourceByMap(Object[] mapRow) {
 
-        var id = (Integer) mapRow.get("id");
-        var version = (Integer) mapRow.get("version");
-        var projectTaskId = (Integer) mapRow.get("project_task_id");
-        var resourceId = (Integer) mapRow.get("resource_id");
-        var duration = (BigDecimal) mapRow.get("duration");
-        var sort = (int) mapRow.get("sort");
-        var name = (String) mapRow.get("name");
+        var id = (Integer) mapRow[0];
+        var version = (Integer) mapRow[1];
+        var projectTaskId = (Integer) mapRow[2];
+        var resourceId = (Integer) mapRow[3];
+        var duration = (BigDecimal) mapRow[4];
+        var sort = (int) mapRow[5];
+        var name = (String) mapRow[6];
         var laborResource = new LaborResourceImpl();
         laborResource.setName(name);
         laborResource.setId(resourceId);

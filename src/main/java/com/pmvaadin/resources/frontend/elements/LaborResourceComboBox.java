@@ -38,6 +38,8 @@ public class LaborResourceComboBox extends ComboBoxWithButtons<LaborResource> {
         var dataProvider = getDataProvider();
         this.getComboBox().setDataProvider(dataProvider, s -> s);
 
+        getSelectionAction().setVisible(true);
+        getOpenAction().setVisible(true);
         this.laborResourceSelectionForm.addListener(LaborResourceSelectionForm.SelectEvent.class, event -> {
             var selectedItems = event.getSelectedItems();
             var selectedItemOpt = selectedItems.stream().findFirst();
@@ -57,6 +59,7 @@ public class LaborResourceComboBox extends ComboBoxWithButtons<LaborResource> {
             this.laborResourceForm.open();
         });
 
+        this.setHeightFull();
     }
 
     public LaborResourceComboBox getInstance() {

@@ -9,7 +9,8 @@ import java.util.List;
 public interface TaskResourceRepository extends Repository<TaskResourceImpl, Integer> {
 
     <I> List<TaskResource> findByProjectTaskIdOrderBySortAsc(I id);
-    List<TaskResource> save(List<TaskResource> taskResources);
+    TaskResource save(TaskResource taskResources);
+    List<TaskResource> saveAll(Iterable<? extends TaskResource> taskResources);
 
     void deleteAllById(Iterable<?> ids);
 

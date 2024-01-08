@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 @Entity
 @Getter
@@ -48,6 +49,30 @@ public class TaskResourceImpl implements TaskResource, HasIdentifyingFields {
     public void nullIdentifyingFields() {
         this.id = null;
         this.version = null;
+    }
+
+    @Override
+    public TaskResource copy() {
+        var copiedItem = new TaskResourceImpl();
+        copiedItem.projectTaskId = this.projectTaskId;
+        copiedItem.resourceId = this.resourceId;
+        copiedItem.duration = this.duration;
+        copiedItem.laborResource = this.laborResource;
+        return copiedItem;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TaskResourceImpl that)) return false;
+        if (getId() == null || that.getId() == null) return false;
+        return Objects.equals(getId(), that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        if (getId() == null) return super.hashCode();
+        return Objects.hash(getId());
     }
 
 }

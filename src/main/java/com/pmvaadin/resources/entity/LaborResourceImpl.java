@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Objects;
+
 @Entity
 @Getter
 @NoArgsConstructor
@@ -22,5 +24,24 @@ public class LaborResourceImpl implements LaborResource {
 
     @Setter
     private String name;
+
+    @Override
+    public String toString() {
+        return name;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof LaborResourceImpl that)) return false;
+        if (getId() == null || that.getId() == null) return false;
+        return Objects.equals(getId(), that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        if (getId() == null) return super.hashCode();
+        return Objects.hash(getId());
+    }
 
 }

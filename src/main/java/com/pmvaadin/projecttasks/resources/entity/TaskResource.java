@@ -30,4 +30,7 @@ public interface TaskResource {
 
     LaborResource getLaborResource();
     void setLaborResource(LaborResource laborResource);
+
+    TaskResource copy();
+
 }

@@ -1,6 +1,8 @@
 package com.pmvaadin.projecttasks.entity;
 
 
+import com.pmvaadin.projecttasks.resources.entity.TaskResource;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Date;
@@ -112,5 +114,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     int getResourcesCheckSum();
     void setResourcesCheckSum(int resourcesCheckSum);
+
+    TaskResource getTaskResourceInstance();
 
 }

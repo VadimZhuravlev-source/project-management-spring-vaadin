@@ -87,7 +87,7 @@ public class ProjectTaskForm extends Dialog {
 
     private final Tab mainDataTab = new Tab("Main");
     private final Tab linksTab = new Tab("Predecessors");
-    private final Tab resourcesTab = new Tab("Predecessors");
+    private final Tab resourcesTab = new Tab("Labor resources");
     private final TabSheet tabSheet = new TabSheet();
 
     // this need to stretch a grid in a tab
@@ -105,7 +105,7 @@ public class ProjectTaskForm extends Dialog {
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
         this.timeUnitService = timeUnitService;
-        this.laborResources = laborResources;
+        this.laborResources = laborResources.getInstance();
 
         addClassName("dialog-padding-1");
 
@@ -135,6 +135,7 @@ public class ProjectTaskForm extends Dialog {
 
         projectTaskData = projectTaskDataService.read(projectTask);
         readData(projectTaskData);
+        this.laborResources.setProjectTask(projectTaskData.getProjectTask());
         name.focus();
 
     }
@@ -168,6 +169,7 @@ public class ProjectTaskForm extends Dialog {
         tabSheet.add(linksTab, linksGridContainer);
         tabSheet.addSelectedChangeListener(this::selectedTabChangeListener);
 
+        resourcesGridContainer.add(laborResources);
         tabSheet.add(resourcesTab, resourcesGridContainer);
 
     }
@@ -431,6 +433,7 @@ public class ProjectTaskForm extends Dialog {
             //projectTaskData.setLinksChangedTableData(linksGrid.getChanges());
             projectTaskData.setLinks(linksGrid.getLinks());
             projectTaskData.setLinksChangedTableData(null);
+            projectTaskData.setTaskResources(laborResources.getItems());
             ProjectTaskData savedData = projectTaskDataService.save(projectTaskData);
             readData(savedData);
         } catch (Throwable e) {
@@ -469,7 +472,6 @@ public class ProjectTaskForm extends Dialog {
         changeDuration = false;
         durationRepresentation.setValue(projectTaskData.getProjectTask().getDurationRepresentation().doubleValue());
         binder.readBean(projectTaskData.getProjectTask());
-
         laborResources.setItems(projectTaskData.getTaskResources());
 
     }
@@ -505,15 +507,8 @@ public class ProjectTaskForm extends Dialog {
 
     private void customizeBinder() {
 
-        binder.forField(id).bindReadOnly((p) -> {
-            Object id = p.getId();
-            String idString = "";
-            if (id != null) {
-                idString = id.toString();
-            }
-            return idString;
-        });
-
+        binder.forField(id).bindReadOnly((p) -> convertIntegerToString(p, ProjectTask::getId));
+        binder.forField(version).bindReadOnly((p) -> convertIntegerToString(p, ProjectTask::getVersion));
         binder.forField(dateOfCreation).bindReadOnly((p) -> convertDateToString(ProjectTask::getDateOfCreation, p));
         binder.forField(updateDate).bindReadOnly((p) -> convertDateToString(ProjectTask::getUpdateDate, p));
 
@@ -528,6 +523,15 @@ public class ProjectTaskForm extends Dialog {
 
         binder.bindInstanceFields(this);
 
+    }
+
+    private String convertIntegerToString(ProjectTask projectTask, Function<ProjectTask, Integer> function) {
+        Integer id = function.apply(projectTask);
+        String idString = "";
+        if (id != null) {
+            idString = id.toString();
+        }
+        return idString;
     }
 
     private String convertDateToString(Function<ProjectTask, Date> dateGetter, ProjectTask projectTask) {
