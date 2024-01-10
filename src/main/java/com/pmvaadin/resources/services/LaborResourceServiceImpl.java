@@ -3,7 +3,9 @@ package com.pmvaadin.resources.services;
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.resources.entity.LaborResource;
+import com.pmvaadin.resources.entity.LaborResourceRepresentationDTO;
 import com.pmvaadin.resources.entity.LaborResourceImpl;
+import com.pmvaadin.resources.entity.LaborResourceRepresentation;
 import com.pmvaadin.resources.repositories.LaborResourceRepository;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.EntityManager;
@@ -17,7 +19,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Service
-public class LaborResourceServiceImpl implements LaborResourceService, ListService<LaborResource, LaborResource> {
+public class LaborResourceServiceImpl implements LaborResourceService, ListService<LaborResourceRepresentation, LaborResource> {
 
     private LaborResourceRepository laborResourceRepository;
     @PersistenceContext
@@ -35,15 +37,14 @@ public class LaborResourceServiceImpl implements LaborResourceService, ListServi
 
     // ListService
     @Override
-    public List<LaborResource> getItems(String filter, Pageable pageable) {
-
-        return laborResourceRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable);
-
+    public List<LaborResourceRepresentation> getItems(String filter, Pageable pageable) {
+        var items = laborResourceRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable, LaborResourceRepresentationDTO.class);
+        return items.stream().map(l -> (LaborResourceRepresentation) l).toList();
     }
 
     @Override
     public int sizeInBackEnd(String filter, Pageable pageable) {
-        return laborResourceRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable).size();
+        return laborResourceRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable, LaborResourceRepresentationDTO.class).size();
     }
 
     @Override
@@ -54,15 +55,15 @@ public class LaborResourceServiceImpl implements LaborResourceService, ListServi
     }
 
     @Override
-    public LaborResource get(LaborResource representation) {
+    public LaborResource get(LaborResourceRepresentation representation) {
         return laborResourceRepository.findById(representation.getId()).get();
     }
 
     @Transactional
     @Override
-    public boolean delete(Collection<LaborResource> reps) {
+    public boolean delete(Collection<LaborResourceRepresentation> reps) {
 
-        var ids = reps.stream().map(LaborResource::getId).toList();
+        var ids = reps.stream().map(LaborResourceRepresentation::getId).toList();
         var deletingIds = checkIfItemsCanBeDeleted(ids);
 
         laborResourceRepository.deleteAllById(deletingIds);
@@ -72,7 +73,7 @@ public class LaborResourceServiceImpl implements LaborResourceService, ListServi
     }
 
     @Override
-    public LaborResource copy(LaborResource calRep) {
+    public LaborResource copy(LaborResourceRepresentation calRep) {
 
         LaborResource laborResource = laborResourceRepository.findById(calRep.getId()).orElse(new LaborResourceImpl());
         if (laborResource instanceof HasIdentifyingFields)

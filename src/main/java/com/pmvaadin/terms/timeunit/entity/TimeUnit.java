@@ -23,4 +23,6 @@ public interface TimeUnit {
     long getDuration(BigDecimal duration);
     BigDecimal getDurationRepresentation(long duration);
 
+    TimeUnitRepresentation getRep();
+
 }

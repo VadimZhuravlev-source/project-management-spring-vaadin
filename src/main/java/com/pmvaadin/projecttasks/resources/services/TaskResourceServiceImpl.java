@@ -6,7 +6,7 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.resources.entity.TaskResource;
 import com.pmvaadin.projecttasks.resources.entity.TaskResourceImpl;
 import com.pmvaadin.projecttasks.resources.repositories.TaskResourceRepository;
-import com.pmvaadin.resources.entity.LaborResourceImpl;
+import com.pmvaadin.resources.entity.LaborResourceRepresentationDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,9 +135,7 @@ public class TaskResourceServiceImpl implements TaskResourceService {
         var duration = (BigDecimal) mapRow[4];
         var sort = (int) mapRow[5];
         var name = (String) mapRow[6];
-        var laborResource = new LaborResourceImpl();
-        laborResource.setName(name);
-        laborResource.setId(resourceId);
+        var laborResource = new LaborResourceRepresentationDTO(resourceId, name);
         return new TaskResourceImpl(id, version, projectTaskId,
                 resourceId, duration, sort, laborResource);
 

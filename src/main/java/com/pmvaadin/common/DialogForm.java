@@ -16,15 +16,17 @@ import java.util.Set;
 public class DialogForm extends Dialog {
 
     private final Button crossClose = new Button(new Icon("lumo", "cross"));
-    private final Button select = new Button("Select");
+    private final Button select = new Button("Choose");
     private final Button saveAndClose = new Button("Save and close");
     private final Button save = new Button("Save");
     private final Button close = new Button("Close");
+    private final Button refresh = new Button("Refresh", new Icon("lumo", "reload"));
 
     public DialogForm() {
         customizeHeader();
         customizeFooter();
         addClassName("dialog-padding-1");
+        refresh.setVisible(false);
     }
 
     public Button getCrossClose() {
@@ -47,6 +49,22 @@ public class DialogForm extends Dialog {
         return close;
     }
 
+//    public Button getRefresh() {
+//        return refresh;
+//    }
+
+    public void setAsSelectForm() {
+        close.setVisible(false);
+        save.setVisible(false);
+        saveAndClose.setVisible(false);
+        refresh.setVisible(false);
+    }
+
+    public void setAsItemForm() {
+        select.setVisible(false);
+        save.setVisible(false);
+    }
+
     private void customizeHeader() {
 
         crossClose.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
@@ -62,8 +80,11 @@ public class DialogForm extends Dialog {
 
         saveAndClose.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-
-        getFooter().add(select, saveAndClose, save, close);
+        select.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        var expander = new HorizontalLayout();
+        expander.setWidthFull();
+        var container = new HorizontalLayout(select, saveAndClose, save, refresh, expander, close);
+        getFooter().add(container);
 
     }
 

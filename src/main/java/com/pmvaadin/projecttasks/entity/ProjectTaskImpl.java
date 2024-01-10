@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.entity;
 
 import com.pmvaadin.projecttasks.resources.entity.TaskResource;
 import com.pmvaadin.projecttasks.resources.entity.TaskResourceImpl;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -130,6 +131,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Setter
     @Transient
     private String timeUnitRepresentation;
+
+    @Setter
+    @Transient
+    private TimeUnitRepresentation timeUnit;
 
     @Setter
     @Transient

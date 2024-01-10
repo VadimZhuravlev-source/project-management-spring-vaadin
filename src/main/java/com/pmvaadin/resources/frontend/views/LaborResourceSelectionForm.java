@@ -2,7 +2,6 @@ package com.pmvaadin.resources.frontend.views;
 
 import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.resources.entity.LaborResource;
 import com.pmvaadin.resources.frontend.elements.LaborResourceList;
 import com.pmvaadin.resources.services.LaborResourceService;
 import com.vaadin.flow.spring.annotation.SpringComponent;
@@ -10,31 +9,32 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 @SpringComponent
 public class LaborResourceSelectionForm extends DialogForm {
 
-    private final LaborResourceService laborResourceService;
+    private final LaborResourceService service;
     private LaborResourceList list;
 
-    public LaborResourceSelectionForm(LaborResourceService laborResourceService) {
-        this.laborResourceService = laborResourceService;
-        if (!(laborResourceService instanceof ListService)) {
+    public LaborResourceSelectionForm(LaborResourceService service) {
+        this.service = service;
+        if (!(service instanceof ListService)) {
             return;
         }
 
-        list = new LaborResourceList((ListService) laborResourceService);
+        list = new LaborResourceList((ListService) service);
         add(list);
         customizeForm();
+        this.addOpenedChangeListener(event -> list.removeSelectionColumn());
     }
 
+
+
     public LaborResourceSelectionForm getInstance() {
-        return new LaborResourceSelectionForm(this.laborResourceService);
+        return new LaborResourceSelectionForm(this.service);
     }
 
     private void customizeForm() {
 
         this.setHeaderTitle("Choose a labor resource");
-        getClose().setVisible(false);
-        getSave().setVisible(false);
-        getSave().setVisible(false);
-        getSaveAndClose().setVisible(false);
+        setAsSelectForm();
+        getCrossClose().addClickListener(e -> this.close());
         getSelect().addClickListener(event -> fireEvent());
         list.onMouseDoubleClick(e -> fireEvent());
 

@@ -1,11 +1,15 @@
 package com.pmvaadin.resources.frontend.elements;
 
 import com.pmvaadin.common.ObjectGrid;
+import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.resources.entity.TaskResource;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+
+import java.math.BigDecimal;
+import java.util.Objects;
 
 @SpringComponent
 public class ProjectTaskLaborResources extends ObjectGrid<TaskResource> {
@@ -27,6 +31,20 @@ public class ProjectTaskLaborResources extends ObjectGrid<TaskResource> {
             setInstantiatable(projectTask::getTaskResourceInstance);
     }
 
+    public boolean validate() {
+        getItems().forEach(taskResource -> {
+            if (taskResource.getLaborResource() == null || taskResource.getResourceId() == null) {
+                grid.getEditor().editItem(taskResource);
+                throw new StandardError("The labor resource can not be empty");
+            }
+            if (taskResource.getDuration() == null || taskResource.getDuration().compareTo(new BigDecimal(0)) <= 0) {
+                grid.getEditor().editItem(taskResource);
+                throw new StandardError("The duration must be greater than 0");
+            }
+        });
+        return true;
+    }
+
     private void customizeElement() {
         setCopyable(TaskResource::copy);
         setDeletable(true);
@@ -42,29 +60,33 @@ public class ProjectTaskLaborResources extends ObjectGrid<TaskResource> {
         resourceField.setAutofocus(false);
         addCloseHandler(resourceField, editor);
         binder.forField(resourceField)
+                .withValidator(Objects::nonNull, "Can not be empty")
                 .bind(TaskResource::getLaborResource,
-                        (taskResource, laborResource) -> taskResource.setResourceId(laborResource.getId()));
+                        (taskResource, laborResource) -> taskResource.setResourceId(laborResource.getId()))
+                ;
         nameColumn.setEditorComponent(resourceField);
 
         // Duration column
         var durationColumn = addColumn(TaskResource::getDuration).
                 setHeader("Duration");
-        NumberField lagRepresentation = new NumberField();
-        lagRepresentation.setWidthFull();
-        lagRepresentation.setStepButtonsVisible(true);
-        lagRepresentation.setStep(1);
-        lagRepresentation.setMin(0);
-        lagRepresentation.setValue(1.0);
-        lagRepresentation.addValueChangeListener(event -> {
+        NumberField duration = new NumberField();
+        duration.setWidthFull();
+        duration.setStepButtonsVisible(true);
+        duration.setStep(1);
+        duration.setMin(0);
+        duration.setValue(1.0);
+        duration.addValueChangeListener(event -> {
             var value = event.getValue();
             if (value < 0.0)
-                lagRepresentation.setValue(0.0);
+                duration.setValue(0.0);
         });
 
-        addCloseHandler(lagRepresentation, editor);
-        binder.forField(lagRepresentation).withConverter(new BigDecimalToDoubleConverter(lagRepresentation))
+        addCloseHandler(duration, editor);
+        binder.forField(duration)
+                .withConverter(new BigDecimalToDoubleConverter(duration))
+                .withValidator(bigDecimal -> bigDecimal.compareTo(new BigDecimal(0)) >= 0, "Must be greater than 0")
                 .bind(TaskResource::getDuration, TaskResource::setDuration);
-        durationColumn.setEditorComponent(lagRepresentation);
+        durationColumn.setEditorComponent(duration);
 
     }
 

@@ -5,7 +5,7 @@ import com.pmvaadin.terms.calendars.view.CalendarsView;
 import com.pmvaadin.projectview.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;
 import com.pmvaadin.security.AdminUsersView;
-import com.pmvaadin.terms.timeunit.views.TimeUnitsView;
+import com.pmvaadin.terms.timeunit.frontend.views.TimeUnitsView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;

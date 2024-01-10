@@ -3,14 +3,15 @@ package com.pmvaadin.resources.frontend.elements;
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.common.vaadin.ItemList;
 import com.pmvaadin.resources.entity.LaborResource;
+import com.pmvaadin.resources.entity.LaborResourceRepresentation;
 import com.pmvaadin.resources.frontend.views.LaborResourceForm;
 
-public class LaborResourceList extends ItemList<LaborResource, LaborResource> {
+public class LaborResourceList extends ItemList<LaborResourceRepresentation, LaborResource> {
 
-    private final ListService<LaborResource, LaborResource> listService;
+    private final ListService<LaborResourceRepresentation, LaborResource> listService;
     private LaborResourceForm editingForm;
 
-    public LaborResourceList(ListService<LaborResource, LaborResource> listService) {
+    public LaborResourceList(ListService<LaborResourceRepresentation, LaborResource> listService) {
         super(listService);
         this.listService = listService;
         configureGrid();
@@ -18,7 +19,7 @@ public class LaborResourceList extends ItemList<LaborResource, LaborResource> {
 
     private void configureGrid() {
 
-        this.grid.addColumn(LaborResource::getName).setHeader("Name");
+        this.grid.addColumn(LaborResourceRepresentation::getName).setHeader("Name");
         onMouseDoubleClick(this::openNewItem);
 
         beforeAddition(this::openNewItem);
@@ -41,10 +42,11 @@ public class LaborResourceList extends ItemList<LaborResource, LaborResource> {
 
     private void saveEvent(LaborResourceForm.SaveEvent event) {
         editingForm.close();
-        var laborResource = event.getLaborResource();
-        if (laborResource != null)
+        var item = event.getItem();
+        if (item instanceof LaborResource laborResource) {
             listService.save(laborResource);
-        this.grid.getDataProvider().refreshAll();
+            this.grid.getDataProvider().refreshAll();
+        }
     }
 
     private void closeEditor() {

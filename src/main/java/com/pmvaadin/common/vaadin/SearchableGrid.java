@@ -65,14 +65,18 @@ public class SearchableGrid<T> extends VerticalLayout {
 
     }
 
-    private void customizeGrid() {
-
-        grid.setSelectionMode(Grid.SelectionMode.MULTI);
+    public void removeSelectionColumn() {
         grid.getElement().getNode().runWhenAttached(ui ->
                 ui.beforeClientResponse(this, context ->
                         getElement().executeJs(
                                 "if (this.querySelector('vaadin-grid-flow-selection-column')) {" +
                                         " this.querySelector('vaadin-grid-flow-selection-column').hidden = true }")));
+    }
+
+    private void customizeGrid() {
+
+        grid.setSelectionMode(Grid.SelectionMode.MULTI);
+        removeSelectionColumn();
         grid.addItemClickListener(this::onMouseClick);
 
     }

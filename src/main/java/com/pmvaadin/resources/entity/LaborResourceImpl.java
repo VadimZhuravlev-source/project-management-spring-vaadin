@@ -1,5 +1,6 @@
 package com.pmvaadin.resources.entity;
 
+import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Table(name = "labor_resources")
-public class LaborResourceImpl implements LaborResource {
+public class LaborResourceImpl implements LaborResource, HasIdentifyingFields {
 
     @Id
     @Setter
@@ -42,6 +43,17 @@ public class LaborResourceImpl implements LaborResource {
     public int hashCode() {
         if (getId() == null) return super.hashCode();
         return Objects.hash(getId());
+    }
+
+    @Override
+    public void nullIdentifyingFields() {
+        this.id = null;
+        this.version = null;
+    }
+
+    @Override
+    public LaborResourceRepresentation getRep() {
+        return new LaborResourceRepresentationDTO(id, name);
     }
 
 }

@@ -15,6 +15,7 @@ import com.pmvaadin.projecttasks.links.views.LinksProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.ProjectTaskDataService;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.frontend.elements.TimeUnitComboBox;
 import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
@@ -46,6 +47,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.util.Date;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -78,7 +80,7 @@ public class ProjectTaskForm extends Dialog {
     private final DatePicker finishDate = new DatePicker();
     private final NumberField durationRepresentation = new NumberField();
     private final ComboBox<ScheduleMode> scheduleMode = new ComboBox<>();
-    private final ComboBox<TimeUnit> timeUnitComboBox = new ComboBox<>();
+//    private final ComboBox<TimeUnit> timeUnitComboBox = new ComboBox<>();
     private boolean changeDuration = true;
 
     // End term fields
@@ -96,16 +98,18 @@ public class ProjectTaskForm extends Dialog {
     private final ProjectTaskLaborResources laborResources;
     private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
 
+    private final TimeUnitComboBox timeUnitComboBox;
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
                            CalendarSelectionForm calendarSelectionForm, TimeUnitService timeUnitService,
-                           ProjectTaskLaborResources laborResources) {
+                           ProjectTaskLaborResources laborResources, TimeUnitComboBox timeUnitComboBox) {
 
         this.projectTaskDataService = projectTaskDataService;
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
         this.timeUnitService = timeUnitService;
         this.laborResources = laborResources.getInstance();
+        this.timeUnitComboBox = timeUnitComboBox;
 
         addClassName("dialog-padding-1");
 
@@ -128,7 +132,7 @@ public class ProjectTaskForm extends Dialog {
 
     public ProjectTaskForm newInstance() {
         return new ProjectTaskForm(projectTaskDataService, linksGrid.newInstance(), calendarSelectionForm,
-                timeUnitService, laborResources);
+                timeUnitService, laborResources, timeUnitComboBox);
     }
 
     public void setProjectTask(ProjectTask projectTask) {
@@ -235,9 +239,9 @@ public class ProjectTaskForm extends Dialog {
         scheduleMode.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
         scheduleMode.setItems(ScheduleMode.values());
         scheduleMode.addValueChangeListener(this::scheduleModeAddListener);
-        timeUnitComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
-        timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
-        timeUnitComboBox.addValueChangeListener(this::TimeUnitChangeListener);
+//        timeUnitComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
+//        timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
+//        timeUnitComboBox.addValueChangeListener(this::TimeUnitChangeListener);
 
         id.setLabel(propertyNames.getHeaderId());
         version.setLabel(propertyNames.getHeaderVersion());
@@ -357,21 +361,21 @@ public class ProjectTaskForm extends Dialog {
 
     }
 
-    private void TimeUnitChangeListener(AbstractField.ComponentValueChangeEvent<ComboBox<TimeUnit>, TimeUnit> component) {
-
-        TimeUnit timeUnit = component.getValue();
-        if (timeUnit == null) timeUnit = component.getOldValue();
-        if (timeUnit == null) {
-            timeUnit = projectTaskData.getTimeUnit();
-            timeUnitComboBox.setValue(timeUnit);
-        }
-        projectTaskData.getProjectTask().setTimeUnitId(timeUnit.getId());
-        projectTaskData.setTimeUnit(timeUnit);
-        long duration = projectTaskData.getProjectTask().getDuration();
-        changeDuration = false;
-        durationRepresentation.setValue(timeUnit.getDurationRepresentation(duration).doubleValue());
-
-    }
+//    private void TimeUnitChangeListener(AbstractField.ComponentValueChangeEvent<ComboBox<TimeUnit>, TimeUnit> component) {
+//
+//        TimeUnit timeUnit = component.getValue();
+//        if (timeUnit == null) timeUnit = component.getOldValue();
+//        if (timeUnit == null) {
+//            timeUnit = projectTaskData.getTimeUnit();
+//            timeUnitComboBox.setValue(timeUnit);
+//        }
+//        projectTaskData.getProjectTask().setTimeUnitId(timeUnit.getId());
+//        projectTaskData.setTimeUnit(timeUnit);
+//        long duration = projectTaskData.getProjectTask().getDuration();
+//        changeDuration = false;
+//        durationRepresentation.setValue(timeUnit.getDurationRepresentation(duration).doubleValue());
+//
+//    }
 
     private Stream<TimeUnit> getPageTimeUnit(Query<TimeUnit, String> query) {
         return timeUnitService.getPageByName(query).stream();
@@ -424,12 +428,21 @@ public class ProjectTaskForm extends Dialog {
         try {
             binder.writeBean(projectTaskData.getProjectTask());
             // TODO terms validator
-            boolean isOk = linksGrid.validate();
+            var isOk = linksGrid.validate();
             if (!isOk) {
                 tabSheet.setSelectedTab(linksTab);
                 return false;
             }
 
+            isOk = laborResources.validate();
+            if (!isOk) {
+                tabSheet.setSelectedTab(resourcesTab);
+                return false;
+            }
+
+            var projectTask = projectTaskData.getProjectTask();
+            var timeUnitId = projectTask.getTimeUnit().getId();
+            projectTask.setTimeUnitId(timeUnitId);
             //projectTaskData.setLinksChangedTableData(linksGrid.getChanges());
             projectTaskData.setLinks(linksGrid.getLinks());
             projectTaskData.setLinksChangedTableData(null);
@@ -468,7 +481,7 @@ public class ProjectTaskForm extends Dialog {
         calendarField.setValue(projectTaskData.getCalendar());
         calendarField.refreshTextValue();
         calendarField.setReadOnly(true);
-        timeUnitComboBox.setValue(projectTaskData.getTimeUnit());
+//        timeUnitComboBox.setValue(projectTaskData.getTimeUnit());
         changeDuration = false;
         durationRepresentation.setValue(projectTaskData.getProjectTask().getDurationRepresentation().doubleValue());
         binder.readBean(projectTaskData.getProjectTask());
@@ -520,6 +533,10 @@ public class ProjectTaskForm extends Dialog {
                 .bind(ProjectTask::getDurationRepresentation, ProjectTask::setDurationRepresentation);
         binder.forField(progress).withConverter(new IntegerToDoubleConverter())
                 .bind(ProjectTask::getProgress, ProjectTask::setProgress);
+
+        binder.forField(timeUnitComboBox)
+                .withValidator(Objects::nonNull, "Can not be empty")
+                .bind(ProjectTask::getTimeUnit, ProjectTask::setTimeUnit);
 
         binder.bindInstanceFields(this);
 

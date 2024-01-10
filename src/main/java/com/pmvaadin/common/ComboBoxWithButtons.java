@@ -1,14 +1,20 @@
 package com.pmvaadin.common;
 
+import com.pmvaadin.common.services.ListService;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.data.provider.DataProvider;
+import com.vaadin.flow.data.provider.DataProviderListener;
+import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.shared.Registration;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 @Tag("tool-select")
 public class ComboBoxWithButtons<T> extends HorizontalLayout implements HasValue<HasValue.ValueChangeEvent<T>, T> {
@@ -55,6 +61,10 @@ public class ComboBoxWithButtons<T> extends HorizontalLayout implements HasValue
     public ComboBoxWithButtons(String label, HasValue.ValueChangeListener<AbstractField.ComponentValueChangeEvent<ComboBox<T>, T>> listener, T... items) {
         this.comboBox = new ComboBox<>(label, listener, items);
         init();
+    }
+
+    public void setDefaultDataProvider(ListService<T, ?> itemService) {
+        this.comboBox.setDataProvider(this.getDefaultDataProvider(itemService), s -> s);
     }
 
     public ComboBox<T> getComboBox() {
@@ -136,6 +146,50 @@ public class ComboBoxWithButtons<T> extends HorizontalLayout implements HasValue
         add(comboBox, selectionAction, openAction);
         selectionAction.setVisible(false);
         openAction.setVisible(false);
+        var background = comboBox.getElement().getProperty("--vaadin-input-field-background");
+        selectionAction.getElement().setProperty("--vaadin-button-background", background);
+        openAction.getElement().setProperty("--vaadin-button-background", background);
+    }
+
+    private DataProvider<T, String> getDefaultDataProvider(ListService<T, ?> itemService) {
+
+        return new DataProvider<>() {
+
+            @Override
+            public boolean isInMemory() {
+                return false;
+            }
+
+            @Override
+            public int size(Query<T, String> query) {
+                var pageable = PageRequest.of(query.getPage(), query.getPageSize());
+                var filter = query.getFilter().orElse("");
+                return itemService.sizeInBackEnd(filter, pageable);
+            }
+
+            @Override
+            public Stream<T> fetch(Query<T, String> query) {
+                var pageable = PageRequest.of(query.getPage(), query.getPageSize());
+                var filter = query.getFilter().orElse("");
+                return itemService.getItems(filter, pageable).stream();
+            }
+
+            @Override
+            public void refreshItem(T item) {
+
+            }
+
+            @Override
+            public void refreshAll() {
+
+            }
+
+            @Override
+            public Registration addDataProviderListener(DataProviderListener<T> listener) {
+                return null;
+            }
+        };
+
     }
 
 }

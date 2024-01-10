@@ -1,6 +1,7 @@
 package com.pmvaadin.projecttasks.resources.entity;
 
 import com.pmvaadin.resources.entity.LaborResource;
+import com.pmvaadin.resources.entity.LaborResourceRepresentation;
 
 import java.math.BigDecimal;
 
@@ -28,8 +29,8 @@ public interface TaskResource {
 
     void setSort(int sort);
 
-    LaborResource getLaborResource();
-    void setLaborResource(LaborResource laborResource);
+    LaborResourceRepresentation getLaborResource();
+    void setLaborResource(LaborResourceRepresentation laborResource);
 
     TaskResource copy();
 

@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.entity;
 
 
 import com.pmvaadin.projecttasks.resources.entity.TaskResource;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -108,6 +109,9 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     String getTimeUnitRepresentation();
     void setTimeUnitRepresentation(String timeUnitRepresentation);
+
+    TimeUnitRepresentation getTimeUnit();
+    void setTimeUnit(TimeUnitRepresentation timeUnitRepresentation);
 
     String getLinkRepresentation();
     void setLinkRepresentation(String linkRepresentation);

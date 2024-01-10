@@ -1,6 +1,6 @@
 package com.pmvaadin.projecttasks.resources.entity;
 
-import com.pmvaadin.resources.entity.LaborResource;
+import com.pmvaadin.resources.entity.LaborResourceRepresentation;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -43,7 +43,7 @@ public class TaskResourceImpl implements TaskResource, HasIdentifyingFields {
 
     @Setter
     @Transient
-    private LaborResource laborResource;
+    private LaborResourceRepresentation laborResource;
 
     @Override
     public void nullIdentifyingFields() {

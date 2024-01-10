@@ -5,6 +5,8 @@ import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitImpl;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentationDTO;
 import com.pmvaadin.terms.timeunit.repositories.TimeUnitRepositoryPaging;
 import com.vaadin.flow.data.provider.Query;
 import jakarta.persistence.EntityManager;
@@ -19,7 +21,7 @@ import java.util.Collection;
 import java.util.List;
 
 @Service
-public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUnit, TimeUnit> {
+public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUnitRepresentation, TimeUnit> {
 
     private TimeUnitRepositoryPaging timeUnitRepositoryPaging;
     @PersistenceContext
@@ -40,7 +42,7 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
 
         return timeUnitRepositoryPaging.findByNameLikeIgnoreCase(
                 "%" + query.getFilter().orElse("") + "%",
-                PageRequest.of(query.getPage(), query.getPageSize()));
+                PageRequest.of(query.getPage(), query.getPageSize()), TimeUnit.class);
 
     }
 
@@ -61,15 +63,14 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
 
     // ListService
     @Override
-    public List<TimeUnit> getItems(String filter, Pageable pageable) {
-
-        return timeUnitRepositoryPaging.findByNameLikeIgnoreCase("%" + filter + "%", pageable);
-
+    public List<TimeUnitRepresentation> getItems(String filter, Pageable pageable) {
+        var items = timeUnitRepositoryPaging.findByNameLikeIgnoreCase("%" + filter + "%", pageable, TimeUnitRepresentationDTO.class);
+        return items.stream().map(i -> (TimeUnitRepresentation) i).toList();
     }
 
     @Override
     public int sizeInBackEnd(String filter, Pageable pageable) {
-        return timeUnitRepositoryPaging.findByNameLikeIgnoreCase("%" + filter + "%", pageable).size();
+        return timeUnitRepositoryPaging.findByNameLikeIgnoreCase("%" + filter + "%", pageable, TimeUnitRepresentationDTO.class).size();
     }
 
     @Override
@@ -80,15 +81,15 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
     }
 
     @Override
-    public TimeUnit get(TimeUnit representation) {
+    public TimeUnit get(TimeUnitRepresentation representation) {
         return getTimeUnitById(representation.getId());
     }
 
     @Transactional
     @Override
-    public boolean delete(Collection<TimeUnit> reps) {
+    public boolean delete(Collection<TimeUnitRepresentation> reps) {
 
-        var ids = reps.stream().map(TimeUnit::getId).toList();
+        var ids = reps.stream().map(TimeUnitRepresentation::getId).toList();
         var deletingIds = checkIfItemsCanBeDeleted(ids);
 
         timeUnitRepositoryPaging.deleteAllById(deletingIds);
@@ -98,9 +99,9 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
     }
 
     @Override
-    public TimeUnit copy(TimeUnit calRep) {
+    public TimeUnit copy(TimeUnitRepresentation itemRep) {
 
-        TimeUnit timeUnit = timeUnitRepositoryPaging.findById(calRep.getId()).orElse(new TimeUnitImpl());
+        TimeUnit timeUnit = timeUnitRepositoryPaging.findById(itemRep.getId()).orElse(new TimeUnitImpl());
         if (timeUnit instanceof HasIdentifyingFields)
             ((HasIdentifyingFields) timeUnit).nullIdentifyingFields();
 

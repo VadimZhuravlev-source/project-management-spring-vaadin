@@ -10,4 +10,6 @@ public interface LaborResource {
     String getName();
     void setName(String name);
 
+    LaborResourceRepresentation getRep();
+
 }

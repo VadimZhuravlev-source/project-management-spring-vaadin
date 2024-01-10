@@ -79,6 +79,11 @@ public class TimeUnitImpl implements TimeUnit, HasIdentifyingFields {
     }
 
     @Override
+    public TimeUnitRepresentation getRep() {
+        return new TimeUnitRepresentationDTO(id, name, predefined, numberOfHours);
+    }
+
+    @Override
     public void nullIdentifyingFields() {
         this.id = null;
         this.version = null;
