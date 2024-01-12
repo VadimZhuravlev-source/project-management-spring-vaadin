@@ -1,7 +1,7 @@
 package com.pmvaadin.projecttasks.entity;
 
-
 import com.pmvaadin.projecttasks.resources.entity.TaskResource;
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 
 import java.math.BigDecimal;

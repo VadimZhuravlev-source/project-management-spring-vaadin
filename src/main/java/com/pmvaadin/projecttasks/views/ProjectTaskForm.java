@@ -15,8 +15,8 @@ import com.pmvaadin.projecttasks.links.views.LinksProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.ProjectTaskDataService;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 import com.pmvaadin.terms.timeunit.frontend.elements.TimeUnitComboBox;
-import com.pmvaadin.terms.timeunit.services.TimeUnitService;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -38,7 +38,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.textfield.TextFieldVariant;
 import com.vaadin.flow.data.binder.*;
 import com.vaadin.flow.data.converter.LocalDateToDateConverter;
-import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
@@ -49,14 +48,12 @@ import java.time.*;
 import java.util.Date;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 @SpringComponent
 public class ProjectTaskForm extends Dialog {
 
     private ProjectTaskData projectTaskData;
     private final ProjectTaskDataService projectTaskDataService;
-    private final TimeUnitService timeUnitService;
     private final LinksProjectTask linksGrid;
     private final CalendarSelectionForm calendarSelectionForm;
     private final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
@@ -101,13 +98,12 @@ public class ProjectTaskForm extends Dialog {
     private final TimeUnitComboBox timeUnitComboBox;
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
-                           CalendarSelectionForm calendarSelectionForm, TimeUnitService timeUnitService,
-                           ProjectTaskLaborResources laborResources, TimeUnitComboBox timeUnitComboBox) {
+                           CalendarSelectionForm calendarSelectionForm, ProjectTaskLaborResources laborResources,
+                           TimeUnitComboBox timeUnitComboBox) {
 
         this.projectTaskDataService = projectTaskDataService;
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
-        this.timeUnitService = timeUnitService;
         this.laborResources = laborResources.getInstance();
         this.timeUnitComboBox = timeUnitComboBox;
 
@@ -132,7 +128,7 @@ public class ProjectTaskForm extends Dialog {
 
     public ProjectTaskForm newInstance() {
         return new ProjectTaskForm(projectTaskDataService, linksGrid.newInstance(), calendarSelectionForm,
-                timeUnitService, laborResources, timeUnitComboBox);
+                laborResources, timeUnitComboBox);
     }
 
     public void setProjectTask(ProjectTask projectTask) {
@@ -239,9 +235,7 @@ public class ProjectTaskForm extends Dialog {
         scheduleMode.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
         scheduleMode.setItems(ScheduleMode.values());
         scheduleMode.addValueChangeListener(this::scheduleModeAddListener);
-//        timeUnitComboBox.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
-//        timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
-//        timeUnitComboBox.addValueChangeListener(this::TimeUnitChangeListener);
+        timeUnitComboBox.addValueChangeListener(this::TimeUnitChangeListener);
 
         id.setLabel(propertyNames.getHeaderId());
         version.setLabel(propertyNames.getHeaderVersion());
@@ -255,16 +249,19 @@ public class ProjectTaskForm extends Dialog {
 
         LocalDate selectedDate = component.getValue();
         if (selectedDate == null) {
-            startDate.setValue(projectTaskData.getProjectTask().getStartDate().toLocalDate());
+            startDate.setValue(component.getOldValue());
+//            startDate.setValue(projectTaskData.getProjectTask().getStartDate().toLocalDate());
             return;
         }
         Calendar calendar = calendarField.getValue();
         LocalDateTime newStartDate;
-        if (projectTaskData.getProjectStartDate().toLocalDate().equals(selectedDate))
+        if (projectTaskData.getProjectStartDate().toLocalDate().compareTo(selectedDate) >= 0)
             newStartDate = projectTaskData.getProjectStartDate();
         else
             newStartDate = calendar.getClosestWorkingDay(LocalDateTime.of(selectedDate, LocalTime.MIN));
-        if (!newStartDate.toLocalDate().equals(selectedDate)) startDate.setValue(newStartDate.toLocalDate());
+
+        if (!newStartDate.toLocalDate().equals(selectedDate))
+            startDate.setValue(newStartDate.toLocalDate());
 
         projectTaskData.getProjectTask().setStartDate(newStartDate);
 
@@ -283,10 +280,6 @@ public class ProjectTaskForm extends Dialog {
 
         Calendar calendar = calendarField.getValue();
         LocalDateTime newFinishDate = calendar.getEndOfWorkingDay(selectedDate);
-//        if (newFinishDate.toLocalTime().equals(calendar.getStartTime())) {
-//        newFinishDate = calendar.getClosestWorkingDay(newFinishDate);
-//        newFinishDate = calendar.getEndOfWorkingDay(newFinishDate);
-//        }
 
         if (newFinishDate.compareTo(projectTask.getStartDate()) <= 0) {
             String message = "The selected date can not be less than the start date of the task";
@@ -361,28 +354,18 @@ public class ProjectTaskForm extends Dialog {
 
     }
 
-//    private void TimeUnitChangeListener(AbstractField.ComponentValueChangeEvent<ComboBox<TimeUnit>, TimeUnit> component) {
-//
-//        TimeUnit timeUnit = component.getValue();
-//        if (timeUnit == null) timeUnit = component.getOldValue();
-//        if (timeUnit == null) {
-//            timeUnit = projectTaskData.getTimeUnit();
-//            timeUnitComboBox.setValue(timeUnit);
-//        }
-//        projectTaskData.getProjectTask().setTimeUnitId(timeUnit.getId());
-//        projectTaskData.setTimeUnit(timeUnit);
-//        long duration = projectTaskData.getProjectTask().getDuration();
-//        changeDuration = false;
-//        durationRepresentation.setValue(timeUnit.getDurationRepresentation(duration).doubleValue());
-//
-//    }
+    private void TimeUnitChangeListener(HasValue.ValueChangeEvent<TimeUnitRepresentation> event) {
 
-    private Stream<TimeUnit> getPageTimeUnit(Query<TimeUnit, String> query) {
-        return timeUnitService.getPageByName(query).stream();
-    }
+        if (projectTaskData == null) return;
 
-    private int getCountItemsInPageByName(Query<TimeUnit, String> query) {
-        return timeUnitService.getCountPageItemsByName(query);
+        var timeUnit = timeUnitComboBox.getTimeUnitInChangeListener(event, projectTaskData);
+
+        projectTaskData.getProjectTask().setTimeUnitId(timeUnit.getId());
+        projectTaskData.setTimeUnit(timeUnit);
+        long duration = projectTaskData.getProjectTask().getDuration();
+        changeDuration = false;
+        durationRepresentation.setValue(timeUnit.getDurationRepresentation(duration).doubleValue());
+
     }
 
     private void customizeHeader() {

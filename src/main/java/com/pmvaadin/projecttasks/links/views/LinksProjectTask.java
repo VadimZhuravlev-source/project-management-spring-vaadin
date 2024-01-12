@@ -14,17 +14,16 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.views.ProjectSelectionForm;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
+import com.pmvaadin.terms.timeunit.frontend.elements.TimeUnitComboBox;
 import com.pmvaadin.terms.timeunit.services.TimeUnitService;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.NumberField;
-import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.stream.Stream;
 
 @SpringComponent
 public class LinksProjectTask extends ObjectGrid<Link> {
@@ -32,24 +31,26 @@ public class LinksProjectTask extends ObjectGrid<Link> {
     private final LinkService linkService;
     private final ProjectSelectionForm projectSelectionForm;
     private final TimeUnitService timeUnitService;
-    private ProjectTaskData projectTaskDate;
+    private final TimeUnitComboBox timeUnitComboBox;
+    private ProjectTaskData projectTaskData;
 
     LinksProjectTask(LinkService linkService, ProjectSelectionForm projectSelectionForm,
-                     TimeUnitService timeUnitService) {
+                     TimeUnitService timeUnitService, TimeUnitComboBox timeUnitComboBox) {
         super();
         this.linkService = linkService;
-        this.projectSelectionForm = projectSelectionForm;
+        this.projectSelectionForm = projectSelectionForm.newInstance();
         this.timeUnitService = timeUnitService;
+        this.timeUnitComboBox = timeUnitComboBox.getInstance();
         customizeLinks();
 
     }
 
     public LinksProjectTask newInstance() {
-        return new LinksProjectTask(linkService, projectSelectionForm.newInstance(), timeUnitService);
+        return new LinksProjectTask(linkService, projectSelectionForm, timeUnitService, timeUnitComboBox);
     }
 
     public void setProjectTask(ProjectTaskData projectTaskDate) {
-        this.projectTaskDate = projectTaskDate;
+        this.projectTaskData = projectTaskDate;
         setItems(projectTaskDate.getLinks());
     }
 
@@ -83,13 +84,13 @@ public class LinksProjectTask extends ObjectGrid<Link> {
     }
 
     private Link setInstantiatable() {
-        Link newLink = projectTaskDate.getLinkSample().getInstance();
-        newLink.setTimeUnit(projectTaskDate.getTimeUnit());
+        Link newLink = projectTaskData.getLinkSample().getInstance();
+        newLink.setTimeUnit(projectTaskData.getTimeUnit());
         return newLink;
     }
 
     private Link setCopyable(Link link) {
-        Link copy = projectTaskDate.getLinkSample().copy(link);
+        Link copy = projectTaskData.getLinkSample().copy(link);
         Integer maxSort = grid.getListDataView().getItems().map(Link::getSort).max(Integer::compareTo).orElse(0);
         copy.setSort(++maxSort);
         return copy;
@@ -153,9 +154,13 @@ public class LinksProjectTask extends ObjectGrid<Link> {
                 .bind(Link::getLagRepresentation, this::setLagRepresentation);
         lagColumn.setEditorComponent(lagRepresentation);
 
-        ComboBox<TimeUnit> timeUnitComboBox = new ComboBox<>();
-        timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
+        var timeUnitComboBox = this.timeUnitComboBox;
+//        timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
         timeUnitComboBox.setWidthFull();
+        timeUnitComboBox.addValueChangeListener(event -> {
+            var timeUnit = timeUnitComboBox.getTimeUnitInChangeListener(event, projectTaskData);
+            timeUnitComboBox.setValue(timeUnit);
+        });
         //timeUnitComboBox.setAutofocus(false);
         addCloseHandler(timeUnitComboBox, editor);
         binder.forField(timeUnitComboBox)
@@ -164,27 +169,35 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     }
 
-    private void setTimeUnit(Link link, TimeUnit timeUnit) {
-        TimeUnit currentTimeUnit = timeUnit;
-        if (timeUnit == null) currentTimeUnit = projectTaskDate.getTimeUnit();
-        BigDecimal lagRepresentation = currentTimeUnit.getDurationRepresentation(link.getLag());
+    private void setTimeUnit(Link link, TimeUnitRepresentation timeUnit) {
+        var timeUnitRep = timeUnit;
+        if (timeUnitRep == null) timeUnitRep = projectTaskData.getTimeUnit();
+        TimeUnit currentTimeUnit;
+        if (timeUnitRep instanceof TimeUnit) {
+            currentTimeUnit = (TimeUnit) timeUnitRep;
+        } else
+            currentTimeUnit = timeUnitComboBox.getByRepresentation(timeUnitRep);
+
+        var lagRepresentation = currentTimeUnit.getDurationRepresentation(link.getLag());
         link.setLagRepresentation(lagRepresentation);
         link.setTimeUnit(timeUnit);
         //binder.refreshFields();
     }
 
-    private Stream<TimeUnit> getPageTimeUnit(Query<TimeUnit, String> query) {
-        return timeUnitService.getPageByName(query).stream();
-    }
-
-    private int getCountItemsInPageByName(Query<TimeUnit, String> query) {
-        return timeUnitService.getCountPageItemsByName(query);
+    private TimeUnit getTimeUnitByRepresentation(TimeUnitRepresentation timeUnitRep) {
+        if (timeUnitRep == null) timeUnitRep = projectTaskData.getTimeUnit();
+        TimeUnit timeUnit;
+        if (timeUnitRep instanceof TimeUnit) {
+            timeUnit = (TimeUnit) timeUnitRep;
+        } else
+            timeUnit = timeUnitComboBox.getByRepresentation(timeUnitRep);
+        return timeUnit;
     }
 
     private void setLagRepresentation(Link link, BigDecimal value) {
 
-        TimeUnit timeUnit = link.getTimeUnit();
-        if (timeUnit == null) timeUnit = projectTaskDate.getTimeUnit();
+        var timeUnitRep = link.getTimeUnit();
+        var timeUnit = getTimeUnitByRepresentation(timeUnitRep);
 
         long lag = timeUnit.getDuration(value);
         link.setLag(lag);
@@ -195,7 +208,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
     private boolean isAddable(ProjectTask projectTask) {
 
-        if (this.projectTaskDate.getProjectTask().equals(projectTask)) {
+        if (this.projectTaskData.getProjectTask().equals(projectTask)) {
             NotificationDialogs.notifyValidationErrors(getTextErrorEqualsThis());
             return false;
         }

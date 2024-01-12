@@ -191,7 +191,7 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
         if (timeUnitId != null) timeUnit = timeUnitService.getTimeUnitById(timeUnitId);
         else timeUnit = timeUnitService.getPredefinedTimeUnit();
 
-        projectTask.setTimeUnit(timeUnit.getRep());
+        projectTask.setTimeUnit(timeUnit);
 
         return new AdditionalData(calendar, defaultStartDate, timeUnit);
 

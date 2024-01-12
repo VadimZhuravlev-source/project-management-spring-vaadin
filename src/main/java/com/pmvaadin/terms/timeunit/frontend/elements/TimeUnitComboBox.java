@@ -2,11 +2,13 @@ package com.pmvaadin.terms.timeunit.frontend.elements;
 
 import com.pmvaadin.common.ComboBoxWithButtons;
 import com.pmvaadin.common.services.ListService;
+import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 import com.pmvaadin.terms.timeunit.frontend.views.TimeUnitForm;
 import com.pmvaadin.terms.timeunit.frontend.views.TimeUnitSelectionForm;
 import com.pmvaadin.terms.timeunit.services.TimeUnitService;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 @SpringComponent
@@ -36,9 +38,16 @@ public class TimeUnitComboBox extends ComboBoxWithButtons<TimeUnitRepresentation
             var selectedItemOpt = selectedItems.stream().findFirst();
             if (selectedItemOpt.isEmpty()) return;
             var selectedItem = selectedItemOpt.get();
-            if (selectedItem instanceof TimeUnitRepresentation item)
-                getComboBox().setValue(item);
-
+            if (!(selectedItem instanceof TimeUnitRepresentation))
+                return;
+            var selectedItem2 = (TimeUnitRepresentation) selectedItem;
+            TimeUnit item;
+            if (selectedItem2 instanceof TimeUnit) {
+                item = (TimeUnit) selectedItem2;
+            } else {
+                item = this.itemService.get(selectedItem2);
+            }
+            getComboBox().setValue(item);
         });
         this.getSelectionAction().addClickListener(event -> this.selectionForm.open());
 
@@ -58,14 +67,38 @@ public class TimeUnitComboBox extends ComboBoxWithButtons<TimeUnitRepresentation
         return new TimeUnitComboBox(service, selectionForm);
     }
 
+    public TimeUnit getByRepresentation(TimeUnitRepresentation representation) {
+        return this.itemService.get(representation);
+    }
+
+    public TimeUnit getTimeUnitInChangeListener(HasValue.ValueChangeEvent<TimeUnitRepresentation> event,
+                                                ProjectTaskData projectTaskData) {
+
+        var timeUnitRep = event.getValue();
+        if (timeUnitRep == null) {
+            timeUnitRep = event.getOldValue();
+        }
+        if (timeUnitRep == null) {
+            timeUnitRep = projectTaskData.getTimeUnit();
+            this.setValue(timeUnitRep);
+        }
+
+        TimeUnit timeUnit;
+        if ((timeUnitRep instanceof TimeUnit))
+            timeUnit = (TimeUnit) timeUnitRep;
+        else
+            timeUnit = this.getByRepresentation(timeUnitRep);
+        return timeUnit;
+
+    }
+
     private void saveEvent(TimeUnitForm.SaveEvent event) {
-        this.itemForm.close();
         var item = event.getItem();
         if (item instanceof TimeUnit timeUnit) {
             var savedItem = service.save(timeUnit);
-            getComboBox().setValue(savedItem.getRep());
+            this.itemForm.read(savedItem);
+            getComboBox().setValue(savedItem);
         }
-
     }
 
 }

@@ -61,10 +61,11 @@ public class LaborResourceComboBox extends ComboBoxWithButtons<LaborResourceRepr
     }
 
     private void saveEvent(LaborResourceForm.SaveEvent event) {
-        this.itemForm.close();
+//        this.itemForm.close();
         var item = event.getItem();
         if (item instanceof LaborResource laborResource) {
             var laborRes = service.save(laborResource);
+            this.itemForm.read(laborRes);
             getComboBox().setValue(laborRes.getRep());
         }
     }

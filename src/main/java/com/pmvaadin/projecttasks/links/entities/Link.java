@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.links.entities;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
+import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 
 import java.math.BigDecimal;
 
@@ -35,8 +36,8 @@ public interface Link {
     Link getInstance();
     Link copy(Link link);
 
-    TimeUnit getTimeUnit();
-    void setTimeUnit(TimeUnit timeUnit);
+    TimeUnitRepresentation getTimeUnit();
+    void setTimeUnit(TimeUnitRepresentation timeUnit);
 
 //    Integer getTimeUnitId();
 //    void setTimeUnitId(Integer timeUnitId);

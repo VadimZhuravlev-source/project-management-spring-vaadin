@@ -25,6 +25,14 @@ public class LaborResourceList extends ItemList<LaborResourceRepresentation, Lab
         beforeAddition(this::openNewItem);
         onCoping(this::openNewItem);
 
+        var menu = this.grid.addContextMenu();
+        menu.addItem("Open", event -> {
+            var itemOpt = event.getItem();
+            if (itemOpt.isEmpty()) return;
+            var item = itemOpt.get();
+            var laborResource = listService.get(item);
+            openNewItem(laborResource);
+        });
     }
 
     private void openNewItem(LaborResource laborResource) {

@@ -2,7 +2,7 @@ package com.pmvaadin.terms.timeunit.entity;
 
 import java.math.BigDecimal;
 
-public interface TimeUnit {
+public interface TimeUnit extends TimeUnitRepresentation {
 
     Integer getId();
 
