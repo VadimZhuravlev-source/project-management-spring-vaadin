@@ -158,7 +158,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 //        timeUnitComboBox.setItems(this::getPageTimeUnit, this::getCountItemsInPageByName);
         timeUnitComboBox.setWidthFull();
         timeUnitComboBox.addValueChangeListener(event -> {
-            var timeUnit = timeUnitComboBox.getTimeUnitInChangeListener(event, projectTaskData);
+            var timeUnit = timeUnitComboBox.getTimeUnitValueChangeListener(event, projectTaskData);
             timeUnitComboBox.setValue(timeUnit);
         });
         //timeUnitComboBox.setAutofocus(false);

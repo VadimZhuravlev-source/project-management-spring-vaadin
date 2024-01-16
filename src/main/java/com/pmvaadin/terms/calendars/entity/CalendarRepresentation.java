@@ -4,7 +4,7 @@ public interface CalendarRepresentation {
 
     Integer getId();
     String getName();
-    CalendarSettings getSettings();
+    CalendarSettings getSetting();
     boolean isPredefined();
 
 }

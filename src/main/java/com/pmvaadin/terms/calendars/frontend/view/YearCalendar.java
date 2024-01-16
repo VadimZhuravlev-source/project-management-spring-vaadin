@@ -1,4 +1,4 @@
-package com.pmvaadin.terms.calendars.view;
+package com.pmvaadin.terms.calendars.frontend.view;
 
 import com.flowingcode.addons.ycalendar.MonthCalendar;
 import com.vaadin.flow.component.button.Button;

@@ -23,7 +23,7 @@ public class TimeUnitComboBox extends ComboBoxWithButtons<TimeUnitRepresentation
                             TimeUnitSelectionForm selectionForm) {
 
         this.service = service;
-        this.selectionForm = selectionForm.getInstance();
+        this.selectionForm = selectionForm.newInstance();
         if (service instanceof ListService<?, ?> itemService) {
             this.itemService = (ListService<TimeUnitRepresentation, TimeUnit>) itemService;
         } else
@@ -71,8 +71,8 @@ public class TimeUnitComboBox extends ComboBoxWithButtons<TimeUnitRepresentation
         return this.itemService.get(representation);
     }
 
-    public TimeUnit getTimeUnitInChangeListener(HasValue.ValueChangeEvent<TimeUnitRepresentation> event,
-                                                ProjectTaskData projectTaskData) {
+    public TimeUnit getTimeUnitValueChangeListener(HasValue.ValueChangeEvent<TimeUnitRepresentation> event,
+                                                   ProjectTaskData projectTaskData) {
 
         var timeUnitRep = event.getValue();
         if (timeUnitRep == null) {

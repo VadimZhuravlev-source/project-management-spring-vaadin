@@ -2,7 +2,6 @@ package com.pmvaadin.terms.calendars.entity;
 
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.common.Interval;
-import com.pmvaadin.terms.calendars.OperationListenerForCalendar;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.terms.calendars.exceptions.CalendarException;
 import com.pmvaadin.terms.calendars.exceptions.CalendarExceptionImpl;

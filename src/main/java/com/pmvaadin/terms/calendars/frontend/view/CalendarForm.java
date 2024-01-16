@@ -1,5 +1,6 @@
-package com.pmvaadin.terms.calendars.view;
+package com.pmvaadin.terms.calendars.frontend.view;
 
+import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.common.ObjectGrid;
 import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.entity.Calendar;
@@ -13,9 +14,7 @@ import com.pmvaadin.terms.calendars.workingweeks.WorkingWeek;
 import com.pmvaadin.terms.calendars.exceptions.views.CalendarExceptionForm;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
@@ -31,7 +30,6 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
-import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 import java.time.DayOfWeek;
@@ -42,7 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @SpringComponent
-public class CalendarForm extends Dialog {
+public class CalendarForm extends DialogForm {
 
     private Calendar calendar;
     private final CalendarService calendarService;
@@ -52,10 +50,6 @@ public class CalendarForm extends Dialog {
     private final ComboBox<CalendarSettings> setting = new ComboBox<>();
 
     private final Binder<Calendar> binder = new BeanValidationBinder<>(Calendar.class);
-
-    private final Button sync = new Button("Refresh", new Icon("lumo", "reload"));
-
-//    private final Map<DayOfWeek, NumberField> dayOfWeekMap = new LinkedHashMap<>(7);
 
     private final Select<DayOfWeek> endOfWeek = new Select<>();
 
@@ -75,13 +69,13 @@ public class CalendarForm extends Dialog {
 
         this.calendarService = calendarService;
         //fillDayOfWeekMap();
-        customizeHeader();
+        setAsItemForm();
+//        customizeHeader();
         customizeForm();
         customizeDataLayout();
-        createButtons();
+        customizeButtons();
         customizeBinder();
         customizeElements();
-        addClassName("dialog-padding-1");
 
     }
 
@@ -145,7 +139,7 @@ public class CalendarForm extends Dialog {
         exceptions.getItems().forEach(e ->
                 e.getExceptionAsDayConstraint().forEach((k, v) -> exceptionsMap.put(k, k))
         );
-        if (this.calendar.isNew()) sync.setEnabled(false);
+        if (this.calendar.isNew()) getRefresh().setEnabled(false);
 
     }
 
@@ -163,7 +157,8 @@ public class CalendarForm extends Dialog {
         addThemeVariants(DialogVariant.LUMO_NO_PADDING);
         setModal(false);
         setCloseOnEsc(false);
-        //this.addListener(Class<ProjectTaskForm>, )
+        getSave().setVisible(true);
+        getRefresh().setVisible(true);
 
     }
 
@@ -188,51 +183,46 @@ public class CalendarForm extends Dialog {
     private void refreshHeader() {
         var calendarName = calendar.getName();
         if (calendarName == null) calendarName = "";
-        var title = Calendar.getHeaderName();
+        var title = Calendar.getCalendarHeader();
         setHeaderTitle(title + ": " + calendarName);
     }
 
-    private void customizeHeader() {
+    private void customizeButtons() {
 
-        Button closeButton = new Button(new Icon("lumo", "cross"),
-                e -> fireEvent(new CloseEvent(this))
-        );
-        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        closeButton.addClickShortcut(Key.ESCAPE);
 
-        getHeader().add(closeButton);
-
-    }
-
-    private void createButtons() {
-
-        Button saveAndClose = new Button("Save and close");
-        saveAndClose.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        var saveAndClose = getSaveAndClose();
         saveAndClose.addClickListener(event -> {
 
             boolean validationDone = validateAndSave();
             if (!validationDone) return;
-            fireEvent(new SaveEvent(this));
+            fireEvent(new SaveEvent(this, this.calendar));
+            this.close();
 
         });
+
         binder.addStatusChangeListener(e -> saveAndClose.setEnabled(binder.isValid()));
 
+        var sync = getRefresh();
         sync.addClickListener(event -> syncData());
         sync.getStyle().set("margin-right", "auto");
 
-        Button close = new Button("Close");
-        close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        close.addClickListener(event -> fireEvent(new CloseEvent(this)));
+        getClose().addClickListener(event -> closeEvent());
+        getCrossClose().addClickListener(event -> closeEvent());
 
-        Button save = new Button("Save");
+        var save = getSave();
         save.addClickListener(event -> {
-            validateAndSave();
+            boolean validationDone = validateAndSave();
+            if (!validationDone) return;
+            fireEvent(new SaveEvent(this, this.calendar));
             read();
         });
         binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
 
-        getFooter().add(saveAndClose, save, sync, close);
+    }
 
+    private void closeEvent() {
+        fireEvent(new CloseEvent(this, this.calendar));
+        this.close();
     }
 
     private boolean validateAndSave() {
@@ -256,31 +246,6 @@ public class CalendarForm extends Dialog {
         if (this.calendar.isNew()) return;
         this.calendar = calendarService.getCalendarById(this.calendar.getId());
         read();
-    }
-
-    public <T extends ComponentEvent<?>> Registration addListener(Class<T> eventType,
-                                                                  ComponentEventListener<T> listener) {
-        return getEventBus().addListener(eventType, listener);
-    }
-
-    public static abstract class CalendarFormEvent extends ComponentEvent<CalendarForm> {
-
-        protected CalendarFormEvent(CalendarForm source) {
-            super(source, false);
-        }
-
-    }
-
-    public static class CloseEvent extends CalendarFormEvent {
-        CloseEvent(CalendarForm source) {
-            super(source);
-        }
-    }
-
-    public static class SaveEvent extends CalendarFormEvent {
-        SaveEvent(CalendarForm source) {
-            super(source);
-        }
     }
 
     private class Exceptions extends ObjectGrid<CalendarException> {

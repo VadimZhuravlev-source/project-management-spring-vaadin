@@ -22,7 +22,7 @@ public class LaborResourceComboBox extends ComboBoxWithButtons<LaborResourceRepr
                                  LaborResourceForm itemForm) {
 
         this.service = service;
-        this.selectionForm = selectionForm.getInstance();
+        this.selectionForm = selectionForm.newInstance();
         this.itemForm = itemForm;
         if (service instanceof ListService<?, ?> itemService) {
             this.itemService = (ListService<LaborResourceRepresentation, LaborResource>) itemService;

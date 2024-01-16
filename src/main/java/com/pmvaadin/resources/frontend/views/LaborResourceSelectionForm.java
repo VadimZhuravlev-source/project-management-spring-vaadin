@@ -26,7 +26,7 @@ public class LaborResourceSelectionForm extends DialogForm {
 
 
 
-    public LaborResourceSelectionForm getInstance() {
+    public LaborResourceSelectionForm newInstance() {
         return new LaborResourceSelectionForm(this.service);
     }
 

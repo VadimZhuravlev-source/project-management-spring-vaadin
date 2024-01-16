@@ -15,7 +15,7 @@ public record CalendarRepresentationDTO(Integer id, String name, CalendarSetting
     }
 
     @Override
-    public CalendarSettings getSettings() {
+    public CalendarSettings getSetting() {
         return setting;
     }
 
@@ -30,6 +30,11 @@ public record CalendarRepresentationDTO(Integer id, String name, CalendarSetting
         if (!(o instanceof CalendarRepresentationDTO that)) return false;
         if (getId() == null && that.getId() == null) return false;
         return Objects.equals(getId(), that.getId());
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 
 }

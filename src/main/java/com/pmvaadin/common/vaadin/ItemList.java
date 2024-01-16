@@ -7,6 +7,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.ItemDoubleClickEvent;
+import com.vaadin.flow.component.grid.contextmenu.GridMenuItem;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
@@ -21,10 +22,9 @@ public class ItemList<T, I> extends SearchableGrid<T> {
     protected Button copy = new Button(new Icon(VaadinIcon.COPY));
 
     protected Consumer<I> beforeAddition;
-
     protected Consumer<I> onMouseDoubleClick;
-
     protected Consumer<I> onCoping;
+    private GridMenuItem<T> openItem;
 
     public ItemList(ListService<T, I> listService) {
 
@@ -48,6 +48,22 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         );
         this.grid.addItemDoubleClickListener(this::onMouseDoubleClick);
 
+    }
+
+    public void onContextMenuOpen(Consumer<I> openEvent) {
+        var menu = this.grid.addContextMenu();
+        if (openItem != null)
+            menu.remove(openItem);
+
+        this.openItem = menu.addItem("Open", event -> {
+            if (openEvent == null)
+                return;
+            var itemOpt = event.getItem();
+            if (itemOpt.isEmpty()) return;
+            var item = itemOpt.get();
+            var timeUnit = ((ListService<T, I>) this.itemService).get(item);
+            openEvent.accept(timeUnit);
+        });
     }
 
     public void beforeAddition(Consumer<I> beforeAddition) {

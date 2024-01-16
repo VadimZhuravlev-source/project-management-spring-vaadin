@@ -24,16 +24,7 @@ public class TimeUnitList extends ItemList<TimeUnitRepresentation, TimeUnit> {
         onMouseDoubleClick(this::openNewItem);
         beforeAddition(this::openNewItem);
         onCoping(this::openNewItem);
-
-        var menu = this.grid.addContextMenu();
-        menu.addItem("Open", event -> {
-            var itemOpt = event.getItem();
-            if (itemOpt.isEmpty()) return;
-            var item = itemOpt.get();
-            var timeUnit = listService.get(item);
-            openNewItem(timeUnit);
-        });
-
+        onContextMenuOpen(this::openNewItem);
     }
 
     private void openNewItem(TimeUnit timeUnit) {

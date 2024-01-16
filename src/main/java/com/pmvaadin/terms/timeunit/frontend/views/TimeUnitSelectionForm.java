@@ -24,7 +24,7 @@ public class TimeUnitSelectionForm extends DialogForm {
         this.addOpenedChangeListener(event -> list.removeSelectionColumn());
     }
 
-    public TimeUnitSelectionForm getInstance() {
+    public TimeUnitSelectionForm newInstance() {
         return new TimeUnitSelectionForm(this.service);
     }
 

@@ -8,8 +8,9 @@ import com.pmvaadin.projectview.ProjectTaskPropertyNames;
 import com.pmvaadin.resources.frontend.elements.ProjectTaskLaborResources;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.projectstructure.NotificationDialogs;
-import com.pmvaadin.terms.calendars.view.CalendarSelectionForm;
-import com.pmvaadin.common.SelectableTextField;
+import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
+import com.pmvaadin.terms.calendars.frontend.elements.CalendarComboBox;
+import com.pmvaadin.terms.calendars.frontend.view.CalendarSelectionForm;
 import com.pmvaadin.projecttasks.data.ProjectTaskData;
 import com.pmvaadin.projecttasks.links.views.LinksProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
@@ -72,13 +73,15 @@ public class ProjectTaskForm extends Dialog {
     private final ComboBox<Status> status = new ComboBox<>();
 
     // Term fields
-    private final SelectableTextField<Calendar> calendarField = new SelectableTextField<>();
+//    private final SelectableTextField<Calendar> calendarField = new SelectableTextField<>();
     private final DatePicker startDate = new DatePicker();
     private final DatePicker finishDate = new DatePicker();
     private final NumberField durationRepresentation = new NumberField();
     private final ComboBox<ScheduleMode> scheduleMode = new ComboBox<>();
 //    private final ComboBox<TimeUnit> timeUnitComboBox = new ComboBox<>();
     private boolean changeDuration = true;
+    private final TimeUnitComboBox timeUnitComboBox;
+    private final CalendarComboBox calendarComboBox;
 
     // End term fields
 
@@ -95,17 +98,17 @@ public class ProjectTaskForm extends Dialog {
     private final ProjectTaskLaborResources laborResources;
     private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
 
-    private final TimeUnitComboBox timeUnitComboBox;
-
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
                            CalendarSelectionForm calendarSelectionForm, ProjectTaskLaborResources laborResources,
-                           TimeUnitComboBox timeUnitComboBox) {
+                           TimeUnitComboBox timeUnitComboBox,
+                           CalendarComboBox calendarComboBox) {
 
         this.projectTaskDataService = projectTaskDataService;
         this.linksGrid = linksGrid;
         this.calendarSelectionForm = calendarSelectionForm;
         this.laborResources = laborResources.getInstance();
         this.timeUnitComboBox = timeUnitComboBox;
+        this.calendarComboBox = calendarComboBox;
 
         addClassName("dialog-padding-1");
 
@@ -128,7 +131,7 @@ public class ProjectTaskForm extends Dialog {
 
     public ProjectTaskForm newInstance() {
         return new ProjectTaskForm(projectTaskDataService, linksGrid.newInstance(), calendarSelectionForm,
-                laborResources, timeUnitComboBox);
+                laborResources, timeUnitComboBox, calendarComboBox);
     }
 
     public void setProjectTask(ProjectTask projectTask) {
@@ -194,7 +197,7 @@ public class ProjectTaskForm extends Dialog {
         termsLayout.addFormItem(startDate, propertyNames.getHeaderStartDate());
         termsLayout.addFormItem(finishDate, propertyNames.getHeaderFinishDate());
         termsLayout.addFormItem(scheduleMode, propertyNames.getHeaderScheduleMode());
-        termsLayout.addFormItem(calendarField, propertyNames.getHeaderCalendar());
+        termsLayout.addFormItem(calendarComboBox, propertyNames.getHeaderCalendar());
         termsLayout.addFormItem(durationRepresentation, propertyNames.getHeaderDurationRepresentation());
         termsLayout.addFormItem(timeUnitComboBox, propertyNames.getHeaderTimeUnit());
         FormLayout milestoneLayout = new FormLayout();
@@ -217,13 +220,13 @@ public class ProjectTaskForm extends Dialog {
         updateDate.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         name.setAutofocus(true);
         name.addThemeVariants(TextFieldVariant.LUMO_SMALL);
-        calendarField.setSelectable(true);
-        calendarField.addSelectionListener(event -> {
-            var currentInstanceOfCalendarSelectionForm = calendarSelectionForm.newInstance();
-            currentInstanceOfCalendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
-            currentInstanceOfCalendarSelectionForm.open();
-        });
-        calendarField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
+//        calendarField.setSelectable(true);
+//        calendarField.addSelectionListener(event -> {
+//            var currentInstanceOfCalendarSelectionForm = calendarSelectionForm.newInstance();
+//            currentInstanceOfCalendarSelectionForm.addSelectionListener(this::calendarSelectionListener);
+//            currentInstanceOfCalendarSelectionForm.open();
+//        });
+//        calendarField.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         startDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
         startDate.addValueChangeListener(this::startDateChangeListener);
         finishDate.addThemeVariants(DatePickerVariant.LUMO_SMALL);
@@ -236,6 +239,7 @@ public class ProjectTaskForm extends Dialog {
         scheduleMode.setItems(ScheduleMode.values());
         scheduleMode.addValueChangeListener(this::scheduleModeAddListener);
         timeUnitComboBox.addValueChangeListener(this::TimeUnitChangeListener);
+        calendarComboBox.addValueChangeListener(this::CalendarChangeListener);
 
         id.setLabel(propertyNames.getHeaderId());
         version.setLabel(propertyNames.getHeaderVersion());
@@ -253,7 +257,9 @@ public class ProjectTaskForm extends Dialog {
 //            startDate.setValue(projectTaskData.getProjectTask().getStartDate().toLocalDate());
             return;
         }
-        Calendar calendar = calendarField.getValue();
+        var calendarRep = calendarComboBox.getValue();
+        if (!(calendarRep instanceof Calendar calendar))
+            return;
         LocalDateTime newStartDate;
         if (projectTaskData.getProjectStartDate().toLocalDate().compareTo(selectedDate) >= 0)
             newStartDate = projectTaskData.getProjectStartDate();
@@ -278,7 +284,9 @@ public class ProjectTaskForm extends Dialog {
             return;
         }
 
-        Calendar calendar = calendarField.getValue();
+        var calendarRep = calendarComboBox.getValue();
+        if (!(calendarRep instanceof Calendar calendar))
+            return;
         LocalDateTime newFinishDate = calendar.getEndOfWorkingDay(selectedDate);
 
         if (newFinishDate.compareTo(projectTask.getStartDate()) <= 0) {
@@ -298,14 +306,14 @@ public class ProjectTaskForm extends Dialog {
 
     }
 
-    private void calendarSelectionListener(Calendar selectedItem) {
-
-        if (selectedItem == null) return;
-        calendarField.setValue(selectedItem);
-        calendarField.refreshTextValue();
-        calendarField.setReadOnly(true);
-        projectTaskData.getProjectTask().setCalendarId(selectedItem.getId());
-    }
+//    private void calendarSelectionListener(Calendar selectedItem) {
+//
+//        if (selectedItem == null) return;
+//        calendarField.setValue(selectedItem);
+//        calendarField.refreshTextValue();
+//        calendarField.setReadOnly(true);
+//        projectTaskData.getProjectTask().setCalendarId(selectedItem.getId());
+//    }
 
     private void scheduleModeAddListener(AbstractField.ComponentValueChangeEvent<ComboBox<ScheduleMode>, ScheduleMode> component) {
 
@@ -327,7 +335,8 @@ public class ProjectTaskForm extends Dialog {
 
         long duration = projectTaskData.getProjectTask().getDuration();
         LocalDateTime startDate = projectTaskData.getProjectTask().getStartDate();
-        LocalDateTime newFinishDate = calendarField.getValue().getDateByDuration(startDate, duration);
+        var calendar = projectTaskData.getCalendar();
+        LocalDateTime newFinishDate = calendar.getDateByDuration(startDate, duration);
         projectTaskData.getProjectTask().setFinishDate(newFinishDate);
         finishDate.setValue(newFinishDate.toLocalDate());
 
@@ -349,7 +358,11 @@ public class ProjectTaskForm extends Dialog {
         // changing finish date
         LocalTime startTime = projectTaskData.getProjectTask().getStartDate().toLocalTime();
         LocalDateTime currentStartDate = LocalDateTime.of(startDate.getValue(), startTime);
-        LocalDateTime newFinishDate = calendarField.getValue().getDateByDuration(currentStartDate, duration);
+
+        var calendarRep = calendarComboBox.getValue();
+        if (!(calendarRep instanceof Calendar calendar))
+            return;
+        LocalDateTime newFinishDate = calendar.getDateByDuration(currentStartDate, duration);
         finishDate.setValue(newFinishDate.toLocalDate());
 
     }
@@ -358,13 +371,25 @@ public class ProjectTaskForm extends Dialog {
 
         if (projectTaskData == null) return;
 
-        var timeUnit = timeUnitComboBox.getTimeUnitInChangeListener(event, projectTaskData);
+        var timeUnit = timeUnitComboBox.getTimeUnitValueChangeListener(event, projectTaskData);
 
         projectTaskData.getProjectTask().setTimeUnitId(timeUnit.getId());
         projectTaskData.setTimeUnit(timeUnit);
         long duration = projectTaskData.getProjectTask().getDuration();
         changeDuration = false;
         durationRepresentation.setValue(timeUnit.getDurationRepresentation(duration).doubleValue());
+
+    }
+
+    private void CalendarChangeListener(HasValue.ValueChangeEvent<CalendarRepresentation> event) {
+
+        if (projectTaskData == null) return;
+
+        var calendar = calendarComboBox.getCalendarChangeValueListener(event, projectTaskData);
+
+        projectTaskData.getProjectTask().setCalendarId(calendar.getId());
+        projectTaskData.setCalendar(calendar);
+        recalculateFinishDateByDuration();
 
     }
 
@@ -461,9 +486,9 @@ public class ProjectTaskForm extends Dialog {
         this.projectTaskData = projectTaskData;
         linksGrid.setProjectTask(projectTaskData);
         refreshHeader();
-        calendarField.setValue(projectTaskData.getCalendar());
-        calendarField.refreshTextValue();
-        calendarField.setReadOnly(true);
+//        calendarField.setValue(projectTaskData.getCalendar());
+//        calendarField.refreshTextValue();
+//        calendarField.setReadOnly(true);
 //        timeUnitComboBox.setValue(projectTaskData.getTimeUnit());
         changeDuration = false;
         durationRepresentation.setValue(projectTaskData.getProjectTask().getDurationRepresentation().doubleValue());
@@ -520,6 +545,9 @@ public class ProjectTaskForm extends Dialog {
         binder.forField(timeUnitComboBox)
                 .withValidator(Objects::nonNull, "Can not be empty")
                 .bind(ProjectTask::getTimeUnit, ProjectTask::setTimeUnit);
+        binder.forField(calendarComboBox)
+                .withValidator(Objects::nonNull, "Can not be empty")
+                .bind(projectTask -> this.projectTaskData.getCalendar(), (projectTask, representation) -> projectTask.setCalendarId(representation.getId()));
 
         binder.bindInstanceFields(this);
 

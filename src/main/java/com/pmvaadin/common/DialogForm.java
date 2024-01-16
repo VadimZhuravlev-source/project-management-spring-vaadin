@@ -49,9 +49,9 @@ public class DialogForm extends Dialog {
         return close;
     }
 
-//    public Button getRefresh() {
-//        return refresh;
-//    }
+    public Button getRefresh() {
+        return refresh;
+    }
 
     public void setAsSelectForm() {
         close.setVisible(false);
