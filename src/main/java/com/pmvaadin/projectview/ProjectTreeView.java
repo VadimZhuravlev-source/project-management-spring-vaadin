@@ -9,7 +9,7 @@ import com.pmvaadin.projecttasks.links.services.LinkService;
 import com.pmvaadin.projecttasks.services.ProjectTreeService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
-import com.pmvaadin.projecttasks.views.ProjectTaskForm;
+import com.pmvaadin.projecttasks.frontend.views.ProjectTaskForm;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;

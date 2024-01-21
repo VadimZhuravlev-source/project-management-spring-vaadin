@@ -12,7 +12,7 @@ import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projecttasks.links.entities.LinkType;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.services.LinkService;
-import com.pmvaadin.projecttasks.views.ProjectSelectionForm;
+import com.pmvaadin.projecttasks.frontend.views.ProjectSelectionForm;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 import com.pmvaadin.terms.timeunit.frontend.elements.TimeUnitComboBox;

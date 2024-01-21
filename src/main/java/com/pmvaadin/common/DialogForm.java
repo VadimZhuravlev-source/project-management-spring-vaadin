@@ -139,4 +139,10 @@ public class DialogForm extends Dialog {
         }
     }
 
+    public static class RefreshEvent extends DialogFormEvent {
+        public RefreshEvent(DialogForm source, Object item) {
+            super(source, item);
+        }
+    }
+
 }

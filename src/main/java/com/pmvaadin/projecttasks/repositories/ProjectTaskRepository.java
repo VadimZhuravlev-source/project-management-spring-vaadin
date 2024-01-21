@@ -2,6 +2,7 @@ package com.pmvaadin.projecttasks.repositories;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
@@ -131,5 +132,9 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
         List<ProjectTaskImpl> foundProjectTasks = findTasksThatFollowAfterGivenTasksIds(tasksIds);
         return foundProjectTasks.stream().map(projectTask -> (ProjectTask) projectTask).collect(Collectors.toList());
     }
+
+    List<ProjectTask> findByNameLikeIgnoreCase(String name, Pageable pageable);
+//    int countByNameIgnoreCase(String name, Pageable pageable);
+
 
 }

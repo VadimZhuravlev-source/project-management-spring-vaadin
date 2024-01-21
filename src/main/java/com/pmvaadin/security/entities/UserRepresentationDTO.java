@@ -1,8 +1,10 @@
-package com.pmvaadin.resources.entity;
+package com.pmvaadin.security.entities;
+
+import com.pmvaadin.resources.entity.LaborResourceRepresentationDTO;
 
 import java.util.Objects;
 
-public record LaborResourceRepresentationDTO(Integer id, String name) implements LaborResourceRepresentation {
+public record UserRepresentationDTO(Integer id, String name, boolean isActive, boolean isPredefined) implements UserRepresentation {
 
     @Override
     public Integer getId() {
@@ -22,7 +24,7 @@ public record LaborResourceRepresentationDTO(Integer id, String name) implements
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof LaborResourceRepresentationDTO that)) return false;
+        if (!(o instanceof UserRepresentationDTO that)) return false;
         if (getId() == null || that.getId() == null) return false;
         return Objects.equals(getId(), that.getId());
     }
@@ -31,5 +33,4 @@ public record LaborResourceRepresentationDTO(Integer id, String name) implements
     public int hashCode() {
         return Objects.hash(getId());
     }
-
 }

@@ -1,4 +1,4 @@
-package com.pmvaadin.projecttasks.views;
+package com.pmvaadin.projecttasks.frontend.views;
 
 import com.pmvaadin.common.IntegerToDoubleConverter;
 import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;

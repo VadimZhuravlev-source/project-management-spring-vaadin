@@ -1,4 +1,4 @@
-package com.pmvaadin.security;
+package com.pmvaadin.security.frontend.views;
 
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.login.LoginForm;
@@ -26,7 +26,7 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         setAlignItems(Alignment.CENTER);
         login.setAction("login");
         LoginI18n i18n = LoginI18n.createDefault();
-        i18n.getForm().setUsername("Phone number");
+        i18n.getForm().setUsername("Name");
         login.setI18n(i18n);
 
         add(new H1("Project management"), login);

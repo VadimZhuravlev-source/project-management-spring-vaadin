@@ -1,36 +1,33 @@
 package com.pmvaadin.security;
 
+import com.pmvaadin.security.entities.User;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.Collections;
 
 public class LoginUserDetails implements UserDetails {
 
     private static final String ROLE_PREFIX = "ROLE_";
-    private String firstName;
-    private String phoneNumber;
-    private String password;
-    private Role role;
-    private boolean isActive;
-    private Collection<? extends GrantedAuthority> authorities;
+    private final String name;
+    private final String password;
+    private final boolean isActive;
+    private final Collection<? extends GrantedAuthority> authorities;
 
     public LoginUserDetails(User user) {
-        this.firstName = user.getFirstName();
-        this.phoneNumber = user.getPhoneNumber();
+        this.name = user.getName();
         this.password = convertPasswordToString(user.getPassword());
         this.isActive = user.isActive();
-        this.role = user.getRole();
-        this.authorities = getAuthorities();
+        this.authorities = user.getRoles().stream()
+                .map(userRole -> new SimpleGrantedAuthority(ROLE_PREFIX + userRole.getRole().name()))
+                .toList();
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority(ROLE_PREFIX + role.name());
-        return Collections.singletonList(authority);
+        return this.authorities;
     }
 
     @Override
@@ -40,7 +37,7 @@ public class LoginUserDetails implements UserDetails {
 
     @Override
     public String getUsername() {
-        return firstName;
+        return name;
     }
 
     @Override
@@ -66,4 +63,5 @@ public class LoginUserDetails implements UserDetails {
     private String convertPasswordToString(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_8);
     }
+
 }

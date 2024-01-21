@@ -1,23 +1,18 @@
-package com.pmvaadin.projecttasks.views;
+package com.pmvaadin.projecttasks.frontend.views;
 
+import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.projectstructure.ProjectHierarchicalDataProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.services.TreeHierarchyChangeService;
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
-import com.vaadin.flow.component.grid.GridSelectionModel;
 import com.vaadin.flow.component.grid.GridVariant;
-import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
-import java.util.Set;
 import java.util.function.Consumer;
 
 @SpringComponent
-public class ProjectSelectionForm extends Dialog {
+public class ProjectSelectionForm extends DialogForm {
 
     private final TreeHierarchyChangeService hierarchyService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
@@ -30,51 +25,24 @@ public class ProjectSelectionForm extends Dialog {
 
         dataProvider = new ProjectHierarchicalDataProvider(hierarchyService);
 
-        Button selectionAction = new Button("Select");
-        selectionAction.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        getFooter().add(selectionAction);
-        //selectionAction.getStyle().set("margin-right", "auto");
-
-        Button refreshButton = new Button(new Icon("lumo", "reload"),
-                (e) -> {
-            treeGrid.getDataProvider().refreshAll();
-                });
-
-        Button refreshItemButton = new Button(new Icon("lumo", "reload"),
-                (e) -> {
-                    GridSelectionModel selectionModel = treeGrid.getSelectionModel();
-                    Set<ProjectTask> projectTaskSet = selectionModel.getSelectedItems();
-                    projectTaskSet.forEach(dataProvider::refreshItem);
-                    //treeGrid.getDataProvider().refreshAll();
-                });
-
-        getFooter().add(refreshButton, refreshItemButton);
-        refreshButton.getStyle().set("margin-right", "auto");
+        setAsSelectForm();
+        getRefresh().setVisible(true);
+        getRefresh().addClickListener(event -> dataProvider.refreshAll());
 
         customizeTreeGrid();
         customizeHeader();
         add(treeGrid);
-        treeGrid.addExpandListener(event -> {
-            for (ProjectTask projectTask: event.getItems()) {
-                ProjectTask parent = treeGrid.getDataCommunicator().getParentItem(projectTask);
-            }
-        });
-        treeGrid.addCollapseListener(event -> {
-            for (ProjectTask projectTask: event.getItems()) {
-                ProjectTask parent = treeGrid.getDataCommunicator().getParentItem(projectTask);
-            }
-        });
 
         setWidth("70%");
         setHeight("70%");
         treeGrid.setSizeFull();
         setDraggable(true);
         setResizable(true);
-        addClassName("dialog-padding-1");
         addThemeVariants(DialogVariant.LUMO_NO_PADDING);
 
-        selectionAction.addClickListener(event -> {
+        getSelect().addClickListener(event -> {
             ProjectTask selectedTask = treeGrid.getSelectedItems().stream().findFirst().orElse(null);
+            fireEvent(new SelectEvent(this, treeGrid.getSelectedItems()));
             selectItem(selectedTask);
         });
         addOpenedChangeListener(event -> {
@@ -94,18 +62,14 @@ public class ProjectSelectionForm extends Dialog {
 
     private void customizeHeader() {
 
-        setHeaderTitle("Project task selection");
-        Button closeButton = new Button(new Icon("lumo", "cross"),
-                (e) -> close());
-        closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
-        getHeader().add(closeButton);
+        setHeaderTitle("Choose project");
+        getCrossClose().addClickListener(event -> fireEvent(new CloseEvent(this, null)));
 
     }
 
     private void customizeTreeGrid() {
 
         treeGrid.setDataProvider(dataProvider);
-        treeGrid.addClassNames("project-tasks-selection-grid");
         treeGrid.setSizeFull();
         treeGrid.setColumnReorderingAllowed(true);
         treeGrid.addThemeVariants(GridVariant.LUMO_COMPACT);
@@ -118,6 +82,7 @@ public class ProjectSelectionForm extends Dialog {
         treeGrid.addItemDoubleClickListener(event -> {
             if (event == null) return;
             ProjectTask projectTask = event.getItem();
+            fireEvent(new SelectEvent(this, treeGrid.getSelectedItems()));
             selectItem(projectTask);
         });
 

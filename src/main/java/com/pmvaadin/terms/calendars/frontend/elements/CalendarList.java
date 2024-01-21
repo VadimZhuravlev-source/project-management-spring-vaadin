@@ -23,7 +23,7 @@ public class CalendarList extends ItemList<CalendarRepresentation, Calendar> {
 
         this.grid.addColumn(CalendarRepresentation::getName).setHeader("Name");
         this.grid.addColumn(CalendarRepresentation::getSetting).setHeader("Setting");
-        this.addPredefinedColumn(CalendarRepresentation::isPredefined);
+        this.addFlagColumn(CalendarRepresentation::isPredefined);
         onMouseDoubleClick(this::openNewItem);
 
         beforeAddition(this::openNewItem);
@@ -46,7 +46,6 @@ public class CalendarList extends ItemList<CalendarRepresentation, Calendar> {
     }
 
     private void saveEvent(CalendarForm.SaveEvent event) {
-        editingForm.close();
         this.grid.getDataProvider().refreshAll();
     }
 

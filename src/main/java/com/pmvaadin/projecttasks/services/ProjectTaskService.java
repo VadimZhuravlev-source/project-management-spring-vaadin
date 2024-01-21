@@ -21,4 +21,6 @@ public interface ProjectTaskService extends ProjectTreeService {
     //List<ProjectTask> recalculateTerms(Set<?> taskIds);
     TermCalculationRespond recalculateTerms(EntityManager entityManager, Set<?> taskIds);
 
+    Map<?, ProjectTask> getTasksById(Iterable<?> ids);
+
 }

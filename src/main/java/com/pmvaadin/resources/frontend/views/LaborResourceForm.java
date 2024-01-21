@@ -22,7 +22,6 @@ public class LaborResourceForm extends DialogForm {
         binder.bindInstanceFields(this);
         add(name);
         customizeButton();
-        addClassName("dialog-padding-1");
     }
 
     public void read(@Nonnull LaborResource laborResource) {

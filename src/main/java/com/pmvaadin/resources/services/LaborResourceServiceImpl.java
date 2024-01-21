@@ -30,12 +30,12 @@ public class LaborResourceServiceImpl implements LaborResourceService, ListServi
         this.laborResourceRepository = laborResourceRepository;
     }
 
+    // ListService
     @Override
     public LaborResource save(LaborResource laborResource) {
         return laborResourceRepository.save(laborResource);
     }
 
-    // ListService
     @Override
     public List<LaborResourceRepresentation> getItems(String filter, Pageable pageable) {
         var items = laborResourceRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable, LaborResourceRepresentationDTO.class);
@@ -88,7 +88,7 @@ public class LaborResourceServiceImpl implements LaborResourceService, ListServi
         var reps = findUndeletableLaborResources(ids);
         if (!reps.isEmpty()) {
             var string = reps.stream().map(c -> c.getName() + " with id " + c.getId()).toList().toString();
-            throw new StandardError("Cannot remove the time units: " + string + ", because they is used in project tasks");
+            throw new StandardError("Cannot remove the labor resources: " + string + ", because they is used in project tasks");
         }
 
         return reps.stream().map(LaborResource::getId).toList();

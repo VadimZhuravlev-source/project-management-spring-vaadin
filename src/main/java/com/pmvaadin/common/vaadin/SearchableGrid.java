@@ -50,7 +50,7 @@ public class SearchableGrid<T> extends VerticalLayout {
 
     }
 
-    public Grid.Column<T> addPredefinedColumn(Predicate<T> predicate) {
+    public Grid.Column<T> addFlagColumn(Predicate<T> predicate) {
 
         return this.grid.addComponentColumn((item) -> {
 

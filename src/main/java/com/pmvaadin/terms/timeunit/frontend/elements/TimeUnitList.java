@@ -20,7 +20,7 @@ public class TimeUnitList extends ItemList<TimeUnitRepresentation, TimeUnit> {
     private void configureGrid() {
 
         this.grid.addColumn(TimeUnitRepresentation::getName).setHeader("Name");
-        this.addPredefinedColumn(TimeUnitRepresentation::isPredefined);
+        this.addFlagColumn(TimeUnitRepresentation::isPredefined);
         onMouseDoubleClick(this::openNewItem);
         beforeAddition(this::openNewItem);
         onCoping(this::openNewItem);

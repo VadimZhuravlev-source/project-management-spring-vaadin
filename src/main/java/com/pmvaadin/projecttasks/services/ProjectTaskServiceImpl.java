@@ -8,6 +8,7 @@ import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.vaadin.flow.component.grid.dnd.GridDropLocation;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,7 +19,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
-public class ProjectTaskServiceImpl implements ProjectTaskService {
+public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataProvider {
 
     private ProjectTaskRepository projectTaskRepository;
     private ProjectRecalculation projectRecalculation;
@@ -166,6 +167,44 @@ public class ProjectTaskServiceImpl implements ProjectTaskService {
 
         return changeHierarchyTransactionalService.recalculateTerms(entityManager, taskIds);
 
+    }
+
+    @Override
+    public int sizeInBackEnd(String filter, PageRequest pageable) {
+        return projectTaskRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable).size();
+    }
+    @Override
+    public List<ProjectTask> getItems(String filter, PageRequest pageable) {
+        return projectTaskRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable);
+    }
+
+    @Override
+    public Map<?, ProjectTask> getTasksById(Iterable<?> ids) {
+//        var queryText = """
+//                SELECT
+//                	id,
+//                	name
+//                FROM
+//                	project_tasks
+//                WHERE
+//                	id = ANY(:ids)
+//                """;
+//        var idsParameter = String.valueOf(ids).replace("[", "'{").replace("]", "}'");
+//        queryText = queryText.replace(":ids", idsParameter);
+//        var query = entityManager.createNativeQuery(queryText);
+//        List<Object[]> resultList = query.getResultList();
+
+        var foundTasks = projectTaskRepository.findAllById(ids);
+        var map = new HashMap<Object, ProjectTask>();
+        foundTasks.forEach(projectTask -> map.put(projectTask.getId(), projectTask));
+//        for (var row: resultList) {
+//            var name = row[1];
+//            if (name == null)
+//                name = "";
+//            map.put(row[0], name.toString());
+//        }
+
+        return map;
     }
 
     private void fillNecessaryFieldsIfItIsNew(ProjectTask projectTask) {

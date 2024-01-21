@@ -41,11 +41,13 @@ public class LaborResourceList extends ItemList<LaborResourceRepresentation, Lab
     }
 
     private void saveEvent(LaborResourceForm.SaveEvent event) {
-        editingForm.close();
         var item = event.getItem();
         if (item instanceof LaborResource laborResource) {
-            listService.save(laborResource);
-            this.grid.getDataProvider().refreshAll();
+            if (editingForm.isOpened()) {
+                var savedResource = listService.save(laborResource);
+                editingForm.read(savedResource);
+            } else
+                this.grid.getDataProvider().refreshAll();
         }
     }
 
