@@ -37,7 +37,7 @@ public class UserImpl implements User, HasIdentifyingFields {
 
     @Column(name = "is_active")
     @Setter
-    private boolean isActive;
+    private boolean isActive = true;
 
     @Column(name = "is_predefined")
     private boolean isPredefined;
@@ -48,12 +48,16 @@ public class UserImpl implements User, HasIdentifyingFields {
 
     @Column(name = "access_type_id")
     @Setter
-    private AccessType accessType;
+    private AccessType accessType = AccessType.ONLY_IN_LIST;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     private List<UserProjectImpl> projects;
 
     @Column(name = "root_project_id")
+    @Setter
+    private Integer rootProjectId;
+
+    @Transient
     private ProjectTaskImpl rootProject;
 
     @Override
@@ -127,6 +131,7 @@ public class UserImpl implements User, HasIdentifyingFields {
         this.version = null;
         roles.forEach(UserRoleImpl::nullIdentifyingFields);
         projects.forEach(UserProjectImpl::nullIdentifyingFields);
+        this.isPredefined = false;
     }
 
 }

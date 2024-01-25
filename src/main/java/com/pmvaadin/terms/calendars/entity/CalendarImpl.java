@@ -347,14 +347,6 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
         if (!intervals.isEmpty()) {
             newTime = intervals.get(intervals.size() - 1).getTo();
         }
-//        var intervals = exception.getIntervals();
-//
-//        var iterator = intervals.listIterator(intervals.size());
-//        while (iterator.hasPrevious()) {
-//            var interval = iterator.previous();
-//            newTime = interval.getTo();
-//            break;
-//        }
 
         if (newTime.equals(LocalTime.MIN))
             newDay = newDay.plusDays(1);

@@ -62,7 +62,6 @@ public class DialogForm extends Dialog {
 
     public void setAsItemForm() {
         select.setVisible(false);
-        save.setVisible(false);
     }
 
     private void customizeHeader() {

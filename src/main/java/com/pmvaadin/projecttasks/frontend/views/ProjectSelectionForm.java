@@ -9,6 +9,7 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
+import java.util.HashSet;
 import java.util.function.Consumer;
 
 @SpringComponent
@@ -82,7 +83,9 @@ public class ProjectSelectionForm extends DialogForm {
         treeGrid.addItemDoubleClickListener(event -> {
             if (event == null) return;
             ProjectTask projectTask = event.getItem();
-            fireEvent(new SelectEvent(this, treeGrid.getSelectedItems()));
+            var set = new HashSet<ProjectTask>(1);
+            set.add(projectTask);
+            fireEvent(new SelectEvent(this, set));
             selectItem(projectTask);
         });
 

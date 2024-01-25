@@ -33,5 +33,7 @@ public interface User {
     UserProject getUserProjectInstance();
     ProjectTask getRootProject();
     void setRootProject(ProjectTask rootProject);
+    Integer getRootProjectId();
+    void setRootProjectId(Integer id);
 
 }

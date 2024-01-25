@@ -87,6 +87,7 @@ public class TimeUnitImpl implements TimeUnit, HasIdentifyingFields {
     public void nullIdentifyingFields() {
         this.id = null;
         this.version = null;
+        this.predefined = false;
     }
 
 }

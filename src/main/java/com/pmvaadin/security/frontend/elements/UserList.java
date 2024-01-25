@@ -2,8 +2,10 @@ package com.pmvaadin.security.frontend.elements;
 
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.common.vaadin.ItemList;
+import com.pmvaadin.projectstructure.NotificationDialogs;
 import com.pmvaadin.security.entities.User;
 import com.pmvaadin.security.entities.UserRepresentation;
+import com.pmvaadin.security.entities.UserRepresentationDTO;
 import com.pmvaadin.security.frontend.views.UserForm;
 
 public class UserList extends ItemList<UserRepresentation, User> {
@@ -46,8 +48,9 @@ public class UserList extends ItemList<UserRepresentation, User> {
 
     private void refreshEvent(UserForm.RefreshEvent event) {
         var item = event.getItem();
-        if (item instanceof UserRepresentation user) {
-            var refreshedUser = listService.get(user);
+        if (item instanceof User user) {
+            var useRepresentation = new UserRepresentationDTO(user.getId(), user.getName(), user.isActive(), user.isPredefined());
+            var refreshedUser = listService.get(useRepresentation);
             editingForm.read(refreshedUser);
         }
     }
@@ -56,7 +59,14 @@ public class UserList extends ItemList<UserRepresentation, User> {
 
         var item = event.getItem();
         if (item instanceof User user) {
-            var savedUser = listService.save(user);
+            User savedUser;
+            try {
+                savedUser = listService.save(user);
+            } catch (Throwable exception) {
+                NotificationDialogs.notifyValidationErrors(exception.getMessage());
+                return;
+            }
+
             if (editingForm.isOpened())
                 editingForm.read(savedUser);
             else

@@ -31,7 +31,8 @@ public class ProjectComboBox extends ComboBoxWithButtons<ProjectTask> {
         this.selectionForm.addListener(ProjectSelectionForm.SelectEvent.class, event -> {
             var selectedItems = event.getSelectedItems();
             var selectedItemOpt = selectedItems.stream().findFirst();
-            if (selectedItemOpt.isEmpty()) return;
+            if (selectedItemOpt.isEmpty())
+                return;
             var selectedItem = selectedItemOpt.get();
             if (selectedItem instanceof ProjectTask item)
                 getComboBox().setValue(item);
@@ -42,6 +43,8 @@ public class ProjectComboBox extends ComboBoxWithButtons<ProjectTask> {
 
         if (service instanceof ComboBoxDataProvider itemService)
             this.getComboBox().setDataProvider(getDataProvider(itemService), s -> s);
+
+        this.getComboBox().setItemLabelGenerator(ProjectTask::getName);
 
     }
 

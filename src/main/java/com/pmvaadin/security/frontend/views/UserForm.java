@@ -2,6 +2,7 @@ package com.pmvaadin.security.frontend.views;
 
 import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.projectstructure.NotificationDialogs;
+import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.frontend.elements.ProjectComboBox;
 import com.pmvaadin.security.entities.*;
 import com.pmvaadin.security.frontend.elements.ProjectsTable;
@@ -54,29 +55,41 @@ public class UserForm extends DialogForm {
         this.user = user;
         binder.readBean(user);
         fillRoles();
-        fillProjects();
+        projectsTable.setUser(user);
         var name = this.user.getName();
         if (name == null) name = "";
         var title = "User: ";
         setHeaderTitle(title + name);
+        customizePredefinedUser();
     }
 
     public UserForm getInstance() {
         return new UserForm(this.projectComboBox, projectsTable);
     }
 
+    private void customizePredefinedUser() {
+        this.rolesTable.setReadOnly(user.isPredefined());
+        this.isActive.setReadOnly(user.isPredefined());
+    }
+
     private void configureBinder() {
         binder.forField(accessType)
-                .withValidator(Objects::isNull, "Can not be empty")
+                .withValidator(Objects::nonNull, "Can not be empty")
                 .bind(User::getAccessType, User::setAccessType);
-        binder.forField(projectComboBox)
-                .withValidator(Objects::isNull, "Can not be empty")
-                        .bind(User::getRootProject, User::setRootProject);
+        binder.forField(projectComboBox).bind(User::getRootProject, this::setRootProject);
         binder.forField(password).bind(user1 -> convertPasswordToString(user1.getPassword()), (user1, s) -> user1.setPassword(s.getBytes(StandardCharsets.UTF_8)));
 
         binder.forField(isActive)
                 .bind(User::isActive, User::setActive);
         binder.bindInstanceFields(this);
+    }
+
+    private void setRootProject(User user, ProjectTask projectTask) {
+        user.setRootProject(projectTask);
+        if (projectTask != null)
+            user.setRootProjectId(projectTask.getId());
+        else
+            user.setRootProjectId(null);
     }
 
     private String convertPasswordToString(byte[] bytes) {
@@ -91,6 +104,7 @@ public class UserForm extends DialogForm {
             saveEvent();
             this.close();
         });
+        getRefresh().setVisible(true);
         getRefresh().addClickListener(event -> fireEvent(new RefreshEvent(this, this.user)));
     }
 
@@ -103,7 +117,10 @@ public class UserForm extends DialogForm {
 
         try {
             binder.writeBean(this.user);
+            projectsTable.validate();
+            user.setProjects(projectsTable.getItems());
             fillUserRoles();
+            fireEvent(new SaveEvent(this, this.user));
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
         }
@@ -129,10 +146,6 @@ public class UserForm extends DialogForm {
         userRoles.addAll(newRoles);
     }
 
-    private void fillProjects() {
-        projectsTable.setUser(user);
-    }
-
     private void configureForm() {
         setAsItemForm();
         accessType.setItems(AccessType.values());
@@ -144,8 +157,8 @@ public class UserForm extends DialogForm {
         var horLayout = new HorizontalLayout(mainLayout, rolesTable);
         var accessTypeLayout = new FormLayout();
         accessTypeLayout.addFormItem(accessType, "Access type");
-        var verLayout = new VerticalLayout(horLayout, accessTypeLayout, this.projectsTable);
-        add(verLayout);
+        var rootFormElement = new VerticalLayout(horLayout, accessTypeLayout, this.projectsTable);
+        add(rootFormElement);
     }
 
     private void fillRoles() {
@@ -172,6 +185,7 @@ public class UserForm extends DialogForm {
     private static class RolesTable extends Grid<RolesRow> {
 
         private final Binder<RolesRow> binder = new Binder<>();
+        private boolean readOnly;
 
         public RolesTable() {
             customizeBinder();
@@ -180,14 +194,30 @@ public class UserForm extends DialogForm {
             this.setWidthFull();
         }
 
+        public void setReadOnly(boolean readOnly) {
+            this.readOnly = readOnly;
+        }
+
         private void configureGrid() {
             var editor = this.getEditor();
             editor.setBinder(this.binder);
             this.addItemDoubleClickListener(e -> {
+                if (this.readOnly)
+                    return;
                 editor.editItem(e.getItem());
                 Component editorComponent = e.getColumn().getEditorComponent();
                 if (editorComponent instanceof Focusable) {
                     ((Focusable<?>) editorComponent).focus();
+                }
+            });
+            this.addItemClickListener(event -> {
+                if (this.readOnly)
+                    return;
+                var item = event.getItem();
+                var editingItem = editor.getItem();
+                if (editor.isOpen() && !Objects.equals(item, editingItem)) {
+                    editor.save();
+                    editor.closeEditor();
                 }
             });
         }
@@ -233,15 +263,7 @@ public class UserForm extends DialogForm {
             onColumn.setEditorComponent(checkbox);
             addCloseHandler(onColumn, this.getEditor());
 
-            var roleColumn = this.addColumn(RolesRow::getRole).setHeader("Role");
-            var roleField = new ComboBox<Role>();
-            roleField.setItems(Role.values());
-            roleField.setWidthFull();
-            this.binder.forField(roleField)
-                    .withValidator(Objects::nonNull, "Can not be empty")
-                    .bind(RolesRow::getRole, RolesRow::setRole);
-            roleColumn.setEditorComponent(roleField);
-            addCloseHandler(roleColumn, this.getEditor());
+            this.addColumn(RolesRow::getRole).setHeader("Role");
 
         }
 

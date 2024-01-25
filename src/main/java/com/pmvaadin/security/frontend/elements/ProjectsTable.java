@@ -56,8 +56,8 @@ public class ProjectsTable extends ObjectGrid<UserProject> {
 
     private void customizeBinder() {
 
-        var nameColumn = addColumn(UserProject::getProject).
-                setHeader("Resource");
+        var nameColumn = addColumn(this::getTitle).
+                setHeader("Project");
 
         var projectField = projectComboBox.getInstance();
         projectField.setWidthFull();
@@ -72,6 +72,12 @@ public class ProjectsTable extends ObjectGrid<UserProject> {
                         });
         nameColumn.setEditorComponent(projectField);
 
+    }
+
+    private String getTitle(UserProject userProject) {
+        if (userProject.getProject() == null)
+            return "";
+        return userProject.getProject().getName();
     }
 
 }

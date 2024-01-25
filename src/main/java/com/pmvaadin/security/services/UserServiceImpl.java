@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 @Service
 @AllArgsConstructor
@@ -31,8 +32,12 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
 
     @Override
     public User save(User user) {
+        var name = user.getName();
+        var foundUser = userRepository.findByName(name);
+        if (foundUser.isPresent() && !Objects.equals(user, foundUser.get()))
+            throw new StandardError("A user with this name exists. Please choose a different name.");
         var savedUser = userRepository.save(user);
-        fillNamesOfProjects(savedUser);
+        fillProjectReferences(savedUser);
         return savedUser;
     }
 
@@ -60,7 +65,7 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
         var foundUser = userRepository.findById(representation.getId()).orElse(null);
         if (foundUser == null)
             return null;
-        fillNamesOfProjects(foundUser);
+        fillProjectReferences(foundUser);
         return foundUser;
     }
 
@@ -82,7 +87,7 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
     public User copy(UserRepresentation calRep) {
 
         var user = userRepository.findById(calRep.getId()).orElse(new UserImpl());
-        fillNamesOfProjects(user);
+        fillProjectReferences(user);
         if (user instanceof HasIdentifyingFields)
             ((HasIdentifyingFields) user).nullIdentifyingFields();
 
@@ -90,13 +95,17 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
 
     }
 
-    private void fillNamesOfProjects(User user) {
+    private void fillProjectReferences(User user) {
         var projects = user.getProjects();
-        if (projects.isEmpty())
+        var projectIds = Stream.concat(projects.stream().map(UserProject::getProjectId),
+                Stream.of(user.getRootProjectId()))
+                .filter(Objects::nonNull).toList();
+        if (projectIds.isEmpty())
             return;
-        var projectIds = projects.stream().map(UserProject::getProjectId).filter(Objects::nonNull).toList();
-        var mapIdName = projectTaskService.getTasksById(projectIds);
-        projects.forEach(p -> p.setProject(mapIdName.getOrDefault(p.getProject(), null)));
+        var tasksById = projectTaskService.getTasksById(projectIds);
+        projects.forEach(p -> p.setProject(tasksById.getOrDefault(p.getProjectId(), null)));
+        var rootProject = tasksById.get(user.getRootProjectId());
+        user.setRootProject(rootProject);
     }
 
     private boolean checkIfItemsCanBeDeleted(List<?> ids) {

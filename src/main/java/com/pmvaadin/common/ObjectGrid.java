@@ -10,10 +10,12 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.function.ValueProvider;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -150,6 +152,19 @@ public class ObjectGrid<T> extends VerticalLayout {
             Component editorComponent = e.getColumn().getEditorComponent();
             if (editorComponent instanceof Focusable) {
                 ((Focusable<?>) editorComponent).focus();
+            }
+        });
+        grid.addItemClickListener(event -> {
+            var item = event.getItem();
+            var editingItem = editor.getItem();
+            if (editor.isOpen() && !Objects.equals(item, editingItem) && editor.getBinder().isValid()) {
+                try {
+                    editor.getBinder().writeBean(editingItem);
+                } catch (ValidationException e) {
+                    throw new RuntimeException(e);
+                }
+                editor.save();
+                editor.closeEditor();
             }
         });
 
