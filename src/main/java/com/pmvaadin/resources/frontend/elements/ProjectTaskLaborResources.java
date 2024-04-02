@@ -79,7 +79,7 @@ public class ProjectTaskLaborResources extends ObjectGrid<TaskResource> {
 
         // Duration column
         var durationColumn = addColumn(TaskResource::getDuration).
-                setHeader("Duration");
+                setHeader("Duration, hours");
         NumberField duration = new NumberField();
         duration.setWidthFull();
         duration.setStepButtonsVisible(true);

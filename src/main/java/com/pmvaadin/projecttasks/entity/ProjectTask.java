@@ -118,7 +118,8 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
 
     int getResourcesCheckSum();
     void setResourcesCheckSum(int resourcesCheckSum);
-
     TaskResource getTaskResourceInstance();
+    String getLaborResourceRepresentation();
+    void setLaborResourceRepresentation(String representation);
 
 }

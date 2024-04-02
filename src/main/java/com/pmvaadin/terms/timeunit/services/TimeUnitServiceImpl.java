@@ -144,7 +144,7 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
             WITH predefined_time_units AS(
             SELECT
             	*
-            FROM time_unit
+            FROM time_units
             WHERE
             id = ANY(:ids)
             	AND predefined
@@ -169,7 +169,7 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
             used_time_units AS (
             SELECT
             	*
-            FROM time_unit
+            FROM time_units
             WHERE
             	id IN(SELECT id FROM used_time_units_ids)
             )

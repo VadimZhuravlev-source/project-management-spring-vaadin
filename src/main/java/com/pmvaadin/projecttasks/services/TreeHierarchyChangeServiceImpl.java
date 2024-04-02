@@ -175,6 +175,8 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
         if (columns.contains(propertyNames.getPropertyTimeUnit())) projectTask.setTimeUnitRepresentation(row.time());
         if (columns.contains(propertyNames.getPropertyDurationRepresentation()))
             projectTask.setDurationRepresentation(new BigDecimal(row.dur()).setScale(2, RoundingMode.CEILING));
+        if (columns.contains(propertyNames.getPropertyLaborResources()))
+            projectTask.setLaborResourceRepresentation(row.laborResources());
 
         fillLinkRepresentation(projectTask, row, columns);
 
@@ -232,6 +234,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
             var timeIndex = 3;
             var durIndex = 4;
             var linksIndex = 5;
+            var laborResourcesIndex = 6;
             Map<I, Row> map = new HashMap<>(rows.size());
 
             for (Object[] row: rows) {
@@ -241,7 +244,8 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
                 var timeRep = Objects.toString(row[timeIndex], "");
                 var durRep = Objects.toString(row[durIndex], "");
                 var linkRep = Objects.toString(row[linksIndex], "");
-                var rowMap = new Row(count, calRep, timeRep, durRep, linkRep);
+                var laborResourcesRep = Objects.toString(row[laborResourcesIndex], "");
+                var rowMap = new Row(count, calRep, timeRep, durRep, linkRep, laborResourcesRep);
                 map.put(id, rowMap);
             }
 
@@ -277,6 +281,8 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
             var linksQueryTexts = getLinkRepTablesInfo();
             list.add(linksQueryTexts);
+            var laborResourcesQueryTexts = getLaborResourcesRepTablesInfo();
+            list.add(laborResourcesQueryTexts);
 
             list.forEach(tablesInfo -> {
                 queryText = queryText.replace("&pt_field", tablesInfo.ptField);
@@ -366,15 +372,15 @@ LEFT JOIN calendar_representation
 
             var table = """
 -- time unit representation
-                    time_unit_representation AS (
+                    time_units_representation AS (
                     SELECT
-                        time_unit.id,
-                        time_unit.name representation,
-                        time_unit.number_of_hours
+                        time_units.id,
+                        time_units.name representation,
+                        time_units.number_of_hours
                     FROM
-                        time_unit
+                        time_units
                     WHERE
-                        time_unit.id IN (
+                        time_units.id IN (
                             SELECT DISTINCT\s
                                 time_unit_id\s
                             FROM found_pts
@@ -384,13 +390,13 @@ LEFT JOIN calendar_representation
                     &table
                     """;
             var resultField = """
-,time_unit_representation.representation time_rep
+,time_units_representation.representation time_rep
                         &result_field
                     """;
 
             var resultJoin = """
-LEFT JOIN time_unit_representation
-                		ON found_pts.time_unit_id = time_unit_representation.id
+LEFT JOIN time_units_representation
+                		ON found_pts.time_unit_id = time_units_representation.id
                 	&join
                     """;
 
@@ -421,14 +427,14 @@ LEFT JOIN time_unit_representation
                     SELECT
                         found_pts.id,
                         CASE\s
-                            WHEN (time_unit_representation.number_of_hours <> 0 AND NOT time_unit_representation.number_of_hours IS NULL)
-                            THEN found_pts.duration / (time_unit_representation.number_of_hours * 3600)\s
+                            WHEN (time_units_representation.number_of_hours <> 0 AND NOT time_units_representation.number_of_hours IS NULL)
+                            THEN found_pts.duration / (time_units_representation.number_of_hours * 3600)\s
                             ELSE 0
                         END duration
                     FROM
                         found_pts
-                    JOIN time_unit_representation
-                        ON found_pts.time_unit_id = time_unit_representation.id
+                    JOIN time_units_representation
+                        ON found_pts.time_unit_id = time_units_representation.id
                     ),
                     
                     &table
@@ -544,11 +550,64 @@ LEFT JOIN links_rep
 
         }
 
+        private TablesInfo getLaborResourcesRepTablesInfo() {
+
+            if (!columns.contains(propertyNames.getPropertyLaborResources())) {
+                var resField = """
+                        ,'' labor_resources_rep
+                        &result_field
+                        """;
+                return getDefaultTableInfo(resField);
+            }
+
+            var fieldPT =
+                    """
+ --labor resources representation
+                                            &pt_field
+                    """;
+
+            var table = """
+--labor resources representation
+                    labor_resources_representation AS (
+                    SELECT
+                        task_labor_resources.project_task_id project_task_id,
+                        STRING_AGG(labor_resources.name || '-' || task_labor_resources.duration, '; ') rep
+                    FROM
+                        task_labor_resources
+                        JOIN labor_resources
+                            ON task_labor_resources.resource_id = labor_resources.id
+                    WHERE
+                        task_labor_resources.project_task_id IN (
+                            SELECT DISTINCT\s
+                                id\s
+                            FROM found_pts
+                        )
+                    GROUP BY
+                        project_task_id
+                    ),
+                    
+                    &table
+                    """;
+            var resultField = """
+,labor_resources_representation.rep labor_resources_rep
+                        &result_field
+                    """;
+
+            var resultJoin = """
+LEFT JOIN labor_resources_representation
+                		ON found_pts.id = labor_resources_representation.project_task_id
+                	&join
+                    """;
+
+            return new TablesInfo(fieldPT, table, resultField, resultJoin);
+
+        }
+
         private record TablesInfo(String ptField, String table, String resultField, String join) {}
 
     }
 
-    private record Row(int count, String cal, String time, String dur, String links) {}
+    private record Row(int count, String cal, String time, String dur, String links, String laborResources) {}
 
     private String getQueryText() {
 
@@ -602,7 +661,8 @@ LEFT JOIN links_rep
                   		result_query.calendar_rep,
                         result_query.time_rep,
                         result_query.dur_rep,
-                        result_query.links_rep
+                        result_query.links_rep,
+                        result_query.labor_resources_rep
                 	FROM result_query
                         
                         """;
