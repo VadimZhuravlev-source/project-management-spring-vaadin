@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -33,7 +34,7 @@ public class UserImpl implements User, HasIdentifyingFields {
     private String name;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private List<UserRoleImpl> roles;
+    private List<UserRoleImpl> roles = new ArrayList<>();
 
     @Column(name = "is_active")
     @Setter
@@ -44,14 +45,14 @@ public class UserImpl implements User, HasIdentifyingFields {
 
     @Column(name = "password")
     @Setter
-    private byte[] password;
+    private byte[] password = new byte[0];
 
     @Column(name = "access_type_id")
     @Setter
     private AccessType accessType = AccessType.ONLY_IN_LIST;
 
     @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private List<UserProjectImpl> projects;
+    private List<UserProjectImpl> projects = new ArrayList<>();
 
     @Column(name = "root_project_id")
     @Setter
