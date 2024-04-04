@@ -3,27 +3,21 @@ package com.pmvaadin.projecttasks.services;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.LinkType;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
-import com.pmvaadin.projecttasks.services.calculation.ColumnsData;
-import com.pmvaadin.projecttasks.services.calculation.DataOfAccessType;
-import com.pmvaadin.projecttasks.services.calculation.Row;
+import com.pmvaadin.projecttasks.services.role.level.calculation.ColumnsData;
+import com.pmvaadin.projecttasks.services.role.level.calculation.Row;
+import com.pmvaadin.projecttasks.services.role.level.Security;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
-import com.pmvaadin.security.entities.AccessType;
-import com.pmvaadin.security.entities.Role;
-import com.pmvaadin.security.entities.UserProject;
-import com.pmvaadin.security.entities.UserRole;
 import com.pmvaadin.security.services.UserService;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import jakarta.persistence.*;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
-import java.util.function.Function;
 
 @Service
 public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeService {
@@ -33,7 +27,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
     private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
 
-//    @PersistenceContext
+    //    @PersistenceContext
     private final EntityManager entityManager;
 
     @Autowired
@@ -97,89 +91,16 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
     private int getCountChildrenOfParent(ProjectTask projectTask) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) return 0;
-        String currentPrincipalName = authentication.getName();
+        var roleLevelSecurity = new Security(entityManager, userService, projectTaskRepository);
+        return roleLevelSecurity.getCountProjectTasks(projectTask);
 
-        var user = userService.getUserByName(currentPrincipalName);
-        var isAdmin = user.getRoles().stream().map(UserRole::getRole).anyMatch(role -> role == Role.ADMIN);
-        if (!isAdmin) {
-            var accessType = user.getAccessType();
-            if (accessType == AccessType.ALL_DENIED)
-                return 0;
-            else if (accessType == AccessType.ONLY_IN_LIST) {
-                return getCountProjectTasksForOnlyInList(projectTask, user.getProjects());
-            } else if (accessType == AccessType.EXCEPT_IN_LIST) {
-                return getCountProjectTasksForExceptInList(projectTask, user.getProjects());
-            }
-        }
-
-        if (isTaskNull(projectTask))
-            return projectTaskRepository.getChildrenCount();
-
-        return projectTaskRepository.getChildrenCount(projectTask.getId());
     }
 
     private List<ProjectTask> getProjectTasks(ProjectTask projectTask) {
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) return new ArrayList<>(0);
-        String currentPrincipalName = authentication.getName();
+        var roleLevelSecurity = new Security(entityManager, userService, projectTaskRepository);
+        return roleLevelSecurity.getProjectTasks(projectTask);
 
-        var user = userService.getUserByName(currentPrincipalName);
-        var isAdmin = user.getRoles().stream().map(UserRole::getRole).anyMatch(role -> role == Role.ADMIN);
-        if (!isAdmin) {
-            var accessType = user.getAccessType();
-            if (accessType == AccessType.ALL_DENIED)
-                return new ArrayList<>();
-            else if (accessType == AccessType.ONLY_IN_LIST) {
-                return getProjectTasksForOnlyInList(projectTask, user.getProjects());
-            } else if (accessType == AccessType.EXCEPT_IN_LIST) {
-                return getProjectTasksForExceptInList(projectTask, user.getProjects());
-            }
-        }
-
-        List<ProjectTask> projectTasks;
-        if (isTaskNull(projectTask)) {
-            projectTasks = projectTaskRepository.findByParentIdIsNullOrderByLevelOrderAsc();
-        } else {
-            projectTasks = projectTaskRepository.findByParentIdOrderByLevelOrderAsc(projectTask.getId());
-        }
-        return projectTasks;
-    }
-
-    private boolean isTaskNull(ProjectTask projectTask) {
-        return Objects.isNull(projectTask) || Objects.isNull(projectTask.getId());
-    }
-
-    private List<ProjectTask> getProjectTasksForOnlyInList(ProjectTask projectTask, List<UserProject> allowedUserProjects) {
-        List<ProjectTask> projectTasks;
-        var dataFromDataBase = new DataOfAccessType(entityManager);
-        if (isTaskNull(projectTask)) {
-            projectTasks = dataFromDataBase.getProjectTasksIfParentIsNull(allowedUserProjects);
-        } else {
-            projectTasks = dataFromDataBase.getProjectTasksOfParent(allowedUserProjects, projectTask);
-        }
-        return projectTasks;
-    }
-
-    private int getCountProjectTasksForOnlyInList(ProjectTask projectTask, List<UserProject> allowedUserProjects) {
-        int count;
-        var dataFromDataBase = new DataOfAccessType(entityManager);
-        if (isTaskNull(projectTask)) {
-            count = dataFromDataBase.getCountProjectTasksIfParentIsNull(allowedUserProjects);
-        } else {
-            count = dataFromDataBase.getCountProjectTasksOfParent(allowedUserProjects, projectTask);
-        }
-        return count;
-    }
-
-    private List<ProjectTask> getProjectTasksForExceptInList(ProjectTask projectTask, List<UserProject> excludedUserProjects) {
-        return new ArrayList<>();
-    }
-
-    private int getCountProjectTasksForExceptInList(ProjectTask projectTask, List<UserProject> excludedUserProjects) {
-        return 0;
     }
 
     private void fillWbs(List<ProjectTask> children, ProjectTask projectTask) {
@@ -209,20 +130,20 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
         String queryText =
                 """
-        SELECT
-        	p.parent_id id,
-            COUNT(p.id) children_count
-        FROM project_tasks p
-        WHERE p.parent_id = ANY(:pids)
-        GROUP BY p.parent_id
-        HAVING COUNT(p.id) > 0
-        UNION
-        SELECT
-        	NULL id,
-            CAST(COUNT(p.id) AS INT) children_count
-        FROM project_tasks p
-        WHERE p.parent_id IS NULL
-        """;
+                        SELECT
+                        	p.parent_id id,
+                            COUNT(p.id) children_count
+                        FROM project_tasks p
+                        WHERE p.parent_id = ANY(:pids)
+                        GROUP BY p.parent_id
+                        HAVING COUNT(p.id) > 0
+                        UNION
+                        SELECT
+                        	NULL id,
+                            CAST(COUNT(p.id) AS INT) children_count
+                        FROM project_tasks p
+                        WHERE p.parent_id IS NULL
+                        """;
 
         var projectTaskIds = projectTasks.stream().map(ProjectTask::getId).filter(Objects::nonNull).toList();
         String parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
@@ -240,7 +161,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
         var idIndex = 0;
         var countIndex = 1;
 
-        for (Object[] row: rows) {
+        for (Object[] row : rows) {
             I id = (I) row[idIndex];
             Integer count = ((Number) row[countIndex]).intValue();
             map.put(id, count);
@@ -289,7 +210,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
         var links = linksRep.split(";");
 
         StringBuilder newLinks = new StringBuilder();
-        for(String link: links) {
+        for (String link : links) {
             var wbsWithType = link.split("-");
             if (wbsWithType.length <= 1) continue;
 

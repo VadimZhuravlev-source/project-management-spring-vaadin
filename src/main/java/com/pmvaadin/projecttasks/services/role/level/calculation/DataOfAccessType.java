@@ -1,4 +1,4 @@
-package com.pmvaadin.projecttasks.services.calculation;
+package com.pmvaadin.projecttasks.services.role.level.calculation;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
