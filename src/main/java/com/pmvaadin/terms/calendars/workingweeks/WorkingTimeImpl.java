@@ -43,9 +43,9 @@ public class WorkingTimeImpl implements WorkingTime, HasIdentifyingFields {
     @Column(name = "interval_setting_id")
     private IntervalSetting intervalSetting = IntervalSetting.DEFAULT;
 
-    @OneToMany(mappedBy = "workingTime", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy = "workingTime", //cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
     @OrderBy("from ASC")
-    @LazyCollection(LazyCollectionOption.FALSE)
     private List<DayOfWeekInterval> intervals = new ArrayList<>();
 
     @Transient

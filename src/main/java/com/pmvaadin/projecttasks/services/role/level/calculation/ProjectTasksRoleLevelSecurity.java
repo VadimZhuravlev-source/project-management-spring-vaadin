@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class DataOfAccessType {
+public class ProjectTasksRoleLevelSecurity {
     private final EntityManager entityManager;
     private final QueryBuilderForOnlyInListAccess queryBuilder = new QueryBuilderForOnlyInListAccess();
 
-    public DataOfAccessType(EntityManager entityManager) {
+    public ProjectTasksRoleLevelSecurity(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
 
@@ -55,9 +55,9 @@ public class DataOfAccessType {
     }
 
     private int getCountProjectTasksByQueryText(String queryText) {
-        var query = entityManager.createNativeQuery(queryText, ProjectTaskImpl.class);
-        List<Object[]> tasks = (List<Object[]>) query.getResultList();
-        return tasks.stream().map(o -> (int) o[0]).findFirst().orElse(0);
+        var query = entityManager.createNativeQuery(queryText);
+        List<Object> tasks = (List<Object>) query.getResultList();
+        return tasks.stream().map(o -> (int) o).findFirst().orElse(0);
     }
 
     private List<ProjectTask> getProjectTasksByQueryText(String queryText) {

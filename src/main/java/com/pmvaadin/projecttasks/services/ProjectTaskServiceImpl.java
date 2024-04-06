@@ -2,6 +2,8 @@ package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projectstructure.*;
 import com.pmvaadin.common.tree.TreeItem;
+import com.pmvaadin.projecttasks.services.role.level.Security;
+import com.pmvaadin.security.services.UserService;
 import com.pmvaadin.terms.calculation.TermCalculationRespond;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
@@ -25,6 +27,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
     private ProjectRecalculation projectRecalculation;
     private ChangeHierarchyTransactionalService changeHierarchyTransactionalService;
 
+    private UserService userService;
+
     @PersistenceContext
     private EntityManager entityManager;
 
@@ -41,6 +45,11 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
     @Autowired
     public void setChangeHierarchyTransactionalService(ChangeHierarchyTransactionalService changeHierarchyTransactionalService) {
         this.changeHierarchyTransactionalService = changeHierarchyTransactionalService;
+    }
+
+    @Autowired
+    public void setUserService(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
@@ -171,11 +180,13 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
 
     @Override
     public int sizeInBackEnd(String filter, PageRequest pageable) {
-        return projectTaskRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable).size();
+        var security = new Security(entityManager, userService, projectTaskRepository);
+        return security.sizeInBackEnd(filter, pageable);
     }
     @Override
     public List<ProjectTask> getItems(String filter, PageRequest pageable) {
-        return projectTaskRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable);
+        var security = new Security(entityManager, userService, projectTaskRepository);
+        return security.getItems(filter, pageable);
     }
 
     @Override

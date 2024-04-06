@@ -54,12 +54,12 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
 
     @Setter
     @OneToMany(mappedBy = "calendar",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
     @OrderBy("sort ASC")
     private List<CalendarExceptionImpl> exceptions = new ArrayList<>();
 
     @OneToMany(mappedBy = "calendar",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
     @OrderBy("sort ASC")
     private List<WorkingWeekImpl> workingWeeks = new ArrayList<>();
 

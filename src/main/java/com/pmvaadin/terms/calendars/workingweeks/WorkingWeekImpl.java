@@ -51,9 +51,9 @@ public class WorkingWeekImpl implements WorkingWeek, HasIdentifyingFields {
     private boolean isDefault = false;
 
     @Setter
-    @OneToMany(mappedBy = "workingWeek", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy = "workingWeek", //cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
     @OrderBy("dayOfWeek ASC")
-    @LazyCollection(LazyCollectionOption.FALSE)
     private List<WorkingTimeImpl> workingTimes = new ArrayList<>();
 
     public static WorkingWeekImpl getDefaultInstance(Calendar calendar) {

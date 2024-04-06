@@ -17,9 +17,13 @@ public class ProjectsTable extends ObjectGrid<UserProject> {
     private final ProjectComboBox projectComboBox;
 
     ProjectsTable(ProjectComboBox projectComboBox) {
-        this.projectComboBox = projectComboBox;
+        this.projectComboBox = projectComboBox.getInstance();
         customizeBinder();
         customizeElement();
+    }
+
+    public ProjectsTable getInstance() {
+        return new ProjectsTable(this.projectComboBox);
     }
 
     public void setUser(User user) {

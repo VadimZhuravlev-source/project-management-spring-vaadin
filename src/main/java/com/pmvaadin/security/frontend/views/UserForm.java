@@ -44,8 +44,8 @@ public class UserForm extends DialogForm {
     private final Binder<User> binder = new Binder<>(User.class);
 
     public UserForm(ProjectComboBox projectComboBox, ProjectsTable projectsTable) {
-        this.projectComboBox = projectComboBox;
-        this.projectsTable = projectsTable;
+        this.projectComboBox = projectComboBox.getInstance();
+        this.projectsTable = projectsTable.getInstance();
         configureForm();
         configureMainButtons();
         configureBinder();
@@ -134,16 +134,17 @@ public class UserForm extends DialogForm {
         var deletedRoles = userRoles.stream().filter(role -> !roleSet.contains(role.getRole())).toList();
         userRoles.removeAll(deletedRoles);
         if (userRoles.size() == roleSet.size()) {
+            user.setRoles(userRoles);
             return;
         }
         var remainedRoles = userRoles.stream().map(UserRole::getRole).collect(Collectors.toSet());
         roleSet.removeAll(remainedRoles);
-        var newRoles = roleSet.stream().map(role -> {
+         roleSet.stream().map(role -> {
             var newUserRole = user.getUserRoleInstance();
             newUserRole.setRole(role);
             return newUserRole;
-        }).toList();
-        userRoles.addAll(newRoles);
+        }).forEach(userRoles::add);
+        user.setRoles(userRoles);
     }
 
     private void configureForm() {
@@ -169,8 +170,11 @@ public class UserForm extends DialogForm {
                     rolesRow.setOn(true);
                     return;
                 }
+
             }
+            rolesRow.setOn(false);
         });
+        rolesTable.getListDataView().refreshAll();
     }
 
     @Data
@@ -218,6 +222,7 @@ public class UserForm extends DialogForm {
                 if (editor.isOpen() && !Objects.equals(item, editingItem)) {
                     editor.save();
                     editor.closeEditor();
+                    this.getListDataView().refreshAll();
                 }
             });
         }
@@ -244,6 +249,7 @@ public class UserForm extends DialogForm {
             component.getElement().addEventListener("keydown", e -> {
                 editor.save();
                 editor.closeEditor();
+                this.getListDataView().refreshAll();
             }).setFilter("event.code === 'Enter'");
 
         }

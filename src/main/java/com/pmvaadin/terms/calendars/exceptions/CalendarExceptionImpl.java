@@ -141,9 +141,9 @@ public class CalendarExceptionImpl implements HasIdentifyingFields, CalendarExce
     @Column(name = "month_year")
     private Month monthYear;
 
-    @OneToMany(mappedBy = "exception", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy = "exception", //cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
     @OrderBy("from ASC")
-    @LazyCollection(LazyCollectionOption.FALSE)
     private List<CalendarExceptionInterval> intervals = new ArrayList<>();
 
     @Override

@@ -36,8 +36,10 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     List<ProjectTask> findByParentIdInOrderByLevelOrderAsc(Collection<?> ids);
     List<ProjectTask> findByParentIdOrderByLevelOrderAsc(Integer id);
-
     List<ProjectTask> findByParentIdIsNullOrderByLevelOrderAsc();
+    List<ProjectTask> findByParentIdAndIdNotInOrderByLevelOrderAsc(Integer id, Iterable<?> excludedIds);
+
+    List<ProjectTask> findByParentIdIsNullAndIdNotInOrderByLevelOrderAsc(Iterable<?> excludedIds);
 
     @Query(value = """            
             SELECT * FROM project_tasks WHERE parent_id IS NULL
@@ -58,6 +60,12 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parentId IS NULL")
     int getChildrenCount();
+
+    @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parentId = :parentId AND id NOT IN(:excludedIds)")
+    int getChildrenCountWithExcludedTasks(@Param("parentId") Integer parentId, @Param("excludedIds") Iterable<?> excludedIds);
+
+    @Query(value = "SELECT COUNT(id) FROM ProjectTaskImpl WHERE parentId IS NULL AND id NOT IN(:excludedIds)")
+    int getChildrenCountWithExcludedTasks(@Param("excludedIds") Iterable<?> excludedIds);
 
     @Query(value = """
             WITH found_task AS (
@@ -135,6 +143,5 @@ public interface ProjectTaskRepository extends Repository<ProjectTaskImpl, Integ
 
     List<ProjectTask> findByNameLikeIgnoreCase(String name, Pageable pageable);
 //    int countByNameIgnoreCase(String name, Pageable pageable);
-
 
 }

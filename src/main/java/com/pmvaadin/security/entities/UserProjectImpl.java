@@ -18,6 +18,9 @@ public class UserProjectImpl implements UserProject, HasIdentifyingFields {
     @Setter
     private Integer id;
 
+    @Version
+    private Integer version;
+
     @Setter
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)

@@ -2,7 +2,8 @@ package com.pmvaadin.security.services;
 
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.projecttasks.services.ProjectTaskService;
+import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.security.entities.*;
 import com.pmvaadin.security.repositories.UserRepository;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
@@ -21,7 +23,7 @@ import java.util.stream.Stream;
 public class UserServiceImpl implements UserService, ListService<UserRepresentation, User> {
 
     private UserRepository userRepository;
-    private ProjectTaskService projectTaskService;
+    private ProjectTaskRepository projectTaskRepository;
 
     @Override
     public User getUserByName(String name) {
@@ -102,7 +104,7 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
                 .filter(Objects::nonNull).toList();
         if (projectIds.isEmpty())
             return;
-        var tasksById = projectTaskService.getTasksById(projectIds);
+        var tasksById = projectTaskRepository.findAllById(projectIds).stream().collect(Collectors.toMap(ProjectTask::getId, p -> p));//.getTasksById(projectIds);
         projects.forEach(p -> p.setProject(tasksById.getOrDefault(p.getProjectId(), null)));
         var rootProject = tasksById.get(user.getRootProjectId());
         user.setRootProject(rootProject);

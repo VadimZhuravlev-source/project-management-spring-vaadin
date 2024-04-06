@@ -33,7 +33,8 @@ public class UserImpl implements User, HasIdentifyingFields {
     @Setter
     private String name;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<UserRoleImpl> roles = new ArrayList<>();
 
     @Column(name = "is_active")
@@ -51,7 +52,8 @@ public class UserImpl implements User, HasIdentifyingFields {
     @Setter
     private AccessType accessType = AccessType.ONLY_IN_LIST;
 
-    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<UserProjectImpl> projects = new ArrayList<>();
 
     @Column(name = "root_project_id")

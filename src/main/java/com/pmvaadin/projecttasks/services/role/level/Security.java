@@ -2,13 +2,11 @@ package com.pmvaadin.projecttasks.services.role.level;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
-import com.pmvaadin.projecttasks.services.role.level.calculation.DataOfAccessType;
-import com.pmvaadin.security.entities.AccessType;
-import com.pmvaadin.security.entities.Role;
-import com.pmvaadin.security.entities.User;
-import com.pmvaadin.security.entities.UserRole;
+import com.pmvaadin.projecttasks.services.role.level.calculation.ProjectTasksRoleLevelSecurity;
+import com.pmvaadin.security.entities.*;
 import com.pmvaadin.security.services.UserService;
 import jakarta.persistence.EntityManager;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -16,9 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class Security {
-    private DataOfAccessType data;
+    private ProjectTasksRoleLevelSecurity data;
     private ProjectTask projectTask;
     private User user;
     private ProjectTaskRepository projectTaskRepository;
@@ -41,7 +40,7 @@ public class Security {
         }
 
         this.projectTaskRepository = projectTaskRepository;
-        this.data = new DataOfAccessType(entityManager);
+        this.data = new ProjectTasksRoleLevelSecurity(entityManager);
 
         var isAdmin = user.getRoles().stream().map(UserRole::getRole).anyMatch(role -> role == Role.ADMIN);
         if (!isAdmin) {
@@ -55,6 +54,7 @@ public class Security {
             } else if (accessType == AccessType.EXCEPT_IN_LIST) {
                 getProjectTasksMethod = this::getProjectTasksForExceptInList;
                 getCountChildrenMethod = this::getCountProjectTasksForExceptInList;
+                return;
             }
         }
 
@@ -71,6 +71,13 @@ public class Security {
     public int getCountProjectTasks(ProjectTask projectTask) {
         this.projectTask = projectTask;
         return getCountChildrenMethod.get();
+    }
+
+    public int sizeInBackEnd(String filter, PageRequest pageable) {
+        return projectTaskRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable).size();
+    }
+    public List<ProjectTask> getItems(String filter, PageRequest pageable) {
+        return projectTaskRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable);
     }
 
     private List<ProjectTask> getEmptyList() {
@@ -118,13 +125,31 @@ public class Security {
     }
 
     private List<ProjectTask> getProjectTasksForExceptInList() {
-        var excludedUserProjects = user.getProjects();
-        return new ArrayList<>();
+        var excludedIds = user.getProjects().stream().map(UserProject::getProjectId).filter(Objects::nonNull).toList();
+        if (isTaskNull(projectTask)) {
+            if (excludedIds.isEmpty())
+                return projectTaskRepository.findByParentIdIsNullOrderByLevelOrderAsc();
+            return projectTaskRepository.findByParentIdIsNullAndIdNotInOrderByLevelOrderAsc(excludedIds);
+        }
+        if (excludedIds.isEmpty())
+            return projectTaskRepository.findByParentIdOrderByLevelOrderAsc(projectTask.getId());
+
+        return projectTaskRepository.findByParentIdAndIdNotInOrderByLevelOrderAsc(projectTask.getId(), excludedIds);
+
     }
 
     private int getCountProjectTasksForExceptInList() {
-        var excludedUserProjects = user.getProjects();
-        return 0;
+        var excludedIds = user.getProjects().stream().map(UserProject::getProjectId).filter(Objects::nonNull).toList();
+        if (isTaskNull(projectTask)) {
+            if (excludedIds.isEmpty())
+                return projectTaskRepository.getChildrenCount();
+            return projectTaskRepository.getChildrenCountWithExcludedTasks(excludedIds);
+        }
+        if (excludedIds.isEmpty())
+            return projectTaskRepository.getChildrenCount(projectTask.getId());
+
+        return projectTaskRepository.getChildrenCountWithExcludedTasks(projectTask.getId(), excludedIds);
+
     }
 
     private boolean isTaskNull(ProjectTask projectTask) {
