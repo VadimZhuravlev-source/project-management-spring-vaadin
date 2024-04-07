@@ -2,7 +2,6 @@ package com.pmvaadin;
 
 import com.pmvaadin.resources.frontend.views.LaborResourceView;
 import com.pmvaadin.security.entities.Role;
-import com.pmvaadin.security.services.UserService;
 import com.pmvaadin.terms.calendars.frontend.view.CalendarsView;
 import com.pmvaadin.projectview.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;
@@ -17,19 +16,15 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.HighlightConditions;
 import com.vaadin.flow.router.RouterLink;
-import com.vaadin.flow.spring.annotation.SpringComponent;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.annotation.security.RolesAllowed;
 
-@SpringComponent
+@RolesAllowed({"ADMIN, PROJECT_MANAGER"})
 public class MainLayout extends AppLayout {
 
     private final SecurityService securityService;
-//    private Role userRole;
 
-    public MainLayout(UserService userService) {
+    public MainLayout() {
         this.securityService = new SecurityService();
-//        this.userRole = securityService.getUserRole();
         createHeader();
         createDrawer();
     }
@@ -56,8 +51,9 @@ public class MainLayout extends AppLayout {
 
     private void createDrawer() {
 
-//        if (userRole == null || userRole == Role.WORKER)
-//            return;
+        var userRole = securityService.getUserRole();
+        if (userRole == null)
+            return;
 
         RouterLink projectTasksLink = new RouterLink("Projects", ProjectTreeView.class);
         projectTasksLink.setHighlightCondition(HighlightConditions.sameLocation());
@@ -77,11 +73,11 @@ public class MainLayout extends AppLayout {
                 timeUnitLink,
                 laborResourceLink);
 
-//        if (userRole == Role.ADMIN) {
+        if (userRole == Role.ADMIN) {
             RouterLink usersLink = new RouterLink("Users", AdminUsersView.class);
             calendarsLink.setHighlightCondition(HighlightConditions.sameLocation());
             verticalLayout.add(usersLink);
-//        }
+        }
 
 //        RouterLink tests = new RouterLink("Tests", TestElementsView.class);
 //        tests.setHighlightCondition(HighlightConditions.sameLocation());

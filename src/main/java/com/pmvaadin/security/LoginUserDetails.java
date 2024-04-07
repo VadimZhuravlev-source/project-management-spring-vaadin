@@ -10,7 +10,7 @@ import java.util.Collection;
 
 public class LoginUserDetails implements UserDetails {
 
-    private static final String ROLE_PREFIX = "ROLE_";
+    public static final String ROLE_PREFIX = "ROLE_";
     private final String name;
     private final String password;
     private final boolean isActive;

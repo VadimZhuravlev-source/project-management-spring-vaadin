@@ -33,7 +33,10 @@ public class QueryBuilderForOnlyInListAccess {
                 WITH is_current_task_child_of_allowed_task AS (
                                 
                 	SELECT
-                		bool_or(TRUE) allowed_all
+                		CASE WHEN bool_or(TRUE) IS NULL
+                                               THEN FALSE
+                                               ELSE TRUE
+                                           END allowed_all
                 	FROM get_parents_in_depth(&parentId)
                 	WHERE id = ANY(&allowedTasks)
                                 
