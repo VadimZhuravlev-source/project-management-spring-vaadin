@@ -77,7 +77,7 @@ public class UserImpl implements User, HasIdentifyingFields {
 
     @Override
     public void setProjects(List<UserProject> projects) {
-        this.projects = projects.stream().map(u -> (UserProjectImpl) u).toList();
+        this.projects = projects.stream().map(u -> (UserProjectImpl) u).collect(Collectors.toList());
     }
 
     @Override
@@ -101,7 +101,7 @@ public class UserImpl implements User, HasIdentifyingFields {
 
     @Override
     public void setRoles(List<UserRole> userRoles) {
-        this.roles = userRoles.stream().map(u -> (UserRoleImpl) u).toList();
+        this.roles = userRoles.stream().map(u -> (UserRoleImpl) u).collect(Collectors.toList());
     }
 
     @Override

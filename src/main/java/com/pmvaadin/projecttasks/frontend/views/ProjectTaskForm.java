@@ -104,11 +104,11 @@ public class ProjectTaskForm extends Dialog {
                            CalendarComboBox calendarComboBox) {
 
         this.projectTaskDataService = projectTaskDataService;
-        this.linksGrid = linksGrid;
-        this.calendarSelectionForm = calendarSelectionForm;
+        this.linksGrid = linksGrid.newInstance();
+        this.calendarSelectionForm = calendarSelectionForm.newInstance();
         this.laborResources = laborResources.getInstance();
-        this.timeUnitComboBox = timeUnitComboBox;
-        this.calendarComboBox = calendarComboBox;
+        this.timeUnitComboBox = timeUnitComboBox.getInstance();
+        this.calendarComboBox = calendarComboBox.getInstance();
 
         addClassName("dialog-padding-1");
 
@@ -435,7 +435,6 @@ public class ProjectTaskForm extends Dialog {
     private boolean validateAndSave() {
         try {
             binder.writeBean(projectTaskData.getProjectTask());
-            // TODO terms validator
             var isOk = linksGrid.validate();
             if (!isOk) {
                 tabSheet.setSelectedTab(linksTab);

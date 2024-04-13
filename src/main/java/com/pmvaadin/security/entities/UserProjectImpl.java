@@ -37,6 +37,7 @@ public class UserProjectImpl implements UserProject, HasIdentifyingFields {
     @Override
     public void nullIdentifyingFields() {
         this.id = null;
+        this.version = null;
     }
 
     @Override

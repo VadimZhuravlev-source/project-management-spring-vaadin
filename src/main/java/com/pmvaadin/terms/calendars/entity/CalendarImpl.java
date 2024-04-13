@@ -146,7 +146,7 @@ public class CalendarImpl implements Calendar, Serializable, HasIdentifyingField
 
     @Override
     public void setWorkingWeeks(List<WorkingWeek> workingWeeks) {
-        this.workingWeeks = workingWeeks.stream().map(workingWeek -> (WorkingWeekImpl) workingWeek).toList();
+        this.workingWeeks = workingWeeks.stream().map(workingWeek -> (WorkingWeekImpl) workingWeek).collect(Collectors.toList());
     }
 
     @Override

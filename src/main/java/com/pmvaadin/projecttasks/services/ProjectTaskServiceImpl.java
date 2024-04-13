@@ -2,7 +2,8 @@ package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projectstructure.*;
 import com.pmvaadin.common.tree.TreeItem;
-import com.pmvaadin.projecttasks.services.role.level.Security;
+import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.projecttasks.services.role.level.security.ProjectTaskFilter;
 import com.pmvaadin.security.services.UserService;
 import com.pmvaadin.terms.calculation.TermCalculationRespond;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
@@ -26,25 +27,30 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
     private ProjectTaskRepository projectTaskRepository;
     private ProjectRecalculation projectRecalculation;
     private ChangeHierarchyTransactionalService changeHierarchyTransactionalService;
-
+    private HierarchyService hierarchyService;
     private UserService userService;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Autowired
-    public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository){
+    public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository) {
         this.projectTaskRepository = projectTaskRepository;
     }
 
     @Autowired
-    public void setProjectRecalculation(ProjectRecalculation projectRecalculation){
+    public void setProjectRecalculation(ProjectRecalculation projectRecalculation) {
         this.projectRecalculation = projectRecalculation;
     }
 
     @Autowired
     public void setChangeHierarchyTransactionalService(ChangeHierarchyTransactionalService changeHierarchyTransactionalService) {
         this.changeHierarchyTransactionalService = changeHierarchyTransactionalService;
+    }
+
+    @Autowired
+    public void setHierarchyService(HierarchyService hierarchyService) {
+        this.hierarchyService = hierarchyService;
     }
 
     @Autowired
@@ -74,7 +80,29 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
 
         if (validate && !validate(projectTask)) return projectTask;
         fillNecessaryFieldsIfItIsNew(projectTask);
+        var isNew = projectTask.isNew();
+        if (isNew && projectTask.getParentId() == null) {
+            var rootProjectId = userService.getRootProject();
+            if (rootProjectId != null) {
+                projectTask.setParentId(rootProjectId);
+            }
+        }
         ProjectTask savedProjectTask = projectTaskRepository.save(projectTask);
+        if (isNew) {
+
+            // TODO Adding new project task in an user's list of projects after executing the current transaction
+//            List<ProjectTask> parents = new ArrayList<>(0);
+//            if (projectTask.getParentId() != null) {
+//                var parent = new ProjectTaskImpl();
+//                parent.setId(projectTask.getParentId());
+//                // TODO finding parents of parents below is excessive in case
+//                //  when parent id of the project task before setting rootProjectId is null
+//                //  and when current user is not RLS user
+//                parents = hierarchyService.getParentsOfParent(parent);
+//            }
+//            userService.addProjectTaskToUserProject(savedProjectTask, parents);
+
+        }
         if (!recalculateTerms) {
             return savedProjectTask;
         }
@@ -138,6 +166,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
     @Override
     public void changeSortOrder(Set<ProjectTask> projectTasks, Direction direction) {
 
+        // TODO forbid changing sort order for upper level tasks for project manager
         changeHierarchyTransactionalService.changeSortOrder(projectTasks, direction);
 
     }
@@ -180,12 +209,13 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
 
     @Override
     public int sizeInBackEnd(String filter, PageRequest pageable) {
-        var security = new Security(entityManager, userService, projectTaskRepository);
+        var security = new ProjectTaskFilter(entityManager, userService, projectTaskRepository);
         return security.sizeInBackEnd(filter, pageable);
     }
+
     @Override
     public List<ProjectTask> getItems(String filter, PageRequest pageable) {
-        var security = new Security(entityManager, userService, projectTaskRepository);
+        var security = new ProjectTaskFilter(entityManager, userService, projectTaskRepository);
         return security.getItems(filter, pageable);
     }
 
@@ -257,7 +287,7 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {
 
-        for (TreeItem<ProjectTask> child: treeItem.getChildren()) {
+        for (TreeItem<ProjectTask> child : treeItem.getChildren()) {
             projectTasks.add(child.getValue());
             populateListByRootItemRecursively(projectTasks, child);
         }

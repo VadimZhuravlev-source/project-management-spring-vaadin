@@ -14,7 +14,6 @@ import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.PersistenceUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -40,7 +39,7 @@ public class LinkServiceImpl implements LinkService {
     }
 
     @Autowired
-    public void setEntityManagerService(DependenciesService dependenciesService){
+    public void setDependenciesService(DependenciesService dependenciesService){
         this.dependenciesService = dependenciesService;
     }
 
@@ -131,8 +130,8 @@ public class LinkServiceImpl implements LinkService {
     public Map<Object, List<Object>> getPredecessorsIds(List<?> ids) {
 
         var queryText = """
-                SELECT\s
-                	project_task,\s
+                SELECT
+                	project_task,
                 	linked_project_task
                 FROM
                 	links
@@ -169,7 +168,8 @@ public class LinkServiceImpl implements LinkService {
         links.forEach(link -> {
             ProjectTask projectTask = projectTaskMap.getOrDefault(link.getLinkedProjectTaskId(), null);
             if (projectTask == null) return;
-            link.setRepresentation(projectTask.getRepresentation());
+            link.setRepresentation(projectTask.getName());
+            link.setWbs(projectTask.getWbs());
             link.setLinkedProjectTask(projectTask);
         });
     }

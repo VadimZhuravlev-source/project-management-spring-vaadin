@@ -1,7 +1,6 @@
 package com.pmvaadin.projecttasks.links.entities;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitImpl;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 import lombok.Getter;
@@ -60,12 +59,13 @@ public class LinkImpl implements Link {
     @Transient
     private String representation;
 
+    @Setter
+    @Transient
+    private String wbs;
+
     @ManyToOne
     @JoinColumn(name = "time_unit_id", nullable = false)
     private TimeUnitImpl timeUnit;
-//    @Setter
-//    @Column(name = "time_unit_id")
-//    private Integer timeUnitId;
 
     public LinkImpl() {
         linkType = LinkType.FINISHSTART;
@@ -82,7 +82,7 @@ public class LinkImpl implements Link {
     @Override
     public void setTimeUnit(TimeUnitRepresentation timeUnit) {
         this.timeUnit = (TimeUnitImpl) timeUnit;
-    };
+    }
 
     @Override
     public Link getInstance() {

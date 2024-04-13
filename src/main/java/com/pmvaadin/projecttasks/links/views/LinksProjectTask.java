@@ -100,6 +100,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
         Grid.Column<Link> linkedProjectTaskIdColumn = addColumn(Link::getRepresentation).
                 setHeader("Project task");
+        addColumn(Link::getWbs).setHeader("Wbs");
         Grid.Column<Link> linkTypeColumn = addColumn(Link::getLinkType).setHeader("Link type");
         Grid.Column<Link> lagColumn = addColumn(Link::getLagRepresentation).
                 setHeader("Lag");
@@ -117,7 +118,8 @@ public class LinksProjectTask extends ObjectGrid<Link> {
 
                         ptField.getValue().setLinkedProjectTask(selectedProjectTask);
                         ptField.getValue().setLinkedProjectTaskId(selectedProjectTask.getId());
-                        ptField.getValue().setRepresentation(selectedProjectTask.getRepresentation());
+                        ptField.getValue().setRepresentation(selectedProjectTask.getName());
+                        ptField.getValue().setWbs(selectedProjectTask.getWbs());
                         ptField.refreshTextValue();
                     });
             projectSelectionForm.open();

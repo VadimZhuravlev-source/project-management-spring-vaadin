@@ -1,5 +1,6 @@
 package com.pmvaadin.projecttasks.services.role.level.calculation;
 
+import com.pmvaadin.common.ListOfObjectsToListItsIdConverter;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.services.role.level.queries.QueryBuilderForOnlyInListAccess;
@@ -67,10 +68,7 @@ public class ProjectTasksRoleLevelSecurity {
     }
 
     private String getIdsAsString(List<UserProject> userProjects) {
-        var projectTaskIds = userProjects.stream().map(UserProject::getProjectId).filter(Objects::nonNull).toList();
-        String parameterValue = String.valueOf(projectTaskIds).replace('[', '{').replace(']', '}');
-        parameterValue = "'" + parameterValue + "'";
-        return parameterValue;
+        return ListOfObjectsToListItsIdConverter.getIdsAsString(userProjects, UserProject::getProjectId);
     }
 
 }

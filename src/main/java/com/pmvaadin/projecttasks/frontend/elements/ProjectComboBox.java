@@ -1,6 +1,7 @@
 package com.pmvaadin.projecttasks.frontend.elements;
 
 import com.pmvaadin.common.ComboBoxWithButtons;
+import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.frontend.views.ProjectSelectionForm;
 import com.pmvaadin.projecttasks.services.ComboBoxDataProvider;
@@ -38,7 +39,11 @@ public class ProjectComboBox extends ComboBoxWithButtons<ProjectTask> {
                 getComboBox().setValue(item);
 
         });
+        this.selectionForm.addListener(ProjectSelectionForm.CloseEvent.class, event -> {
+            event.getSource().close();
+        });
         this.getSelectionAction().addClickListener(event -> this.selectionForm.open());
+
         this.setWidthFull();
 
         if (service instanceof ComboBoxDataProvider itemService)

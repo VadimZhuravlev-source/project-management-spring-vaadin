@@ -23,6 +23,9 @@ public interface Link {
     void setLinkedProjectTask(ProjectTask projectTask);
     String getRepresentation();
     void setRepresentation(String representation);
+    String getWbs();
+    void setWbs(String wbs);
+
 
     LinkType getLinkType();
     void setLinkType(LinkType linkType);

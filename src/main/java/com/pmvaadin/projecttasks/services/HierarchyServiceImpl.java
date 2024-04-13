@@ -57,7 +57,7 @@ public class HierarchyServiceImpl implements HierarchyService {
         if (ids.size() == 0) return new ArrayList<>();
 
         var isNullElement = ids.stream().anyMatch(Objects::isNull);
-        if (isNullElement) throw new IllegalArgumentException();
+        if (isNullElement) throw new IllegalArgumentException("The provided project tasks must not contain parent id = null");
 
         var parameterValue = String.valueOf(ids).replace('[', '{').replace(']', '}');
         parameterValue = "'" + parameterValue + "'";

@@ -5,7 +5,7 @@ import com.pmvaadin.projecttasks.links.entities.LinkType;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.projecttasks.services.role.level.calculation.ColumnsData;
 import com.pmvaadin.projecttasks.services.role.level.calculation.Row;
-import com.pmvaadin.projecttasks.services.role.level.Security;
+import com.pmvaadin.projecttasks.services.role.level.security.ProjectTaskFilter;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
 import com.pmvaadin.security.services.UserService;
 import lombok.AllArgsConstructor;
@@ -91,14 +91,14 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
     private int getCountChildrenOfParent(ProjectTask projectTask) {
 
-        var roleLevelSecurity = new Security(entityManager, userService, projectTaskRepository);
+        var roleLevelSecurity = new ProjectTaskFilter(entityManager, userService, projectTaskRepository);
         return roleLevelSecurity.getCountProjectTasks(projectTask);
 
     }
 
     private List<ProjectTask> getProjectTasks(ProjectTask projectTask) {
 
-        var roleLevelSecurity = new Security(entityManager, userService, projectTaskRepository);
+        var roleLevelSecurity = new ProjectTaskFilter(entityManager, userService, projectTaskRepository);
         return roleLevelSecurity.getProjectTasks(projectTask);
 
     }
@@ -173,7 +173,7 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
     private void fillData(ProjectTask projectTask, List<ProjectTask> projectTasks, List<String> columns) {
 
-        ColumnsData data = new ColumnsData(projectTask, columns, entityManager, propertyNames);
+        ColumnsData data = new ColumnsData(projectTasks, columns, entityManager, propertyNames);
 
         Map<?, Row> valueMap = data.executeQuery();
 

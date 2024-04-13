@@ -1,4 +1,4 @@
-package com.pmvaadin.projecttasks.services.role.level;
+package com.pmvaadin.projecttasks.services.role.level.security;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class Security {
+public class ProjectTaskFilter {
     private ProjectTasksRoleLevelSecurity data;
     private ProjectTask projectTask;
     private User user;
@@ -23,7 +23,7 @@ public class Security {
     private Supplier<List<ProjectTask>> getProjectTasksMethod;
     private Supplier<Integer> getCountChildrenMethod;
 
-    public Security(EntityManager entityManager, UserService userService, ProjectTaskRepository projectTaskRepository) {
+    public ProjectTaskFilter(EntityManager entityManager, UserService userService, ProjectTaskRepository projectTaskRepository) {
 
         this.getProjectTasksMethod = this::getEmptyList;
         this.getCountChildrenMethod = this::getNull;
@@ -72,6 +72,7 @@ public class Security {
         return getCountChildrenMethod.get();
     }
 
+    // TODO remake tasks finding for two method below by writing query counting the user projects
     public int sizeInBackEnd(String filter, PageRequest pageable) {
         return projectTaskRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable).size();
     }

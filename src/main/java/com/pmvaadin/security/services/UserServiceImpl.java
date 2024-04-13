@@ -10,6 +10,9 @@ import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -94,6 +97,65 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
             ((HasIdentifyingFields) user).nullIdentifyingFields();
 
         return user;
+
+    }
+
+    // End of the List service
+
+    @Override
+    public void addProjectTaskToUserProject(ProjectTask projectTask, List<ProjectTask> parents) {
+
+        var user = getCurrentUser();
+        var isUserFollowedRLS = isUserFollowedRLS(user);
+        if (!isUserFollowedRLS)
+            return;
+        var pids = parents.stream().map(ProjectTask::getId).filter(Objects::nonNull).collect(Collectors.toSet());
+        var projects = user.getProjects();
+        var projectIds = projects.stream().map(UserProject::getProjectId).anyMatch(pids::contains);
+        if (projectIds)
+            return;
+        var userProject = user.getUserProjectInstance();
+        userProject.setProjectId(projectTask.getId());
+        projects.add(userProject);
+        user.setProjects(projects);
+
+        userRepository.save(user);
+
+    }
+
+    @Override
+    public Integer getRootProject() {
+
+        var user = getCurrentUser();
+        var isUserFollowedRLS = isUserFollowedRLS(user);
+        if (!isUserFollowedRLS)
+            return null;
+        return user.getRootProjectId();
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null)
+            return null;
+
+        var principal = authentication.getPrincipal();
+        UserDetails userDetails;
+        if (principal instanceof UserDetails) {
+            userDetails = (UserDetails) principal;
+        } else
+            return null;
+        var name = userDetails.getUsername();
+        return getUserByName(name);
+    }
+
+    private boolean isUserFollowedRLS(User user) {
+        if (user == null)
+            return false;
+        var roles = user.getRoles().stream().map(UserRole::getRole).toList();
+        if (roles.contains(Role.ADMIN))
+            return false;
+
+        return user.getAccessType() == AccessType.ONLY_IN_LIST;
 
     }
 

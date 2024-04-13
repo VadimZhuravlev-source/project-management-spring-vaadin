@@ -1,7 +1,9 @@
 package com.pmvaadin.projecttasks.services.role.level.calculation;
 
+import com.pmvaadin.common.ListOfObjectsToListItsIdConverter;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
+import com.pmvaadin.security.entities.UserProject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 
@@ -9,15 +11,15 @@ import java.util.*;
 
 public class ColumnsData {
 
-    private final ProjectTask projectTask;
+    private final List<ProjectTask> projectTasks;
     private final List<String> columns;
     private String queryText;
     private final EntityManager entityManager;
     private final ProjectTaskPropertyNames propertyNames;
 
-    public ColumnsData(ProjectTask projectTask, List<String> columns, EntityManager entityManager,
+    public ColumnsData(List<ProjectTask> projectTasks, List<String> columns, EntityManager entityManager,
                        ProjectTaskPropertyNames propertyNames) {
-        this.projectTask = projectTask;
+        this.projectTasks = projectTasks;
         this.columns = columns;
         this.entityManager = entityManager;
         this.propertyNames = propertyNames;
@@ -58,12 +60,8 @@ public class ColumnsData {
     private void composeQueryText() {
 
         queryText = getQueryText();
-        String condition;
-        if (Objects.isNull(projectTask) || Objects.isNull(projectTask.getId())) {
-            condition = "project_tasks.parent_id IS NULL";
-        } else {
-            condition = "project_tasks.parent_id = " + projectTask.getId();
-        }
+        var parameter = ListOfObjectsToListItsIdConverter.getIdsAsString(projectTasks, ProjectTask::getId);
+        var condition = String.format("project_tasks.id = ANY(%s)", parameter);
 
         var conditionName = "&condition";
         queryText = queryText.replace(conditionName, condition);
@@ -409,9 +407,7 @@ LEFT JOIN labor_resources_representation
 
     private String getQueryText() {
 
-        var text =
-
-                """
+        return """
                         WITH RECURSIVE found_pts AS (
                             
                             SELECT
@@ -464,8 +460,6 @@ LEFT JOIN labor_resources_representation
                             FROM result_query
                                 
                                 """;
-
-        return text;
 
     }
 

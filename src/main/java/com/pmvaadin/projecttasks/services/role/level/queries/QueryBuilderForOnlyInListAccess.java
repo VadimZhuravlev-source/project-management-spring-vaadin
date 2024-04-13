@@ -5,9 +5,16 @@ public class QueryBuilderForOnlyInListAccess {
     private final String nameOfAllowedTasks = "&allowedTasks";
     private final String nameOfFinalSelect = "&finalSelect";
 
+    private final boolean showHierarchy = false;
+
     public String getQueryTextForUpperLevel(boolean isCount, String ids) {
 
-        var queryText = getQueryTextForUpperLevel();
+        String queryText;
+        if (showHierarchy)
+            queryText = getQueryTextForUpperLevel();
+        else
+            queryText = getQueryForUpperLevelWithoutFullHierarchy();
+
         var fillingOfFinalSelect = getFinalSelect(isCount);
         queryText = queryText.replace(nameOfFinalSelect, fillingOfFinalSelect);
 
@@ -117,6 +124,59 @@ public class QueryBuilderForOnlyInListAccess {
                         	JOIN parents_of_allowed_tasks
                         		ON children_of_task.id = parents_of_allowed_tasks.id
                         	
+                        )
+                             
+                        &finalSelect
+                        """;
+    }
+
+    private String getQueryForUpperLevelWithoutFullHierarchy() {
+        return
+                """
+                                        
+                        WITH RECURSIVE checking_allowed_tasks_by_upper_hierarchy AS (
+                                        
+                            SELECT
+                                id,
+                                id id_iter,
+                                FALSE remove_id,
+                                ARRAY[id] path -- protection of cycle
+                            FROM project_tasks
+                            WHERE id = ANY(&allowedTasks)
+                                        
+                            UNION ALL
+                            
+                            SELECT
+                                a.id,
+                                p.parent_id,
+                                p.parent_id = ANY(&allowedTasks) OR p.parent_id = ANY(a.path),
+                                a.path || p.parent_id
+                            FROM checking_allowed_tasks_by_upper_hierarchy a
+                            JOIN project_tasks p
+                                ON a.id_iter = p.id
+                                AND NOT a.remove_id
+                            
+                        ),
+                                        
+                        removing_tasks AS (
+                            SELECT DISTINCT
+                                id
+                            FROM
+                                checking_allowed_tasks_by_upper_hierarchy
+                            WHERE
+                                remove_id
+                        ),
+                                        
+                        allowed_tasks AS (
+                            SELECT DISTINCT
+                                id
+                            FROM
+                                checking_allowed_tasks_by_upper_hierarchy
+                            WHERE
+                                id NOT IN(SELECT
+                                            id
+                                         FROM
+                                            removing_tasks)
                         )
                              
                         &finalSelect
