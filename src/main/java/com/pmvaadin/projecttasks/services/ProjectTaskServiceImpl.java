@@ -345,8 +345,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
             } else {
                 levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentId);
             }
-            if (levelOrder == null) levelOrder = 1;
-            projectTask.setLevelOrder(levelOrder);
+            if (levelOrder == null) levelOrder = 0;
+            projectTask.setLevelOrder(++levelOrder);
 
         }
 
