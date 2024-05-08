@@ -206,7 +206,7 @@ public class UserForm extends DialogForm {
             var editor = this.getEditor();
             editor.setBinder(this.binder);
             this.addItemDoubleClickListener(e -> {
-                if (this.readOnly)
+                if (this.readOnly || e.getItem() == null)
                     return;
                 editor.editItem(e.getItem());
                 Component editorComponent = e.getColumn().getEditorComponent();

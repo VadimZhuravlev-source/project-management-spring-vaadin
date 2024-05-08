@@ -2,8 +2,9 @@ package com.pmvaadin.projecttasks.services;
 
 import com.pmvaadin.projectstructure.*;
 import com.pmvaadin.common.tree.TreeItem;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.projecttasks.entity.HierarchyElement;
 import com.pmvaadin.projecttasks.services.role.level.security.ProjectTaskFilter;
+import com.pmvaadin.security.entities.User;
 import com.pmvaadin.security.services.UserService;
 import com.pmvaadin.terms.calculation.TermCalculationRespond;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
@@ -78,36 +79,8 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
     @Transactional
     public ProjectTask save(ProjectTask projectTask, boolean validate, boolean recalculateTerms) {
 
-        if (validate && !validate(projectTask)) return projectTask;
-        fillNecessaryFieldsIfItIsNew(projectTask);
-        var isNew = projectTask.isNew();
-        if (isNew && projectTask.getParentId() == null) {
-            var rootProjectId = userService.getRootProject();
-            if (rootProjectId != null) {
-                projectTask.setParentId(rootProjectId);
-            }
-        }
-        ProjectTask savedProjectTask = projectTaskRepository.save(projectTask);
-        if (isNew) {
-
-            // TODO Adding new project task in an user's list of projects after executing the current transaction
-//            List<ProjectTask> parents = new ArrayList<>(0);
-//            if (projectTask.getParentId() != null) {
-//                var parent = new ProjectTaskImpl();
-//                parent.setId(projectTask.getParentId());
-//                // TODO finding parents of parents below is excessive in case
-//                //  when parent id of the project task before setting rootProjectId is null
-//                //  and when current user is not RLS user
-//                parents = hierarchyService.getParentsOfParent(parent);
-//            }
-//            userService.addProjectTaskToUserProject(savedProjectTask, parents);
-
-        }
-        if (!recalculateTerms) {
-            return savedProjectTask;
-        }
-        changeHierarchyTransactionalService.recalculateTerms(savedProjectTask);
-        return savedProjectTask;
+        var taskSaver = new TaskSaver();
+        return taskSaver.save(projectTask, validate, recalculateTerms);
 
     }
 
@@ -166,7 +139,6 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
     @Override
     public void changeSortOrder(Set<ProjectTask> projectTasks, Direction direction) {
 
-        // TODO forbid changing sort order for upper level tasks for project manager
         changeHierarchyTransactionalService.changeSortOrder(projectTasks, direction);
 
     }
@@ -248,48 +220,134 @@ public class ProjectTaskServiceImpl implements ProjectTaskService, ComboBoxDataP
         return map;
     }
 
-    private void fillNecessaryFieldsIfItIsNew(ProjectTask projectTask) {
 
-        if (!projectTask.isNew()) return;
-
-        var parentId = projectTask.getParentId();
-
-        if (parentId != null) {
-            // Validate parent existence
-            ProjectTask foundParent = projectTaskRepository.findById(parentId).orElse(null);
-            if (foundParent == null) {
-                projectTask.setParentId(null);
-                parentId = null;
-                //throw new StandardError("Unable to persist the object. A Parent of the task does not exist. Update the project and try again.");
-
-            }
-        }
-
-        Integer levelOrder;
-        if (parentId == null) {
-            levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
-        } else {
-            levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentId);
-        }
-        if (levelOrder == null) levelOrder = 0;
-        projectTask.setLevelOrder(++levelOrder);
-
-        if (projectTask.getStartDate() == null || projectTask.getFinishDate() == null) {
-            var now = LocalDateTime.now();
-            projectTask.setStartDate(now);
-            projectTask.setFinishDate(now.plusDays(1));
-        }
-
-        if (projectTask.getDuration() == 0)
-            projectTask.setDuration(Calendar.DAY_DURATION_SECONDS);
-
-    }
 
     private void populateListByRootItemRecursively(List<ProjectTask> projectTasks, TreeItem<ProjectTask> treeItem) {
 
         for (TreeItem<ProjectTask> child : treeItem.getChildren()) {
             projectTasks.add(child.getValue());
             populateListByRootItemRecursively(projectTasks, child);
+        }
+
+    }
+
+    private class TaskSaver {
+
+        private ProjectTask projectTask;
+        private boolean isNew;
+        private User user;
+        private boolean isUserFollowingRLS;
+        private Object parentId;
+        private boolean addProjectToUserProjects;
+
+        public ProjectTask save(ProjectTask projectTask, boolean validate, boolean recalculateTerms) {
+
+            this.projectTask = projectTask;
+            this.isNew = projectTask.isNew();
+
+            if (validate && !validate(projectTask))
+                return projectTask;
+
+            fillNecessaryFieldsIfItIsNew(projectTask);
+
+            var savedProjectTask = projectTaskRepository.save(projectTask);
+
+            if (isUserFollowingRLS && addProjectToUserProjects) {
+                var list = new ArrayList<ProjectTask>(1);
+                list.add(savedProjectTask);
+                userService.addProjectTaskToUserProject(list, this.user);
+            }
+
+            if (!recalculateTerms) {
+                return savedProjectTask;
+            }
+            changeHierarchyTransactionalService.recalculateTerms(savedProjectTask);
+            return savedProjectTask;
+
+        }
+
+        private void fillNecessaryFieldsIfItIsNew(ProjectTask projectTask) {
+
+            if (!isNew) return;
+
+            user = userService.getCurrentUser();
+            isUserFollowingRLS = userService.isUserFollowingRLS(user);
+
+            parentId = projectTask.getParentId();
+            setCorrespondParentId();
+
+            setLevelOrder();
+
+            // set Terms
+            if (projectTask.getDuration() == 0)
+                projectTask.setDuration(Calendar.DAY_DURATION_SECONDS);
+
+            if (projectTask.getStartDate() == null || projectTask.getFinishDate() == null) {
+                var now = LocalDateTime.now();
+                // TODO recalculation of the dates by a task's calendar
+                //  or to compare with ProjectData's filling of this necessitated fields
+                projectTask.setStartDate(now);
+                projectTask.setFinishDate(now.plusDays(1));
+            }
+
+        }
+
+        private void setCorrespondParentId() {
+
+            if (parentId != null) {
+                // Validate parent existence
+                var foundParentOpt = projectTaskRepository.findById(parentId);
+                if (foundParentOpt.isEmpty()) {
+                    projectTask.setParentId(null);
+                    parentId = null;
+                }
+            }
+
+            if (!isUserFollowingRLS)
+                return;
+
+            if (parentId == null) {
+                setParentAsUserRoot();
+                return;
+            }
+
+            var list = new ArrayList<>();
+            list.add(parentId);
+            var parents = hierarchyService.getParentsOfParent(list);
+            var task = parents.stream().filter(p -> parentId.equals(p.getParentId())).findFirst().orElse(null);
+            if (task == null) {
+                setParentAsUserRoot();
+                return;
+            }
+            List<HierarchyElement<Object>> elements = new ArrayList<>(1);
+            elements.add((HierarchyElement) task);
+            var accessTable = userService.getUserAccessTable(elements, user, parents);
+            var accessRights = accessTable.get(parentId);
+            if (accessRights.isCurrentTaskAnAllowedProject()
+                    || accessRights.isOneOfAllowedChildren()) {
+                return;
+            }
+            setParentAsUserRoot();
+        }
+
+        private void setParentAsUserRoot() {
+            var rootProjectId = user.getRootProjectId();
+            projectTask.setParentId(rootProjectId);
+            parentId = rootProjectId;
+            addProjectToUserProjects = true;
+        }
+
+        private void setLevelOrder() {
+
+            Integer levelOrder;
+            if (parentId == null) {
+                levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevelWhereParentNull();
+            } else {
+                levelOrder = projectTaskRepository.findMaxOrderIdOnParentLevel(parentId);
+            }
+            if (levelOrder == null) levelOrder = 1;
+            projectTask.setLevelOrder(levelOrder);
+
         }
 
     }

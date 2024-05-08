@@ -35,5 +35,6 @@ public interface User {
     void setRootProject(ProjectTask rootProject);
     Integer getRootProjectId();
     void setRootProjectId(Integer id);
+    void addProjects(List<UserProject> newProjects);
 
 }

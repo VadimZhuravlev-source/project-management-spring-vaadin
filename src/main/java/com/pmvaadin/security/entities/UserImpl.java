@@ -137,4 +137,11 @@ public class UserImpl implements User, HasIdentifyingFields {
         this.isPredefined = false;
     }
 
+    @Override
+    public void addProjects(List<UserProject> newProjects) {
+        var projectsImpl = newProjects.stream().map(up -> (UserProjectImpl) up).toList();
+        this.projects.removeAll(projectsImpl);
+        this.projects.addAll(projectsImpl);
+    }
+
 }

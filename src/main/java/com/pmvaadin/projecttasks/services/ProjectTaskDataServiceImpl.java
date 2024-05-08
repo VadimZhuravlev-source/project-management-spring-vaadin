@@ -89,7 +89,6 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     //@Transactional
     public ProjectTaskData save(ProjectTaskData projectTaskData) {
 
-        // validation
         var saveRespond = saveProjectDataTransactional.save(projectTaskData);
         var returnedValue = getProjectTaskDateRespond(saveRespond.projectTaskData());
         projectRecalculation.recalculate(saveRespond.respond().getRecalculatedProjects());
