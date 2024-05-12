@@ -75,6 +75,7 @@ public class QueryBuilderForOnlyInListAccess {
         queryText = queryText.replace("&mainQuery", mainQuery);
         var fillingOfFinalSelect = getFinalSelect(isCount);
         queryText = queryText.replace(nameOfFinalSelect, fillingOfFinalSelect);
+        //TODO change applyFilter so excluded tasks make effect on getting parents of project tasks
         queryText = applyFilters(queryText, filter);
 
         return queryText;
