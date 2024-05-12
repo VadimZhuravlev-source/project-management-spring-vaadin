@@ -1,5 +1,6 @@
 package com.pmvaadin.projecttasks.services;
 
+import com.pmvaadin.projectstructure.Filter;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.entities.LinkType;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
@@ -54,9 +55,9 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 //    }
 
     @Override
-    public FetchedData getFetchedData(ProjectTask projectTask) {
+    public FetchedData getFetchedData(ProjectTask projectTask, Filter filter) {
 
-        var projectTasks = getProjectTasks(projectTask);
+        var projectTasks = getProjectTasks(projectTask, filter);
 
         int childrenCountUpperLevel = fillChildrenCount(projectTasks);
         fillWbs(projectTasks, projectTask);
@@ -64,16 +65,16 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
     }
 
     @Override
-    public int getChildrenCount(ProjectTask projectTask) {
+    public int getChildrenCount(ProjectTask projectTask, Filter filter) {
 
-        return getCountChildrenOfParent(projectTask);
+        return getCountChildrenOfParent(projectTask, filter);
 
     }
 
     @Override
-    public List<ProjectTask> getChildren(ProjectTask projectTask, List<String> chosenColumns) {
+    public List<ProjectTask> getChildren(ProjectTask projectTask, List<String> chosenColumns, Filter filter) {
 
-        var projectTasks = getProjectTasks(projectTask);
+        var projectTasks = getProjectTasks(projectTask, filter);
 
         fillData(projectTask, projectTasks, chosenColumns);
 
@@ -89,17 +90,17 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
     }
 
-    private int getCountChildrenOfParent(ProjectTask projectTask) {
+    private int getCountChildrenOfParent(ProjectTask projectTask, Filter filter) {
 
         var roleLevelSecurity = new ProjectTaskFilter(entityManager, userService, projectTaskRepository);
-        return roleLevelSecurity.getCountProjectTasks(projectTask);
+        return roleLevelSecurity.getCountProjectTasks(projectTask, filter);
 
     }
 
-    private List<ProjectTask> getProjectTasks(ProjectTask projectTask) {
+    private List<ProjectTask> getProjectTasks(ProjectTask projectTask, Filter filter) {
 
         var roleLevelSecurity = new ProjectTaskFilter(entityManager, userService, projectTaskRepository);
-        return roleLevelSecurity.getProjectTasks(projectTask);
+        return roleLevelSecurity.getProjectTasks(projectTask, filter);
 
     }
 

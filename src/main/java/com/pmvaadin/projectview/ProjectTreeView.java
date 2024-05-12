@@ -2,6 +2,8 @@ package com.pmvaadin.projectview;
 
 import com.pmvaadin.MainLayout;
 import com.pmvaadin.common.ConfirmDialog;
+import com.pmvaadin.projectstructure.Filter;
+import com.pmvaadin.projectstructure.FilterImpl;
 import com.pmvaadin.projectstructure.TaskTreeProvider;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
@@ -13,6 +15,7 @@ import com.pmvaadin.projecttasks.frontend.views.ProjectTaskForm;
 import com.vaadin.flow.component.*;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.contextmenu.SubMenu;
 import com.vaadin.flow.component.grid.Grid;
@@ -58,7 +61,7 @@ public class ProjectTreeView extends VerticalLayout {
 //    private final TreeHierarchyChangeService treeHierarchyChangeService;
     private final LinkService linkService;
     private final TreeGrid<ProjectTask> treeGrid = new TreeGrid<>();
-    private final TextField filterText = new TextField();
+    private final TextField filterField = new TextField();
     private final ProjectTaskForm projectTaskForm;
     private ProjectTaskForm editingForm;
     private final TaskTreeProvider dataProvider;
@@ -72,6 +75,7 @@ public class ProjectTreeView extends VerticalLayout {
     private final Select<Resolution> resolutionSelect = new Select<>();
     private final HorizontalLayout treeGridContainer = new HorizontalLayout();
     private final Button updateTreeData = new Button(new Icon("lumo", "reload"));
+    private final Filter filter = new FilterImpl("", false);
 
     public ProjectTreeView(ProjectTreeService projectTreeService,
                            TreeHierarchyChangeService treeHierarchyChangeService,
@@ -248,10 +252,20 @@ public class ProjectTreeView extends VerticalLayout {
 
     private HorizontalLayout getToolbar() {
 
-        filterText.setPlaceholder("Filter...");
-        filterText.setClearButtonVisible(true);
-        filterText.setValueChangeMode(ValueChangeMode.LAZY);
-        //filterText.addValueChangeListener(e -> updateProject());
+        filterField.setPlaceholder("Filter...");
+        filterField.setClearButtonVisible(true);
+        filterField.setValueChangeMode(ValueChangeMode.LAZY);
+        //filterField.setValueChangeMode(ValueChangeMode.EAGER);
+        filterField.addValueChangeListener(event -> {
+            if (event.getValue() == null) {
+                filter.setFilterText("");
+                dataProvider.setFilter(filter);
+            } else {
+                filter.setFilterText(event.getValue());
+                dataProvider.setFilter(filter);
+            }
+
+        });
 
         Button addProjectTask = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
         addProjectTask.addClickListener(click -> addProjectTask());
@@ -302,7 +316,7 @@ public class ProjectTreeView extends VerticalLayout {
         resolutionSelectContainer.setSpacing(false);
 
         HorizontalLayout toolbarButtons = new HorizontalLayout(
-                //filterText,
+                filterField,
                 addProjectTask, deleteProjectTask, updateTreeData,
                 changeLevelUp,
                 changeLevelDown,
@@ -318,20 +332,28 @@ public class ProjectTreeView extends VerticalLayout {
         SubMenu subMenu = settingsItem.getSubMenu();
 
         ComponentEventListener<ClickEvent<MenuItem>> listener = e -> {
-            ColumnSelectionForm columnSelectionForm = new ColumnSelectionForm(chosenColumns);
-            columnSelectionForm.setOnCloseEvent(chosenColumns -> {
-                this.chosenColumns.clear();
-                this.chosenColumns.addAll(chosenColumns);
-                customizeColumns();
-            });
-            columnSelectionForm.open();
+            if (e.getSource().equals(settingsItem)) {
+                ColumnSelectionForm columnSelectionForm = new ColumnSelectionForm(chosenColumns);
+                columnSelectionForm.setOnCloseEvent(chosenColumns -> {
+                    this.chosenColumns.clear();
+                    this.chosenColumns.addAll(chosenColumns);
+                    customizeColumns();
+                });
+                columnSelectionForm.open();
+            }
         };
         subMenu.addItem("Column settings", listener);
 
         HorizontalLayout toolbarMenu = new HorizontalLayout();
         toolbarMenu.setWidthFull();
 
-        var toolbar = new HorizontalLayout(toolbarButtons, toolbarMenu, menuBar);
+        var checkBox = new Checkbox("Projects");
+        checkBox.addValueChangeListener(e -> {
+            filter.setShowOnlyProjects(e.getValue());
+            dataProvider.setFilter(filter);
+        });
+
+        var toolbar = new HorizontalLayout(toolbarButtons, toolbarMenu, checkBox, menuBar);
         toolbar.setWidthFull();
         return toolbar;
 

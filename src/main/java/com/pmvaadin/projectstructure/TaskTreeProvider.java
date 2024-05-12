@@ -37,7 +37,7 @@ public class TaskTreeProvider extends ProjectHierarchicalDataProvider {
     }
 
     @Override
-    public int getChildCount(HierarchicalQuery<ProjectTask, Void> query) {
+    public int getChildCount(HierarchicalQuery<ProjectTask, String> query) {
         return super.getChildCount(query);
     }
 
@@ -53,9 +53,9 @@ public class TaskTreeProvider extends ProjectHierarchicalDataProvider {
     }
 
     @Override
-    protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, Void> query) {
+    protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, String> query) {
         var parent = query.getParent();
-        var children = super.hierarchyService.getChildren(parent, chosenColumns);
+        var children = super.hierarchyService.getChildren(parent, chosenColumns, super.filter);
         if (selectedItems != null && !selectedItems.isEmpty()) {
             var multiSelect = treeGrid.asMultiSelect();
             //var selectedItems = multiSelect.getSelectedItems();

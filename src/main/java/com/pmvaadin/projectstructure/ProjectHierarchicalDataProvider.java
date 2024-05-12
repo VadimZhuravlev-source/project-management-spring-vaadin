@@ -7,9 +7,11 @@ import com.vaadin.flow.data.provider.hierarchy.HierarchicalQuery;
 
 import java.util.stream.Stream;
 
-public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchicalDataProvider<ProjectTask, Void> {
+public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchicalDataProvider<ProjectTask, String> {
 
     protected final TreeHierarchyChangeService hierarchyService;
+    protected Filter filter = new FilterImpl("", false);
+    protected boolean showOnlyProjects;
 
 //    private int cacheChildrenCountUpperLevel;
 //    private boolean receiveRootChildrenCount;
@@ -22,10 +24,10 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     }
 
     @Override
-    public int getChildCount(HierarchicalQuery<ProjectTask, Void> query) {
+    public int getChildCount(HierarchicalQuery<ProjectTask, String> query) {
 
         ProjectTask item = query.getParent();
-        return hierarchyService.getChildrenCount(item);
+        return hierarchyService.getChildrenCount(item, filter);
 //        if (item == null) {
 //            if (receiveRootChildrenCount) {
 //                cacheChildrenCountUpperLevel = hierarchyService.getChildrenCount(null);
@@ -57,10 +59,10 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
     }
 
     @Override
-    protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, Void> query) {
+    protected Stream<ProjectTask> fetchChildrenFromBackEnd(HierarchicalQuery<ProjectTask, String> query) {
 
         ProjectTask parent = query.getParent();
-        TreeHierarchyChangeService.FetchedData fetchedData = hierarchyService.getFetchedData(parent);
+        TreeHierarchyChangeService.FetchedData fetchedData = hierarchyService.getFetchedData(parent, filter);
 
         return fetchedData.getChildren().stream();
 
@@ -68,6 +70,11 @@ public class ProjectHierarchicalDataProvider extends AbstractBackEndHierarchical
 //
 //        return cacheChildren.stream();
 
+    }
+
+    public void setFilter(Filter filter) {
+        this.filter = filter;
+        this.refreshAll();
     }
 
 //    @Override

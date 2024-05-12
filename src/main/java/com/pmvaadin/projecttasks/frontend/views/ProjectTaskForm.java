@@ -548,6 +548,8 @@ public class ProjectTaskForm extends Dialog {
                 .withValidator(Objects::nonNull, "Can not be empty")
                 .bind(projectTask -> this.projectTaskData.getCalendar(), (projectTask, representation) -> projectTask.setCalendarId(representation.getId()));
 
+        binder.forField(isProject).bind(ProjectTask::isProject, ProjectTask::setProject);
+        binder.forField(isMilestone).bind(ProjectTask::isMilestone, ProjectTask::setMilestone);
         binder.bindInstanceFields(this);
 
     }

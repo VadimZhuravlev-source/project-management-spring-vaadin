@@ -1,6 +1,7 @@
 package com.pmvaadin.projecttasks.services.role.level.calculation;
 
 import com.pmvaadin.common.ListOfObjectsToListItsIdConverter;
+import com.pmvaadin.projectstructure.Filter;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.services.role.level.queries.QueryBuilderForOnlyInListAccess;
@@ -8,7 +9,6 @@ import com.pmvaadin.security.entities.UserProject;
 import jakarta.persistence.EntityManager;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ProjectTasksRoleLevelSecurity {
@@ -19,37 +19,86 @@ public class ProjectTasksRoleLevelSecurity {
         this.entityManager = entityManager;
     }
 
-    public List<ProjectTask> getProjectTasksIfParentIsNull(List<UserProject> userProjects) {
+    public List<ProjectTask> getProjectTasksIfParentIsNull(List<UserProject> userProjects,
+                                                           Filter filter) {
 
         var ids = getIdsAsString(userProjects);
-        var queryText = queryBuilder.getQueryTextForUpperLevel(false, ids);
+        var queryText = queryBuilder.getQueryTextForUpperLevel(false, ids,
+                filter);
 
         return getProjectTasksByQueryText(queryText);
 
     }
 
-    public List<ProjectTask> getProjectTasksOfParent(List<UserProject> userProjects, ProjectTask parent) {
+    public int getCountProjectTasksIfParentIsNull(List<UserProject> userProjects, Filter filter) {
 
         var ids = getIdsAsString(userProjects);
-        var queryText = queryBuilder.getQueryTextForParent(false, ids, parent.getId().toString());
-
-        return getProjectTasksByQueryText(queryText);
-
-    }
-
-    public int getCountProjectTasksIfParentIsNull(List<UserProject> userProjects) {
-
-        var ids = getIdsAsString(userProjects);
-        var queryText = queryBuilder.getQueryTextForUpperLevel(true, ids);
+        var queryText = queryBuilder.getQueryTextForUpperLevel(true, ids,
+                filter);
 
         return getCountProjectTasksByQueryText(queryText);
 
     }
 
-    public int getCountProjectTasksOfParent(List<UserProject> userProjects, ProjectTask parent) {
+    public List<ProjectTask> getProjectTasksOfParent(List<UserProject> userProjects, ProjectTask parent,
+                                                     Filter filter) {
 
         var ids = getIdsAsString(userProjects);
-        var queryText = queryBuilder.getQueryTextForParent(true, ids, parent.getId().toString());
+        var queryText = queryBuilder.getQueryTextForParent(false, ids, parent.getId().toString(),
+                filter);
+
+        return getProjectTasksByQueryText(queryText);
+
+    }
+
+    public int getCountProjectTasksOfParent(List<UserProject> userProjects, ProjectTask parent,
+                                            Filter filter) {
+
+        var ids = getIdsAsString(userProjects);
+        var queryText = queryBuilder.getQueryTextForParent(true, ids, parent.getId().toString(),
+                filter);
+
+        return getCountProjectTasksByQueryText(queryText);
+
+    }
+
+    public List<ProjectTask> getProjectTasksOfParentFullRights(Object parentId,
+                                                               Filter filter) {
+
+        var queryText = queryBuilder.getQueryTextForParentFullRights(false, parentId,
+                filter);
+
+        return getProjectTasksByQueryText(queryText);
+
+    }
+
+    public int getCountProjectTasksOfParentFullRights(Object parentId,
+                                                      Filter filter) {
+
+        var queryText = queryBuilder.getQueryTextForParentFullRights(true, parentId,
+                filter);
+
+        return getCountProjectTasksByQueryText(queryText);
+
+    }
+
+    public List<ProjectTask> getProjectTasksOfParentFullRights(List<UserProject> userProjects, Object parentId,
+                                                               Filter filter) {
+
+        var excludedIds = getIdsAsString(userProjects);
+        var queryText = queryBuilder.getQueryTextForParentFullRights(false, parentId,
+                filter, excludedIds);
+
+        return getProjectTasksByQueryText(queryText);
+
+    }
+
+    public int getCountProjectTasksOfParentFullRights(List<UserProject> userProjects, Object parentId,
+                                                      Filter filter) {
+
+        var excludedIds = getIdsAsString(userProjects);
+        var queryText = queryBuilder.getQueryTextForParentFullRights(true, parentId,
+                filter, excludedIds);
 
         return getCountProjectTasksByQueryText(queryText);
 

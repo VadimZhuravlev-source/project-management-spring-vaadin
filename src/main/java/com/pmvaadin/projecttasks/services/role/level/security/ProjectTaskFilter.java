@@ -1,5 +1,6 @@
 package com.pmvaadin.projecttasks.services.role.level.security;
 
+import com.pmvaadin.projectstructure.Filter;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.projecttasks.services.role.level.calculation.ProjectTasksRoleLevelSecurity;
@@ -22,6 +23,7 @@ public class ProjectTaskFilter {
     private ProjectTaskRepository projectTaskRepository;
     private Supplier<List<ProjectTask>> getProjectTasksMethod;
     private Supplier<Integer> getCountChildrenMethod;
+    private Filter filter;
 
     public ProjectTaskFilter(EntityManager entityManager, UserService userService, ProjectTaskRepository projectTaskRepository) {
 
@@ -58,17 +60,19 @@ public class ProjectTaskFilter {
         }
 
         getProjectTasksMethod = this::getProjectTasksWithFullRights;
-        getCountChildrenMethod = this::getChildrenWithFullRights;
+        getCountChildrenMethod = this::getChildrenCountWithFullRights;
 
     }
 
-    public List<ProjectTask> getProjectTasks(ProjectTask projectTask) {
+    public List<ProjectTask> getProjectTasks(ProjectTask projectTask, Filter filter) {
         this.projectTask = projectTask;
+        this.filter = filter;
         return getProjectTasksMethod.get();
     }
 
-    public int getCountProjectTasks(ProjectTask projectTask) {
+    public int getCountProjectTasks(ProjectTask projectTask, Filter filter) {
         this.projectTask = projectTask;
+        this.filter = filter;
         return getCountChildrenMethod.get();
     }
 
@@ -92,9 +96,9 @@ public class ProjectTaskFilter {
 
         var allowedUserProjects = user.getProjects();
         if (isTaskNull(projectTask)) {
-            return data.getProjectTasksIfParentIsNull(allowedUserProjects);
+            return data.getProjectTasksIfParentIsNull(allowedUserProjects, filter);
         }
-        return data.getProjectTasksOfParent(allowedUserProjects, projectTask);
+        return data.getProjectTasksOfParent(allowedUserProjects, projectTask, filter);
 
     }
 
@@ -102,13 +106,24 @@ public class ProjectTaskFilter {
 
         var allowedUserProjects = user.getProjects();
         if (isTaskNull(projectTask)) {
-            return data.getCountProjectTasksIfParentIsNull(allowedUserProjects);
+            return data.getCountProjectTasksIfParentIsNull(allowedUserProjects, filter);
         }
-        return data.getCountProjectTasksOfParent(allowedUserProjects, projectTask);
+        return data.getCountProjectTasksOfParent(allowedUserProjects, projectTask, filter);
 
     }
 
+    private boolean applyFilter() {
+        return filter != null && filter.applyFilter();
+    }
+
     private List<ProjectTask> getProjectTasksWithFullRights() {
+
+        if (applyFilter()) {
+            if (projectTask == null) {
+                return data.getProjectTasksOfParentFullRights(null, filter);
+            }
+            return data.getProjectTasksOfParentFullRights(projectTask.getId(), filter);
+        }
 
         if (isTaskNull(projectTask)) {
             return projectTaskRepository.findByParentIdIsNullOrderByLevelOrderAsc();
@@ -117,7 +132,15 @@ public class ProjectTaskFilter {
 
     }
 
-    private int getChildrenWithFullRights() {
+    private int getChildrenCountWithFullRights() {
+
+        if (applyFilter()) {
+            if (projectTask == null) {
+                return data.getCountProjectTasksOfParentFullRights(null, filter);
+            }
+            return data.getCountProjectTasksOfParentFullRights(projectTask.getId(), filter);
+        }
+
         if (isTaskNull(projectTask))
             return projectTaskRepository.getChildrenCount();
 
@@ -125,6 +148,14 @@ public class ProjectTaskFilter {
     }
 
     private List<ProjectTask> getProjectTasksForExceptInList() {
+
+        if (applyFilter()) {
+            if (projectTask == null) {
+                return data.getProjectTasksOfParentFullRights(user.getProjects(),null, filter);
+            }
+            return data.getProjectTasksOfParentFullRights(user.getProjects(), projectTask.getId(), filter);
+        }
+
         var excludedIds = user.getProjects().stream().map(UserProject::getProjectId).filter(Objects::nonNull).toList();
         if (isTaskNull(projectTask)) {
             if (excludedIds.isEmpty())
@@ -139,6 +170,14 @@ public class ProjectTaskFilter {
     }
 
     private int getCountProjectTasksForExceptInList() {
+
+        if (applyFilter()) {
+            if (projectTask == null) {
+                return data.getCountProjectTasksOfParentFullRights(user.getProjects(),null, filter);
+            }
+            return data.getCountProjectTasksOfParentFullRights(user.getProjects(), projectTask.getId(), filter);
+        }
+
         var excludedIds = user.getProjects().stream().map(UserProject::getProjectId).filter(Objects::nonNull).toList();
         if (isTaskNull(projectTask)) {
             if (excludedIds.isEmpty())
