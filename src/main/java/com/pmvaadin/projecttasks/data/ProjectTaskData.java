@@ -36,4 +36,6 @@ public interface ProjectTaskData {
     Link getLinkInstance();
     TaskResource getTaskResourceInstance();
 
+    List<Link> getSuccessors();
+
 }

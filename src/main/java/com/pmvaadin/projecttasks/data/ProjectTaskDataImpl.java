@@ -11,6 +11,7 @@ import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -32,6 +33,7 @@ public class ProjectTaskDataImpl implements ProjectTaskData {
     private Link linkSample;
 
     private List<TaskResource> taskResources;
+    private List<Link> successors = new ArrayList<>(0);
 
     public ProjectTaskDataImpl(ProjectTask projectTask, List<Link> links, LocalDateTime projectStartDate,
                                Calendar calendar, TimeUnit timeUnit, Link linkSample) {

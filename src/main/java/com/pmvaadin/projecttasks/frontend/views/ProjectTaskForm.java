@@ -4,6 +4,7 @@ import com.pmvaadin.common.IntegerToDoubleConverter;
 import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.entity.ScheduleMode;
 import com.pmvaadin.projecttasks.entity.Status;
+import com.pmvaadin.projecttasks.links.entities.Link;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
 import com.pmvaadin.resources.frontend.elements.ProjectTaskLaborResources;
 import com.pmvaadin.terms.calendars.entity.Calendar;
@@ -30,6 +31,7 @@ import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
@@ -90,12 +92,15 @@ public class ProjectTaskForm extends Dialog {
     private final Tab mainDataTab = new Tab("Main");
     private final Tab linksTab = new Tab("Predecessors");
     private final Tab resourcesTab = new Tab("Labor resources");
+    private final Tab successorsTab = new Tab("Successors");
     private final TabSheet tabSheet = new TabSheet();
 
     // this need to stretch a grid in a tab
     private final VerticalLayout linksGridContainer = new VerticalLayout();
     private final VerticalLayout resourcesGridContainer = new VerticalLayout();
     private final ProjectTaskLaborResources laborResources;
+    private final VerticalLayout successorsGridContainer = new VerticalLayout();
+    private final Grid<Link> successors = new Grid<>();
     private final ProjectTaskPropertyNames propertyNames = new ProjectTaskPropertyNames();
 
     public ProjectTaskForm(ProjectTaskDataService projectTaskDataService, LinksProjectTask linksGrid,
@@ -172,9 +177,19 @@ public class ProjectTaskForm extends Dialog {
         tabSheet.add(linksTab, linksGridContainer);
         tabSheet.addSelectedChangeListener(this::selectedTabChangeListener);
 
+        tabSheet.add(successorsTab, successorsGridContainer);
+
         resourcesGridContainer.add(laborResources);
         tabSheet.add(resourcesTab, resourcesGridContainer);
 
+        customizeSuccessors();
+
+    }
+
+    private void customizeSuccessors() {
+        successorsGridContainer.add(successors);
+        successors.addColumn(Link::getRepresentation).setHeader("Name");
+        successors.addColumn(Link::getWbs).setHeader("Wbs");
     }
 
     private void selectedTabChangeListener(TabSheet.SelectedChangeEvent event) {
@@ -493,6 +508,7 @@ public class ProjectTaskForm extends Dialog {
         durationRepresentation.setValue(projectTaskData.getProjectTask().getDurationRepresentation().doubleValue());
         binder.readBean(projectTaskData.getProjectTask());
         laborResources.setItems(projectTaskData.getTaskResources());
+        successors.setItems(projectTaskData.getSuccessors());
 
     }
 

@@ -17,7 +17,7 @@ public interface LinkService {
 
     void delete(List<? extends Link> links);
 
-    List<Link> getLinksWithProjectTaskRepresentation(ProjectTask projectTask);
+    List<Link> getLinksAndSuccessorsWithProjectTaskRepresentation(ProjectTask projectTask);
 
     void fillLinksByChanges(ProjectTaskData projectTaskData);
 

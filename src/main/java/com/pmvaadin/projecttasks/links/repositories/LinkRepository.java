@@ -27,4 +27,8 @@ public interface LinkRepository extends Repository<LinkImpl, Integer> {
 
     List<Link> findDistinctByProjectTaskIdIn(Collection<Integer> projectTaskIds);
 
+    @Query(value = "SELECT l FROM LinkImpl l WHERE projectTaskId = :projectTaskId OR linkedProjectTaskId = :projectTaskId ORDER BY sort ASC")
+    <I> List<Link> findAllWithSuccessorsByProjectTaskId(@Param("projectTaskId") I projectTaskId);
+
+
 }

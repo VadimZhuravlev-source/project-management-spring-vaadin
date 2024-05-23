@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class LinkServiceImpl implements LinkService {
@@ -120,9 +121,9 @@ public class LinkServiceImpl implements LinkService {
     }
 
     @Override
-    public List<Link> getLinksWithProjectTaskRepresentation(ProjectTask projectTask) {
-        List<Link> links = getLinks(projectTask);
-        fillRepresentation(links);
+    public List<Link> getLinksAndSuccessorsWithProjectTaskRepresentation(ProjectTask projectTask) {
+        List<Link> links = getLinksWithSuccessors(projectTask);
+        fillRepresentation(links, projectTask);
         return links;
     }
 
@@ -159,15 +160,29 @@ public class LinkServiceImpl implements LinkService {
 
     }
 
-    private void fillRepresentation(List<? extends Link> links) {
+    private List<Link> getLinksWithSuccessors(ProjectTask projectTask) {
+        return linkRepository.findAllWithSuccessorsByProjectTaskId(projectTask.getId());
+    }
 
-        if (links.size() == 0) return;
+    private void fillRepresentation(List<? extends Link> links, ProjectTask linksOwner) {
 
-        List<?> projectTasksIds = links.stream().map(Link::getLinkedProjectTaskId).toList();
-        Map<?, ProjectTask> projectTaskMap = projectTaskService.getProjectTasksByIdWithFilledWbs(projectTasksIds);
+        if (links.isEmpty()) return;
+        var ids = links.stream().filter(link -> link.getLinkedProjectTaskId().equals(linksOwner.getId()))
+                .map(Link::getProjectTaskId)
+                .collect(Collectors.toList());
+        var projectTasksIds = links.stream().filter(link -> link.getProjectTaskId().equals(linksOwner.getId())).map(Link::getLinkedProjectTaskId).toList();
+        ids.addAll(projectTasksIds);
+        Map<?, ProjectTask> projectTaskMap = projectTaskService.getProjectTasksByIdWithFilledWbs(ids);
         links.forEach(link -> {
             ProjectTask projectTask = projectTaskMap.getOrDefault(link.getLinkedProjectTaskId(), null);
-            if (projectTask == null) return;
+            if (projectTask == null || link.getLinkedProjectTaskId().equals(linksOwner.getId())) {
+                projectTask = projectTaskMap.get(link.getProjectTaskId());
+                if (projectTask == null)
+                    return;
+                link.setRepresentation(projectTask.getName());
+                link.setWbs(projectTask.getWbs());
+                return;
+            }
             link.setRepresentation(projectTask.getName());
             link.setWbs(projectTask.getWbs());
             link.setLinkedProjectTask(projectTask);

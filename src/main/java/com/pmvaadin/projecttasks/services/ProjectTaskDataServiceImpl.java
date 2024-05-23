@@ -102,14 +102,27 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
 
         ProjectTask syncedProjectTask = projectTask;
         List<Link> links = new ArrayList<>(0);
-        if (!projectTask.isNew()) {
+        var isNew = projectTask.isNew();
+        List<Link> predecessors = new ArrayList<>(0);
+        if (!isNew) {
             syncedProjectTask = projectTaskService.sync(projectTask);
-            links = linkService.getLinksWithProjectTaskRepresentation(syncedProjectTask);
+            links = linkService.getLinksAndSuccessorsWithProjectTaskRepresentation(syncedProjectTask);
+            predecessors = links.stream().filter(link -> link.getProjectTaskId().equals(projectTask.getId()))
+                    .sorted(Comparator.comparingInt(Link::getSort))
+                    .collect(Collectors.toList());
         }
 
         if (syncedProjectTask.isNew()) syncedProjectTask.setDuration(Calendar.DAY_DURATION_SECONDS);
 
-        return getProjectTaskData(syncedProjectTask, links);
+        var data = getProjectTaskData(syncedProjectTask, predecessors);
+
+        if (!isNew) {
+            var successors = links.stream().filter(link -> link.getLinkedProjectTaskId().equals(projectTask.getId()))
+                    .toList();
+            data.getSuccessors().addAll(successors);
+        }
+
+        return data;
 
     }
 
@@ -218,10 +231,19 @@ public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
     private ProjectTaskData getProjectTaskDateRespond(ProjectTaskData projectTaskData) {
 
         ProjectTask projectTask = projectTaskData.getProjectTask();
-        List<Link> links = linkService.getLinksWithProjectTaskRepresentation(projectTask);
+        List<Link> links = linkService.getLinksAndSuccessorsWithProjectTaskRepresentation(projectTask);
         //projectTaskService.fillParent(projectTask);
 
-        return getProjectTaskData(projectTask, links);
+        var predecessors = links.stream().filter(link -> link.getProjectTaskId().equals(projectTask.getId()))
+                .sorted(Comparator.comparingInt(Link::getSort))
+                .collect(Collectors.toList());
+
+        var data = getProjectTaskData(projectTask, predecessors);
+
+        var successors = links.stream().filter(link -> link.getLinkedProjectTaskId().equals(projectTask.getId()))
+                .toList();
+        data.getSuccessors().addAll(successors);
+        return data;
 
     }
 

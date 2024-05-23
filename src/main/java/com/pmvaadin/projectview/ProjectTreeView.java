@@ -332,15 +332,13 @@ public class ProjectTreeView extends VerticalLayout {
         SubMenu subMenu = settingsItem.getSubMenu();
 
         ComponentEventListener<ClickEvent<MenuItem>> listener = e -> {
-            if (e.getSource().equals(settingsItem)) {
-                ColumnSelectionForm columnSelectionForm = new ColumnSelectionForm(chosenColumns);
-                columnSelectionForm.setOnCloseEvent(chosenColumns -> {
-                    this.chosenColumns.clear();
-                    this.chosenColumns.addAll(chosenColumns);
-                    customizeColumns();
-                });
-                columnSelectionForm.open();
-            }
+            ColumnSelectionForm columnSelectionForm = new ColumnSelectionForm(chosenColumns);
+            columnSelectionForm.setOnCloseEvent(chosenColumns -> {
+                this.chosenColumns.clear();
+                this.chosenColumns.addAll(chosenColumns);
+                customizeColumns();
+            });
+            columnSelectionForm.open();
         };
         subMenu.addItem("Column settings", listener);
 
