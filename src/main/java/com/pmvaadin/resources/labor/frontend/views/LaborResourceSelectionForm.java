@@ -1,9 +1,9 @@
-package com.pmvaadin.resources.frontend.views;
+package com.pmvaadin.resources.labor.frontend.views;
 
 import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.resources.frontend.elements.LaborResourceList;
-import com.pmvaadin.resources.services.LaborResourceService;
+import com.pmvaadin.resources.labor.frontend.elements.LaborResourceList;
+import com.pmvaadin.resources.labor.services.LaborResourceService;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 @SpringComponent

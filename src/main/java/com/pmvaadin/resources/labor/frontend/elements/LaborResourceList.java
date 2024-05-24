@@ -1,10 +1,10 @@
-package com.pmvaadin.resources.frontend.elements;
+package com.pmvaadin.resources.labor.frontend.elements;
 
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.common.vaadin.ItemList;
-import com.pmvaadin.resources.entity.LaborResource;
-import com.pmvaadin.resources.entity.LaborResourceRepresentation;
-import com.pmvaadin.resources.frontend.views.LaborResourceForm;
+import com.pmvaadin.resources.labor.entity.LaborResource;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.frontend.views.LaborResourceForm;
 
 public class LaborResourceList extends ItemList<LaborResourceRepresentation, LaborResource> {
 

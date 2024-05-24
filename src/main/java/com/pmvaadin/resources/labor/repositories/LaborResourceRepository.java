@@ -1,10 +1,8 @@
-package com.pmvaadin.resources.repositories;
+package com.pmvaadin.resources.labor.repositories;
 
-import com.pmvaadin.resources.entity.LaborResource;
-import com.pmvaadin.resources.entity.LaborResourceImpl;
-import com.pmvaadin.resources.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.entity.LaborResource;
+import com.pmvaadin.resources.labor.entity.LaborResourceImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 

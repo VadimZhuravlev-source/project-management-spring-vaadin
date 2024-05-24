@@ -6,7 +6,7 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.resources.entity.TaskResource;
 import com.pmvaadin.projecttasks.resources.entity.TaskResourceImpl;
 import com.pmvaadin.projecttasks.resources.repositories.TaskResourceRepository;
-import com.pmvaadin.resources.entity.LaborResourceRepresentationDTO;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentationDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;

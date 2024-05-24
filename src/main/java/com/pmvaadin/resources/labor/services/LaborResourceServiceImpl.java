@@ -1,12 +1,12 @@
-package com.pmvaadin.resources.services;
+package com.pmvaadin.resources.labor.services;
 
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.resources.entity.LaborResource;
-import com.pmvaadin.resources.entity.LaborResourceRepresentationDTO;
-import com.pmvaadin.resources.entity.LaborResourceImpl;
-import com.pmvaadin.resources.entity.LaborResourceRepresentation;
-import com.pmvaadin.resources.repositories.LaborResourceRepository;
+import com.pmvaadin.resources.labor.entity.LaborResource;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentationDTO;
+import com.pmvaadin.resources.labor.entity.LaborResourceImpl;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.repositories.LaborResourceRepository;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

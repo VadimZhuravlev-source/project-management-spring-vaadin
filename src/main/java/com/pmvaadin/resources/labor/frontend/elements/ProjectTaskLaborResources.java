@@ -1,11 +1,11 @@
-package com.pmvaadin.resources.frontend.elements;
+package com.pmvaadin.resources.labor.frontend.elements;
 
 import com.pmvaadin.common.ObjectGrid;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.resources.entity.TaskResource;
-import com.pmvaadin.resources.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 

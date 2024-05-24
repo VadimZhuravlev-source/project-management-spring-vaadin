@@ -1,8 +1,9 @@
-package com.pmvaadin.security.entities;
+package com.pmvaadin.costs.labor.entities;
 
+import java.time.LocalDate;
 import java.util.Objects;
 
-public record UserRepresentationDTO(Integer id, String name, boolean isActive, boolean isPredefined) implements UserRepresentation {
+public record LaborCostRepresentationDTO(Integer id, String name, LocalDate day) implements LaborCostRepresentation {
 
     @Override
     public Integer getId() {
@@ -20,9 +21,14 @@ public record UserRepresentationDTO(Integer id, String name, boolean isActive, b
     }
 
     @Override
+    public LocalDate getDay() {
+        return day;
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof UserRepresentationDTO that)) return false;
+        if (!(o instanceof LaborCostRepresentationDTO that)) return false;
         if (getId() == null || that.getId() == null) return false;
         return Objects.equals(getId(), that.getId());
     }
@@ -31,4 +37,5 @@ public record UserRepresentationDTO(Integer id, String name, boolean isActive, b
     public int hashCode() {
         return Objects.hash(getId());
     }
+
 }

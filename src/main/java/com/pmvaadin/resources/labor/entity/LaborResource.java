@@ -1,4 +1,4 @@
-package com.pmvaadin.resources.entity;
+package com.pmvaadin.resources.labor.entity;
 
 public interface LaborResource {
 

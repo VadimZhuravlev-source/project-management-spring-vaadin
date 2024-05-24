@@ -1,7 +1,6 @@
 package com.pmvaadin.projecttasks.resources.entity;
 
-import com.pmvaadin.resources.entity.LaborResource;
-import com.pmvaadin.resources.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 
 import java.math.BigDecimal;
 

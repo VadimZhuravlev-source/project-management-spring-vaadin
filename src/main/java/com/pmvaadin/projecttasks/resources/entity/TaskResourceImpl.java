@@ -1,6 +1,6 @@
 package com.pmvaadin.projecttasks.resources.entity;
 
-import com.pmvaadin.resources.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

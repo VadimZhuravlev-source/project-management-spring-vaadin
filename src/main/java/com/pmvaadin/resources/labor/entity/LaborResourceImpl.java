@@ -1,4 +1,4 @@
-package com.pmvaadin.resources.entity;
+package com.pmvaadin.resources.labor.entity;
 
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;

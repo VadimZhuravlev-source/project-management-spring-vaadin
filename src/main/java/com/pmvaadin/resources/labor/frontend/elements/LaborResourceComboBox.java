@@ -1,12 +1,12 @@
-package com.pmvaadin.resources.frontend.elements;
+package com.pmvaadin.resources.labor.frontend.elements;
 
 import com.pmvaadin.common.ComboBoxWithButtons;
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.resources.entity.LaborResource;
-import com.pmvaadin.resources.entity.LaborResourceRepresentation;
-import com.pmvaadin.resources.frontend.views.LaborResourceForm;
-import com.pmvaadin.resources.frontend.views.LaborResourceSelectionForm;
-import com.pmvaadin.resources.services.LaborResourceService;
+import com.pmvaadin.resources.labor.entity.LaborResource;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.frontend.views.LaborResourceForm;
+import com.pmvaadin.resources.labor.frontend.views.LaborResourceSelectionForm;
+import com.pmvaadin.resources.labor.services.LaborResourceService;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
 @SpringComponent
