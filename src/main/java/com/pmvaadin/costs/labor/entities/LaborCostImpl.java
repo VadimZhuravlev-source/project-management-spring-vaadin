@@ -1,6 +1,5 @@
 package com.pmvaadin.costs.labor.entities;
 
-import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -40,13 +39,14 @@ public class LaborCostImpl implements LaborCost, HasIdentifyingFields {
     @Setter
     private String name;
 
+    // now, the employeeName is a name of a user.
     @Setter
     @Transient
     private String employeeName;
 
     @Setter
-    @Column(name = "employee_id")
-    private Integer employeeId;
+    @Column(name = "labor_resource_id")
+    private Integer labor_resource_id;
 
     @Setter
     @Column(name = "day")
@@ -57,10 +57,6 @@ public class LaborCostImpl implements LaborCost, HasIdentifyingFields {
     @OrderBy("from ASC")
     private List<WorkIntervalImpl> intervals = new ArrayList<>();
 
-    @Transient
-    @Setter
-    private List<ProjectTaskRep> assignedTasks = new ArrayList<>();
-
     @Override
     public String toString() {
         return name;
@@ -69,9 +65,9 @@ public class LaborCostImpl implements LaborCost, HasIdentifyingFields {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof LaborCostImpl that)) return false;
-        if (getId() == null || that.getId() == null) return false;
-        return Objects.equals(getId(), that.getId());
+        if (o == null || getClass() != o.getClass()) return false;
+        LaborCostImpl laborCost = (LaborCostImpl) o;
+        return Objects.equals(getId(), laborCost.getId());
     }
 
     @Override
@@ -87,7 +83,13 @@ public class LaborCostImpl implements LaborCost, HasIdentifyingFields {
         dateOfCreation = null;
         updateDate = null;
         intervals.forEach(WorkIntervalImpl::nullIdentifyingFields);
-        assignedTasks.clear();
+    }
+
+    @Override
+    public WorkInterval getWorkIntervalInstance() {
+        var workInterval = new WorkIntervalImpl();
+        workInterval.setLaborCost(this);
+        return workInterval;
     }
 
     @Override

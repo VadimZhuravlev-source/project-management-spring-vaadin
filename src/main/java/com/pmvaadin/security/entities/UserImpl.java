@@ -2,6 +2,8 @@ package com.pmvaadin.security.entities;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.security.user.labor.resource.UserLaborResource;
+import com.pmvaadin.security.user.labor.resource.UserLaborResourceImpl;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -55,6 +57,10 @@ public class UserImpl implements User, HasIdentifyingFields {
     @OneToMany(mappedBy = "user",
             cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
     private List<UserProjectImpl> projects = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user",
+            cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE}, fetch = FetchType.EAGER, orphanRemoval = true)
+    private List<UserLaborResourceImpl> laborResources = new ArrayList<>();
 
     @Column(name = "root_project_id")
     @Setter
@@ -142,6 +148,24 @@ public class UserImpl implements User, HasIdentifyingFields {
         var projectsImpl = newProjects.stream().map(up -> (UserProjectImpl) up).toList();
         this.projects.removeAll(projectsImpl);
         this.projects.addAll(projectsImpl);
+    }
+
+    @Override
+    public UserLaborResource getUserLaborResourceInstance() {
+        var resource = new UserLaborResourceImpl();
+        resource.setUser(this);
+        return resource;
+    }
+
+    @Override
+    public List<UserLaborResource> getUserLaborResources() {
+        return this.laborResources.stream().map(userLaborResource -> (UserLaborResourceImpl) userLaborResource)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void setUserLaborResources(List<UserLaborResource> laborResources) {
+        this.laborResources = laborResources.stream().map(u -> (UserLaborResourceImpl) u).collect(Collectors.toList());
     }
 
 }

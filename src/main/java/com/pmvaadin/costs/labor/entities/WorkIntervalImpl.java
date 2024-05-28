@@ -25,7 +25,7 @@ public class WorkIntervalImpl implements WorkInterval, HasIdentifyingFields {
 
     @Setter
     @Transient
-    private String Name;
+    private String taskName;
 
     @Setter
     @Column(name = "task_id")
@@ -89,6 +89,5 @@ public class WorkIntervalImpl implements WorkInterval, HasIdentifyingFields {
         if (this.to.equals(LocalTime.MIN)) to = Calendar.FULL_DAY_SECONDS;
         this.duration = to - this.from.toSecondOfDay();
     }
-
 
 }

@@ -6,12 +6,21 @@ import com.vaadin.flow.component.timepicker.TimePickerVariant;
 
 import java.time.LocalTime;
 
-public class IntervalGrid extends ObjectGrid<Interval> {
+public class IntervalGrid<T extends Interval> extends ObjectGrid<T> {
+
+    private String validationMassageFrom = "The start of a shaft must be later then the end of the previous shift.";
+    private String validationMassageTo = "The end of a shaft must be later then the start.";
 
     public IntervalGrid() {
 
         addColumns();
 
+    }
+
+    public IntervalGrid(String validationMessageFrom, String validationMassageTo) {
+        this.validationMassageFrom = validationMessageFrom;
+        this.validationMassageTo = validationMassageTo;
+        addColumns();
     }
 
     private void addColumns() {
@@ -30,7 +39,7 @@ public class IntervalGrid extends ObjectGrid<Interval> {
                         return true;
 
                     return localTime.compareTo(previousIntervalOpt.get().getTo()) >= 0;
-                }, "The start of a shaft must be later then the end of the previous shift.")
+                }, validationMassageFrom)
                 .bind(Interval::getFrom, Interval::setFrom);
         fromColumn.setEditorComponent(fromPicker);
 
@@ -45,7 +54,7 @@ public class IntervalGrid extends ObjectGrid<Interval> {
                     var currentInterval = this.editor.getItem();
                     if (localTime == null || localTime.equals(LocalTime.MIN)) return true;
                     return localTime.compareTo(currentInterval.getTo()) >= 0;
-                }, "The end of a shaft must be later then the start.")
+                }, validationMassageTo)
                 .bind(Interval::getTo, Interval::setTo);
         toColumn.setEditorComponent(toPicker);
 

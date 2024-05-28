@@ -2,35 +2,72 @@ package com.pmvaadin.costs.labor.frontend.views;
 
 import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.costs.labor.entities.LaborCost;
+import com.pmvaadin.costs.labor.entities.WorkInterval;
+import com.pmvaadin.costs.labor.services.LaborCostService;
+import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.frontend.elements.FilteredLaborResourceComboBox;
+import com.pmvaadin.terms.calendars.common.IntervalGrid;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dnd.GridDropMode;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
+import com.vaadin.flow.data.converter.LocalDateToDateConverter;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import jakarta.annotation.Nonnull;
+
+import java.time.*;
+import java.util.Comparator;
+import java.util.Date;
 
 @SpringComponent
 public class LaborCostForm extends DialogForm {
 
     private LaborCost laborCost;
+    private final LaborCostService laborCostService;
     private final TextField name = new TextField("Name");
+    private final FilteredLaborResourceComboBox resource;
+    private final DatePicker day = new DatePicker("Day");
     private final Binder<LaborCost> binder = new Binder<>(LaborCost.class);
+    private final Grid<ProjectTaskRep> assignedTasks = new Grid<>();
+    private final Intervals intervals = new Intervals();
+    private ProjectTaskRep draggedItem;
 
-    public LaborCostForm() {
+    public LaborCostForm(LaborCostService laborCostService, FilteredLaborResourceComboBox resource) {
+        this.laborCostService = laborCostService;
+        this.resource = resource;
+        binder.forField(day).withConverter(new LocalDateToDateConverter())
+                .bind(this::getDay, this::setDay);
         binder.bindInstanceFields(this);
-        add(name);
+        assignedTasks.addColumn(ProjectTaskRep::getRep).setHeader("Task");
+//        assignedTasks.setRowsDraggable(true);
+        assignedTasks.addDragStartListener(l -> draggedItem = l.getDraggedItems().get(0));
+        assignedTasks.addDragEndListener(l -> draggedItem = null);
+        var verticalLayout = new VerticalLayout(intervals, assignedTasks);
+        add(name, resource, day,
+                verticalLayout);
         customizeButton();
     }
 
     public void read(@Nonnull LaborCost laborCost) {
         this.laborCost = laborCost;
         binder.readBean(this.laborCost);
+        intervals.setItems(laborCost.getIntervals());
         var laborCostName = this.laborCost.getName();
         if (laborCostName == null) laborCostName = "";
         var title = "Labor cost: ";
         setHeaderTitle(title + laborCostName);
+        if (this.day.getValue() == null)
+            this.day.setValue(LocalDate.now());
+        var assignedTasks = laborCostService.getAvailableTasks(resource.getValue(), this.day.getValue());
+        this.assignedTasks.setItems(assignedTasks);
     }
 
     private void customizeButton() {
@@ -59,6 +96,78 @@ public class LaborCostForm extends DialogForm {
     private void closeEvent(ClickEvent<Button> event) {
         fireEvent(new CloseEvent(this, this.laborCost));
         this.close();
+    }
+
+    private Date getDay(LaborCost laborCost) {
+
+        var day = laborCost.getDay();
+        return convertLocalDateTimeToDate(day);
+
+    }
+
+    private void setDay(LaborCost laborCost, Date date) {
+
+        var newDate = Instant.ofEpochMilli(date.getTime()).atZone(ZoneId.systemDefault()).toLocalDate();
+        laborCost.setDay(newDate);
+
+    }
+
+    private Date convertLocalDateTimeToDate(LocalDate date) {
+        if (date == null) return new Date();
+        return Date.from(date.atStartOfDay(ZoneId.systemDefault()).toInstant());
+    }
+
+    private class Intervals extends IntervalGrid<WorkInterval> {
+
+        Intervals() {
+            super(getValidationMessageFrom(), getValidationMessageTo());
+//            setInstantiatable(this::onAddInterval);
+            setDeletable(true);
+            grid.addThemeVariants(GridVariant.LUMO_COMPACT);
+            this.addToolbarSmallThemeVariant();
+            var taskNameCol = grid.addColumn(WorkInterval::getTaskName).setHeader("Task");
+            grid.getColumns().set(0, taskNameCol);
+            grid.setDropMode(GridDropMode.ON_GRID);
+            grid.setRowsDraggable(true);
+            grid.addDropListener(l -> {
+                if (draggedItem == null)
+                    return;
+                var gridItem = onAddInterval();
+                if (gridItem == null)
+                    return;
+                grid.getListDataView().addItem(gridItem);
+            });
+
+        }
+
+        private static String getValidationMessageFrom() {
+            return "The start of a period must be later then the end of the previous period.";
+        }
+
+        private static String getValidationMessageTo() {
+            return "The end of a shaft must be later then the period.";
+        }
+
+        public void clear() {
+            grid.getListDataView().removeItems(grid.getListDataView().getItems().toList());
+        }
+
+        private WorkInterval onAddInterval() {
+
+            if (laborCost == null || draggedItem == null)
+                return null;
+            var newInterval = laborCost.getWorkIntervalInstance();
+            var previousTimeTo = this.grid.getListDataView().getItems().map(WorkInterval::getTo)
+                    .max(Comparator.naturalOrder()).orElse(LocalTime.MIN);
+            //TODO interval validation
+            newInterval.setFrom(previousTimeTo);
+            newInterval.setTo(previousTimeTo);
+            newInterval.setTaskId(draggedItem.getId());
+            newInterval.setTaskName(draggedItem.getRep());
+            return newInterval;
+
+        }
+
     }
 
 }

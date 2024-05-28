@@ -1,6 +1,7 @@
 package com.pmvaadin.security.entities;
 
 import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.security.user.labor.resource.UserLaborResource;
 
 import java.util.List;
 
@@ -36,5 +37,9 @@ public interface User {
     Integer getRootProjectId();
     void setRootProjectId(Integer id);
     void addProjects(List<UserProject> newProjects);
+
+    UserLaborResource getUserLaborResourceInstance();
+    List<UserLaborResource> getUserLaborResources();
+    void setUserLaborResources(List<UserLaborResource> laborResources);
 
 }

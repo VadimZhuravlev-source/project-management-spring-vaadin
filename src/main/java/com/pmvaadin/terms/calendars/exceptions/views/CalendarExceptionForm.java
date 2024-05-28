@@ -36,6 +36,7 @@ import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.converter.Converter;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
+import org.checkerframework.common.value.qual.IntRange;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -779,7 +780,7 @@ public class CalendarExceptionForm extends Dialog {
         }
     }
 
-    private class Intervals extends IntervalGrid {
+    private class Intervals extends IntervalGrid<Interval> {
 
         Intervals() {
             setInstantiatable(this::onAddInterval);

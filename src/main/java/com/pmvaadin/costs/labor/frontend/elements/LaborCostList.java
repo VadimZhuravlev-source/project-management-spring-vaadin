@@ -5,16 +5,20 @@ import com.pmvaadin.common.vaadin.ItemList;
 import com.pmvaadin.costs.labor.entities.LaborCost;
 import com.pmvaadin.costs.labor.entities.LaborCostRepresentation;
 import com.pmvaadin.costs.labor.frontend.views.LaborCostForm;
+import com.pmvaadin.costs.labor.services.LaborCostService;
+import com.pmvaadin.resources.labor.frontend.elements.FilteredLaborResourceComboBox;
 import com.pmvaadin.resources.labor.frontend.views.LaborResourceForm;
 
 public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> {
 
-    private final ListService<LaborCostRepresentation, LaborCost> listService;
+    private final LaborCostService listService;
+    private final FilteredLaborResourceComboBox resourceComboBox;
     private LaborCostForm editingForm;
 
-    public LaborCostList(ListService<LaborCostRepresentation, LaborCost> listService) {
-        super(listService);
+    public LaborCostList(LaborCostService listService, FilteredLaborResourceComboBox resourceComboBox) {
+        super((ListService<LaborCostRepresentation, LaborCost>) listService);
         this.listService = listService;
+        this.resourceComboBox = resourceComboBox;
         configureGrid();
     }
 
@@ -33,7 +37,7 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
     }
 
     private void openEditingForm(LaborCost laborCost) {
-        editingForm = new LaborCostForm();
+        editingForm = new LaborCostForm(listService, resourceComboBox);
         editingForm.read(laborCost);
         editingForm.addListener(LaborCostForm.SaveEvent.class, this::saveEvent);
         editingForm.addListener(LaborCostForm.CloseEvent.class, closeEvent -> closeEditor());
@@ -45,7 +49,7 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
         var item = event.getItem();
         if (item instanceof LaborCost laborCost) {
             if (editingForm.isOpened()) {
-                var savedResource = listService.save(laborCost);
+                var savedResource = ((ListService<LaborCostRepresentation, LaborCost>) listService).save(laborCost);
                 editingForm.read(savedResource);
             } else
                 this.grid.getDataProvider().refreshAll();

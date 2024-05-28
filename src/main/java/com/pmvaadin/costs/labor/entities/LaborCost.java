@@ -1,7 +1,5 @@
 package com.pmvaadin.costs.labor.entities;
 
-import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
-
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
@@ -22,17 +20,16 @@ public interface LaborCost {
     String getEmployeeName();
     void setEmployeeName(String name);
 
-    Integer getEmployeeId();
-    void setEmployeeId(Integer name);
+    Integer getLabor_resource_id();
+    void setLabor_resource_id(Integer name);
 
     LocalDate getDay();
     void setDay(LocalDate day);
 
+    WorkInterval getWorkIntervalInstance();
+
     List<WorkInterval> getIntervals();
     void setIntervals(List<WorkInterval> intervals);
-
-    List<ProjectTaskRep> getAssignedTasks();
-    void setAssignedTasks(List<ProjectTaskRep> assignedTasks);
 
     LaborCostRepresentation getRep();
 

@@ -2,13 +2,12 @@ package com.pmvaadin.security.frontend.elements;
 
 import com.pmvaadin.common.ObjectGrid;
 import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.frontend.elements.ProjectComboBox;
 import com.pmvaadin.security.entities.User;
 import com.pmvaadin.security.entities.UserProject;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Objects;
 
 @SpringComponent
@@ -34,22 +33,22 @@ public class ProjectsTable extends ObjectGrid<UserProject> {
         setInstantiatable(user::getUserProjectInstance);
         var projects = user.getProjects();
         if (projects != null)
-            this.setItems(user.getProjects());
+            this.setItems(projects);
     }
 
     public boolean validate() {
         var items = getItems();
-        var mapResource = new HashMap<ProjectTask, Boolean>();
+        var mapResource = new HashSet<>();
         items.forEach(userProject -> {
             if (userProject.getProject() == null || userProject.getProjectId() == null) {
                 grid.getEditor().editItem(userProject);
                 throw new StandardError("The project can not be empty");
             }
-            if (mapResource.containsKey(userProject.getProject())) {
+            if (mapResource.contains(userProject.getProject())) {
                 grid.getEditor().editItem(userProject);
                 throw new StandardError("The table can not contain a labor resource duplicates");
             }
-            mapResource.put(userProject.getProject(), true);
+            mapResource.add(userProject.getProject());
         });
         return true;
     }

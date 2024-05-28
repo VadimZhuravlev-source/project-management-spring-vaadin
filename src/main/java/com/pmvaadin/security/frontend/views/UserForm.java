@@ -6,6 +6,7 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.frontend.elements.ProjectComboBox;
 import com.pmvaadin.security.entities.*;
 import com.pmvaadin.security.frontend.elements.ProjectsTable;
+import com.pmvaadin.security.frontend.elements.UserLaborResources;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Focusable;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -41,11 +42,13 @@ public class UserForm extends DialogForm {
     private final ComboBox<AccessType> accessType = new ComboBox<>();
     private final ProjectComboBox projectComboBox;
     private final ProjectsTable projectsTable;
+    private final UserLaborResources userLaborResources;
     private final Binder<User> binder = new Binder<>(User.class);
 
-    public UserForm(ProjectComboBox projectComboBox, ProjectsTable projectsTable) {
+    public UserForm(ProjectComboBox projectComboBox, ProjectsTable projectsTable, UserLaborResources userLaborResources) {
         this.projectComboBox = projectComboBox.getInstance();
         this.projectsTable = projectsTable.getInstance();
+        this.userLaborResources = userLaborResources.getInstance();
         configureForm();
         configureMainButtons();
         configureBinder();
@@ -56,6 +59,7 @@ public class UserForm extends DialogForm {
         binder.readBean(user);
         fillRoles();
         projectsTable.setUser(user);
+        userLaborResources.setUser(user);
         var name = this.user.getName();
         if (name == null) name = "";
         var title = "User: ";
@@ -64,7 +68,7 @@ public class UserForm extends DialogForm {
     }
 
     public UserForm getInstance() {
-        return new UserForm(this.projectComboBox, projectsTable);
+        return new UserForm(this.projectComboBox, projectsTable, userLaborResources);
     }
 
     private void customizePredefinedUser() {
@@ -119,6 +123,8 @@ public class UserForm extends DialogForm {
             binder.writeBean(this.user);
             projectsTable.validate();
             user.setProjects(projectsTable.getItems());
+            userLaborResources.validate();
+            user.setUserLaborResources(userLaborResources.getItems());
             fillUserRoles();
             fireEvent(new SaveEvent(this, this.user));
         } catch (Throwable e) {
@@ -158,7 +164,8 @@ public class UserForm extends DialogForm {
         var horLayout = new HorizontalLayout(mainLayout, rolesTable);
         var accessTypeLayout = new FormLayout();
         accessTypeLayout.addFormItem(accessType, "Access type");
-        var rootFormElement = new VerticalLayout(horLayout, accessTypeLayout, this.projectsTable);
+        var rootFormElement = new VerticalLayout(horLayout, accessTypeLayout, this.projectsTable,
+                this.userLaborResources);
         add(rootFormElement);
     }
 
@@ -198,7 +205,7 @@ public class UserForm extends DialogForm {
             this.setWidthFull();
         }
 
-        public void setReadOnly(boolean readOnly) {
+        private void setReadOnly(boolean readOnly) {
             this.readOnly = readOnly;
         }
 

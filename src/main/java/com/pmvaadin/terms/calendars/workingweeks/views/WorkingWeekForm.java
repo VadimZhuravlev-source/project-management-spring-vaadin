@@ -321,7 +321,7 @@ public class WorkingWeekForm extends Dialog {
 
     }
 
-    private class IntervalGrid2 extends IntervalGrid {
+    private class IntervalGrid2 extends IntervalGrid<Interval> {
 
         IntervalGrid2() {
 

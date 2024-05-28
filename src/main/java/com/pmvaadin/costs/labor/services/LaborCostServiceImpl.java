@@ -6,31 +6,32 @@ import com.pmvaadin.costs.labor.entities.LaborCostImpl;
 import com.pmvaadin.costs.labor.entities.LaborCostRepresentation;
 import com.pmvaadin.costs.labor.entities.LaborCostRepresentationDTO;
 import com.pmvaadin.costs.labor.repositories.LaborCostRepository;
-import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
-import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class LaborCostServiceImpl implements LaborCostService, ListService<LaborCostRepresentation, LaborCost> {
 
     private LaborCostRepository laborCostRepository;
-    private EntityManager entityManager;
 
     @Autowired
     public void setLaborCostRepository(LaborCostRepository laborCostRepository) {
         this.laborCostRepository = laborCostRepository;
     }
 
-    @Autowired
-    public void setEntityManager(EntityManager entityManager) {
-        this.entityManager = entityManager;
+    @Override
+    public List<ProjectTaskRep> getAvailableTasks(LaborResourceRepresentation laborResource, LocalDate day) {
+
     }
 
     // ListService
@@ -66,10 +67,8 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
     @Override
     public boolean delete(Collection<LaborCostRepresentation> reps) {
 
-        var ids = reps.stream().map(LaborCostRepresentation::getId).toList();
-        var deletingIds = checkIfItemsCanBeDeleted(ids);
-
-        laborCostRepository.deleteAllById(deletingIds);
+        var ids = reps.stream().map(LaborCostRepresentation::getId).filter(Objects::nonNull).distinct().toList();
+        laborCostRepository.deleteAllById(ids);
 
         return true;
 
@@ -85,52 +84,5 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
         return laborCost;
 
     }
-
-    private List<?> checkIfItemsCanBeDeleted(List<?> ids) {
-
-        var reps = findUndeletableLaborCosts(ids);
-        if (!reps.isEmpty()) {
-            var string = reps.stream().map(c -> c.getName() + " with id " + c.getId()).toList().toString();
-            throw new StandardError("Cannot remove the labor resources: " + string + ", because they is used in project tasks");
-        }
-
-        return reps.stream().map(LaborCost::getId).toList();
-
-    }
-
-    private List<LaborCost> findUndeletableLaborCosts(List<?> ids) {
-
-        var queryText = getQueryTextForDetectionOfUndeletableLaborCosts();
-
-        var idsParameter = String.valueOf(ids).replace("[", "'{").replace("]", "}'");
-        queryText = queryText.replace(":ids", idsParameter);
-        var query = entityManager.createNativeQuery(queryText, LaborCostImpl.class);
-
-        List<LaborCostImpl> resultList = query.getResultList();
-
-        return resultList.stream().map(t -> (LaborCost) t).toList();
-
-    }
-
-    private String getQueryTextForDetectionOfUndeletableLaborCosts() {
-
-        return """
-            WITH used_labor_resources AS(
-                SELECT
-                    resource_id
-                FROM task_labor_resources
-                WHERE
-                    resource_id = ANY(:ids)
-            )
-            
-            SELECT
-                *
-            FROM labor_resources
-                JOIN used_labor_resources
-                    ON labor_resources.id = used_labor_resources.resource_id
-        """;
-
-    }
-
 
 }

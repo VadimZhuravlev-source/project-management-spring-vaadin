@@ -1,8 +1,10 @@
 package com.pmvaadin.costs.labor.repositories;
 
 import com.pmvaadin.costs.labor.entities.LaborCost;
+import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
 import com.pmvaadin.resources.labor.entity.LaborResourceImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.Repository;
 import org.springframework.data.repository.query.Param;
 
@@ -20,5 +22,13 @@ public interface LaborCostRepository extends Repository<LaborResourceImpl, Integ
     LaborCost save(LaborCost laborResource);
 
     <T> List<T> findAllByIdIn(@Param("id") Iterable<?> ids, Class<T> type);
+
+    @Query("""
+            SELECT p.id, p.name FROM ProjectTaskImpl p
+            WHERE id IN(
+            SELECT  FROM UserResourceImpl u
+            
+            """)
+    List<ProjectTaskRep> getAvailableTasks();
 
 }
