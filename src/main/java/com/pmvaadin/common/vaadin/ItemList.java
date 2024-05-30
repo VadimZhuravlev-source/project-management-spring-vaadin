@@ -78,6 +78,22 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         this.onMouseDoubleClick = onMouseDoubleClick;
     }
 
+    public void setDeletionAvailable(boolean deletionAvailable) {
+        this.isDeletionAvailable = deletionAvailable;
+    }
+
+    public Grid<T> getGrid() {
+        return grid;
+    }
+
+    public void setEdible(boolean edible) {
+        add.setVisible(edible);
+        delete.setVisible(edible);
+        copy.setVisible(edible);
+        if (openItem != null)
+            openItem.setVisible(edible);
+    }
+
     private void onMouseDoubleClick(ItemDoubleClickEvent<T> event) {
 
         if (event == null) return;
@@ -87,14 +103,6 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         var doubleClickItem = ((ListService<T, I>) itemService).get(item);
         if (onMouseDoubleClick != null) onMouseDoubleClick.accept(doubleClickItem);
 
-    }
-
-    public void setDeletionAvailable(boolean deletionAvailable) {
-        this.isDeletionAvailable = deletionAvailable;
-    }
-
-    public Grid<T> getGrid() {
-        return grid;
     }
 
     private void additionListener(ClickEvent<Button> event) {

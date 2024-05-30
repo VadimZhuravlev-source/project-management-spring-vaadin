@@ -14,6 +14,8 @@ import com.vaadin.flow.data.provider.AbstractBackEndDataProvider;
 import com.vaadin.flow.data.provider.ConfigurableFilterDataProvider;
 import com.vaadin.flow.data.provider.Query;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.data.domain.PageRequest;
 
 import java.util.HashSet;
@@ -31,6 +33,7 @@ public class SearchableGrid<T> extends VerticalLayout {
     protected final HorizontalLayout toolBar;
 
     protected final TextField searchField = new TextField();
+    protected final Button refreshButton = new Button("Refresh", new Icon("lumo", "reload"));
 
     private final ConfigurableFilterDataProvider<T, Void, ItemFilter> filterDataProvider;
 
@@ -121,7 +124,6 @@ public class SearchableGrid<T> extends VerticalLayout {
             itemFilter.setSearchTerm(e.getValue());
             filterDataProvider.setFilter(itemFilter);
         });
-        var refreshButton = new Button("Refresh", new Icon("lumo", "reload"));
         refreshButton.addClickListener(e -> grid.getDataProvider().refreshAll());
 
         toolBar.add(searchField, refreshButton);
@@ -161,17 +163,10 @@ public class SearchableGrid<T> extends VerticalLayout {
 
     }
 
+    @Setter
+    @Getter
     private static class ItemFilter {
         private String searchTerm = "";
-
-        public void setSearchTerm(String searchTerm) {
-            this.searchTerm = searchTerm;
-        }
-
-        public String getSearchTerm() {
-            return searchTerm;
-        }
-
     }
 
 }

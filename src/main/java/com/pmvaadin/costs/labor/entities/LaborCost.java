@@ -1,5 +1,7 @@
 package com.pmvaadin.costs.labor.entities;
 
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
+
 import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
@@ -20,8 +22,11 @@ public interface LaborCost {
     String getEmployeeName();
     void setEmployeeName(String name);
 
-    Integer getLabor_resource_id();
-    void setLabor_resource_id(Integer name);
+    Integer getLaborResourceId();
+    void setLaborResourceId(Integer name);
+
+    LaborResourceRepresentation getLaborResourceRepresentation();
+    void setLaborResourceRepresentation(LaborResourceRepresentation resourceRepresentation);
 
     LocalDate getDay();
     void setDay(LocalDate day);

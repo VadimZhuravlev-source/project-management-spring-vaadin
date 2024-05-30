@@ -4,12 +4,13 @@ import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.resources.labor.frontend.elements.LaborResourceList;
 import com.pmvaadin.resources.labor.services.LaborResourceService;
-import com.vaadin.flow.spring.annotation.SpringComponent;
+import lombok.Getter;
 
-@SpringComponent
+//@SpringComponent
 public class LaborResourceSelectionForm extends DialogForm {
 
     private final LaborResourceService service;
+    @Getter
     private LaborResourceList list;
 
     public LaborResourceSelectionForm(LaborResourceService service) {
@@ -23,8 +24,6 @@ public class LaborResourceSelectionForm extends DialogForm {
         customizeForm();
         this.addOpenedChangeListener(event -> list.removeSelectionColumn());
     }
-
-
 
     public LaborResourceSelectionForm newInstance() {
         return new LaborResourceSelectionForm(this.service);

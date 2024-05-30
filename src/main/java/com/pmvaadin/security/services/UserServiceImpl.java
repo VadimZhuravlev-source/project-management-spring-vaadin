@@ -4,14 +4,16 @@ import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.entity.HierarchyElement;
 import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
 import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
-import com.pmvaadin.projecttasks.services.HierarchyService;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.services.LaborResourceService;
 import com.pmvaadin.security.entities.*;
 import com.pmvaadin.security.repositories.UserRepository;
+import com.pmvaadin.security.user.labor.resource.UserLaborResource;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,11 +25,27 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Service
-@AllArgsConstructor
 public class UserServiceImpl implements UserService, ListService<UserRepresentation, User> {
 
     private UserRepository userRepository;
     private ProjectTaskRepository projectTaskRepository;
+    private LaborResourceService laborResourceService;
+
+    @Autowired
+    @Qualifier("LaborResourceService")
+    public void setLaborResourceService(LaborResourceService laborResourceService) {
+        this.laborResourceService = laborResourceService;
+    }
+
+    @Autowired
+    public void setProjectTaskRepository(ProjectTaskRepository projectTaskRepository) {
+        this.projectTaskRepository = projectTaskRepository;
+    }
+
+    @Autowired
+    public void setUserRepository(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public User getUserByName(String name) {
@@ -42,11 +60,11 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
         var foundUser = userRepository.findByName(name);
         if (foundUser.isPresent() && !Objects.equals(user, foundUser.get()))
             throw new StandardError("There is a user with this name. Please choose another name.");
+        fillSortableFields(user);
         var savedUser = userRepository.save(user);
-        fillProjectReferences(savedUser);
+        fillAssistiveData(savedUser);
         return savedUser;
     }
-
 
     @Override
     public List<UserRepresentation> getItems(String filter, Pageable pageable) {
@@ -71,7 +89,7 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
         var foundUser = userRepository.findById(representation.getId()).orElse(null);
         if (foundUser == null)
             return null;
-        fillProjectReferences(foundUser);
+        fillAssistiveData(foundUser);
         return foundUser;
     }
 
@@ -93,7 +111,7 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
     public User copy(UserRepresentation calRep) {
 
         var user = userRepository.findById(calRep.getId()).orElse(new UserImpl());
-        fillProjectReferences(user);
+        fillAssistiveData(user);
         if (user instanceof HasIdentifyingFields)
             ((HasIdentifyingFields) user).nullIdentifyingFields();
 
@@ -102,37 +120,6 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
     }
 
     // End of the List service
-
-//    @Override
-//    public void addProjectTaskToUserProject(HierarchyService hierarchyService, ProjectTask projectTask) {
-//
-//        var user = getCurrentUser();
-//        var isUserFollowedRLS = isUserFollowingRLS(user);
-//        if (!isUserFollowedRLS)
-//            return;
-//
-//        List<ProjectTask> parents = new ArrayList<>(0);
-//        if (projectTask.getParentId() != null) {
-//            var parent = new ProjectTaskImpl();
-//            parent.setId(projectTask.getParentId());
-//            // TODO finding parents of parents below is excessive in case
-//            //  when parent id of the project task before setting rootProjectId is null
-//            parents = hierarchyService.getParentsOfParent(parent);
-//        }
-//
-//        var pids = parents.stream().map(ProjectTask::getId).filter(Objects::nonNull).collect(Collectors.toSet());
-//        var projects = user.getProjects();
-//        var projectIds = projects.stream().map(UserProject::getProjectId).anyMatch(pids::contains);
-//        if (projectIds)
-//            return;
-//        var userProject = user.getUserProjectInstance();
-//        userProject.setProjectId(projectTask.getId());
-//        projects.add(userProject);
-//        user.addProjects(projects);
-//
-//        userRepository.save(user);
-//
-//    }
 
     @Override
     public void addProjectTaskToUserProject(List<ProjectTask> projectTasks, User user) {
@@ -156,17 +143,8 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
     }
 
     @Override
-    public Integer getRootProjectId() {
+    public String getUserName() {
 
-        var user = getCurrentUser();
-        var isUserFollowedRLS = isUserFollowingRLS(user);
-        if (!isUserFollowedRLS)
-            return null;
-        return user.getRootProjectId();
-    }
-
-    @Override
-    public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null)
             return null;
@@ -177,7 +155,12 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
             userDetails = (UserDetails) principal;
         } else
             return null;
-        var name = userDetails.getUsername();
+        return userDetails.getUsername();
+    }
+
+    @Override
+    public User getCurrentUser() {
+        var name = getUserName();
         return getUserByName(name);
     }
 
@@ -237,6 +220,20 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
 
     }
 
+    private void fillSortableFields(User user) {
+
+        int sort = 0;
+        for (var laborRes: user.getUserLaborResources()) {
+            laborRes.setSort(sort++);
+        }
+
+    }
+
+    private void fillAssistiveData(User user) {
+        fillProjectReferences(user);
+        fillLaborResourceRep(user);
+    }
+
     private void fillProjectReferences(User user) {
         var projects = user.getProjects();
         var projectIds = Stream.concat(projects.stream().map(UserProject::getProjectId),
@@ -248,6 +245,16 @@ public class UserServiceImpl implements UserService, ListService<UserRepresentat
         projects.forEach(p -> p.setProject(tasksById.getOrDefault(p.getProjectId(), null)));
         var rootProject = tasksById.get(user.getRootProjectId());
         user.setRootProject(rootProject);
+    }
+
+    private void fillLaborResourceRep(User user) {
+        var ids = user.getUserLaborResources().stream().map(UserLaborResource::getLaborResourceId).toList();
+        if (ids.isEmpty())
+            return;
+        var map = laborResourceService.getAllById(ids).stream().collect(Collectors.toMap(LaborResourceRepresentation::getId, l -> l));
+        user.getUserLaborResources().forEach(userLaborResource -> {
+            userLaborResource.setLaborResource(map.get(userLaborResource.getLaborResourceId()));
+        });
     }
 
     private boolean checkIfItemsCanBeDeleted(List<?> ids) {

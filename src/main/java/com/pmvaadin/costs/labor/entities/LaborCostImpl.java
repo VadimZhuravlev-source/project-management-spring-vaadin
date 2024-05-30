@@ -1,5 +1,6 @@
 package com.pmvaadin.costs.labor.entities;
 
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -46,10 +47,13 @@ public class LaborCostImpl implements LaborCost, HasIdentifyingFields {
 
     @Setter
     @Column(name = "labor_resource_id")
-    private Integer labor_resource_id;
+    private Integer laborResourceId;
 
     @Setter
-    @Column(name = "day")
+    @Transient
+    private LaborResourceRepresentation laborResourceRepresentation;
+
+    @Setter
     private LocalDate day = LocalDate.now();
 
     @OneToMany(mappedBy = "laborCost",

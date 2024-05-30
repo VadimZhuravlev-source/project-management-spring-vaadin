@@ -159,7 +159,7 @@ public class UserImpl implements User, HasIdentifyingFields {
 
     @Override
     public List<UserLaborResource> getUserLaborResources() {
-        return this.laborResources.stream().map(userLaborResource -> (UserLaborResourceImpl) userLaborResource)
+        return this.laborResources.stream().map(userLaborResource -> (UserLaborResource) userLaborResource)
                 .collect(Collectors.toList());
     }
 

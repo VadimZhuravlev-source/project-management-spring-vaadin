@@ -15,10 +15,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
-@Service
+@Service(value = "LaborResourceService")
 public class LaborResourceServiceImpl implements LaborResourceService, ListService<LaborResourceRepresentation, LaborResource> {
 
     private LaborResourceRepository laborResourceRepository;
@@ -28,6 +30,19 @@ public class LaborResourceServiceImpl implements LaborResourceService, ListServi
     @Autowired
     public void setLaborResourceRepository(LaborResourceRepository laborResourceRepository) {
         this.laborResourceRepository = laborResourceRepository;
+    }
+
+    @Override
+    public <I> LaborResourceRepresentation getById(I id) {
+        var ids = new ArrayList<>();
+        ids.add(id);
+        return laborResourceRepository.findAllByIdIn(ids, LaborResourceRepresentationDTO.class).stream().findFirst().orElse(null);
+    }
+
+    @Override
+    public <I> List<LaborResourceRepresentation> getAllById(Collection<I> ids) {
+        return laborResourceRepository.findAllByIdIn(ids, LaborResourceRepresentationDTO.class).stream()
+                .map(l -> (LaborResourceRepresentation) l).collect(Collectors.toList());
     }
 
     // ListService

@@ -28,7 +28,7 @@ public class WorkIntervalImpl implements WorkInterval, HasIdentifyingFields {
     private String taskName;
 
     @Setter
-    @Column(name = "task_id")
+    @Column(name = "project_task_id")
     private Integer taskId;
 
     @ManyToOne
@@ -45,22 +45,6 @@ public class WorkIntervalImpl implements WorkInterval, HasIdentifyingFields {
 
     @Setter
     private int duration = 0;
-
-    public WorkIntervalImpl(LaborCostImpl laborCost, LocalTime from, LocalTime to) {
-        this.laborCost = laborCost;
-        this.from = from;
-        this.to = to;
-    }
-
-    public WorkIntervalImpl(WorkIntervalImpl interval) {
-
-        this.id = interval.id;
-        this.version = interval.version;
-        this.laborCost = interval.laborCost;
-        this.from = interval.from;
-        this.to = interval.to;
-
-    }
 
     @Override
     public void setLaborCost(LaborCost laborCost) {

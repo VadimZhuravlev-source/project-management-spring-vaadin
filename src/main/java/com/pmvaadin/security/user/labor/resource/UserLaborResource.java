@@ -22,4 +22,7 @@ public interface UserLaborResource {
     LaborResourceRepresentation getLaborResource();
     void setLaborResource(LaborResourceRepresentation laborResource);
 
+    int getSort();
+    void setSort(int sort);
+
 }

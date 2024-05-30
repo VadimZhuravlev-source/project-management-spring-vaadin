@@ -1,7 +1,6 @@
 package com.pmvaadin.resources.labor.frontend.elements;
 
 import com.pmvaadin.resources.labor.frontend.views.LaborResourceForm;
-import com.pmvaadin.resources.labor.frontend.views.LaborResourceSelectionForm;
 import com.pmvaadin.resources.labor.services.FilteredLaborResourceService;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
@@ -9,9 +8,21 @@ import com.vaadin.flow.spring.annotation.SpringComponent;
 public class FilteredLaborResourceComboBox extends LaborResourceComboBox {
 
     public FilteredLaborResourceComboBox(FilteredLaborResourceService service,
-                                         LaborResourceSelectionForm selectionForm,
+//                                         LaborResourceSelectionForm selectionForm,
                                          LaborResourceForm itemForm) {
-        super(service, selectionForm, itemForm);
+        super(service,
+//                selectionForm,
+                itemForm);
+        getOpenAction().setVisible(false);
+        getSelectionForm().getList().setEdible(false);
+
+    }
+
+    @Override
+    public FilteredLaborResourceComboBox getInstance() {
+        return new FilteredLaborResourceComboBox((FilteredLaborResourceService) service,
+//                selectionForm,
+                itemForm);
     }
 
 }

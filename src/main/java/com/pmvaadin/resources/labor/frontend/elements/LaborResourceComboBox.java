@@ -8,21 +8,24 @@ import com.pmvaadin.resources.labor.frontend.views.LaborResourceForm;
 import com.pmvaadin.resources.labor.frontend.views.LaborResourceSelectionForm;
 import com.pmvaadin.resources.labor.services.LaborResourceService;
 import com.vaadin.flow.spring.annotation.SpringComponent;
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @SpringComponent
 public class LaborResourceComboBox extends ComboBoxWithButtons<LaborResourceRepresentation> {
 
-    private final LaborResourceService service;
+    protected final LaborResourceService service;
+    @Getter
     private final LaborResourceSelectionForm selectionForm;
-    private final LaborResourceForm itemForm;
+    protected final LaborResourceForm itemForm;
     private ListService<LaborResourceRepresentation, LaborResource> itemService;
 
-    public LaborResourceComboBox(LaborResourceService service,
-                                 LaborResourceSelectionForm selectionForm,
+    public LaborResourceComboBox(@Qualifier("LaborResourceService") LaborResourceService service,
+                                 //LaborResourceSelectionForm selectionForm,
                                  LaborResourceForm itemForm) {
 
         this.service = service;
-        this.selectionForm = selectionForm.newInstance();
+        this.selectionForm = new LaborResourceSelectionForm(service);//selectionForm.newInstance();
         this.itemForm = itemForm;
         if (service instanceof ListService<?, ?> itemService) {
             this.itemService = (ListService<LaborResourceRepresentation, LaborResource>) itemService;
@@ -57,7 +60,9 @@ public class LaborResourceComboBox extends ComboBoxWithButtons<LaborResourceRepr
     }
 
     public LaborResourceComboBox getInstance() {
-        return new LaborResourceComboBox(service, selectionForm, itemForm);
+        return new LaborResourceComboBox(service,
+//                selectionForm,
+                itemForm);
     }
 
     private void saveEvent(LaborResourceForm.SaveEvent event) {

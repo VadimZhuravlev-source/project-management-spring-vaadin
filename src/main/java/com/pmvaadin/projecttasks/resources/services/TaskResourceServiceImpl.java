@@ -146,7 +146,7 @@ public class TaskResourceServiceImpl implements TaskResourceService {
                 SELECT
                     task_labor_resources.*,
                     labor_resources.name
-                    
+                
                 FROM task_labor_resources
                     JOIN labor_resources
                         ON task_labor_resources.resource_id = labor_resources.id

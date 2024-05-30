@@ -29,6 +29,9 @@ public class UserLaborResourceImpl implements UserLaborResource {
     private Integer laborResourceId;
 
     @Setter
+    private int sort;
+
+    @Setter
     @Transient
     private LaborResourceRepresentation laborResource;
 
