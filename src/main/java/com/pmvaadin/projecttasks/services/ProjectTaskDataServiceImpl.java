@@ -31,7 +31,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class ProjectTaskDataServiceImpl implements ProjectTaskDataService{
+public class ProjectTaskDataServiceImpl implements ProjectTaskDataService {
 
     private ProjectTaskService projectTaskService;
     private LinkService linkService;

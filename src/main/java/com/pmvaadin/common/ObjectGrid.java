@@ -35,6 +35,7 @@ public class ObjectGrid<T> extends VerticalLayout {
     protected UnaryOperator<T> copy;
 
     protected Predicate<T> constraintForDeletion;
+    protected DeletionEvent afterDeletion;
 
     protected Button addButton = new Button(new Icon(VaadinIcon.PLUS_CIRCLE));
     protected Button deleteButton = new Button(new Icon(VaadinIcon.CLOSE_CIRCLE));
@@ -103,6 +104,10 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     public void setDeletable(boolean deletable) {
         deleteButton.setVisible(deletable);
+    }
+
+    public void afterDeletionListener(DeletionEvent afterDeletion) {
+        this.afterDeletion = afterDeletion;
     }
 
     public boolean isEditing() {
@@ -243,6 +248,8 @@ public class ObjectGrid<T> extends VerticalLayout {
             grid.getSelectionModel().deselectAll();
 
             if (nextSelectedItem != null) grid.select(nextSelectedItem);
+            if (afterDeletion != null)
+                afterDeletion.doAfterDeletion();
 
         });
 
@@ -250,6 +257,10 @@ public class ObjectGrid<T> extends VerticalLayout {
 
     public interface InlineEditor<T> {
         void customize(Binder<T> binder, Editor<T> editor);
+    }
+
+    public interface DeletionEvent {
+        void doAfterDeletion();
     }
 
 }

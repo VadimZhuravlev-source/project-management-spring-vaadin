@@ -20,10 +20,10 @@ public class IntervalGrid<T extends Interval> extends ObjectGrid<T> {
     public IntervalGrid(String validationMessageFrom, String validationMassageTo) {
         this.validationMassageFrom = validationMessageFrom;
         this.validationMassageTo = validationMassageTo;
-        addColumns();
+//        addColumns();
     }
 
-    private void addColumns() {
+    public void addColumns() {
 
         var fromColumn = addColumn(Interval::getFrom).
                 setHeader("From");

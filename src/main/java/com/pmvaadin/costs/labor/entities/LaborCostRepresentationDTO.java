@@ -1,9 +1,10 @@
 package com.pmvaadin.costs.labor.entities;
 
 import java.time.LocalDate;
+import java.util.Date;
 import java.util.Objects;
 
-public record LaborCostRepresentationDTO(Integer id, String name, LocalDate day) implements LaborCostRepresentation {
+public record LaborCostRepresentationDTO(Integer id, String name, LocalDate day, Date dateOfCreation) implements LaborCostRepresentation {
 
     @Override
     public Integer getId() {
@@ -23,6 +24,11 @@ public record LaborCostRepresentationDTO(Integer id, String name, LocalDate day)
     @Override
     public LocalDate getDay() {
         return day;
+    }
+
+    @Override
+    public Date getDateOfCreation() {
+        return dateOfCreation;
     }
 
     @Override

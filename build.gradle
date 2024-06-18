@@ -6,20 +6,25 @@ buildscript {
 	}
 }
 plugins {
-	id 'org.springframework.boot' version '3.1.5'//2.7.2-SNAPSHOT'
-	id 'io.spring.dependency-management' version '1.1.4'//1.0.15.RELEASE
-	id 'com.vaadin' version "24.2.5"
+	id 'org.springframework.boot' version '3.3.0'
+	id 'io.spring.dependency-management' version '1.1.5'
+	id 'com.vaadin' version "24.4.3"
 	id "org.flywaydb.flyway" version "10.2.0"
 	id 'java'
 }
 
 group = 'com.PMVaadin'
 version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '17'
 
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
+	}
+}
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(22)
 	}
 }
 
@@ -31,7 +36,7 @@ repositories {
 }
 
 ext {
-	set('vaadinVersion', "24.2.5")
+	set('vaadinVersion', "24.4.3")
 }
 
 dependencies {
@@ -39,6 +44,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.flywaydb:flyway-core'
+	implementation 'org.flywaydb:flyway-database-postgresql'
 	implementation 'junit:junit:4.13.2'
 	implementation 'com.google.guava:guava:32.0.0-android'
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'

@@ -35,16 +35,26 @@ public class WorkIntervalImpl implements WorkInterval, HasIdentifyingFields {
     @JoinColumn(name = "labor_cost_id", nullable = false)
     private LaborCostImpl laborCost;
 
-    @Setter
     @Column(name = "from_time")
     private LocalTime from;
 
-    @Setter
     @Column(name = "to_time")
     private LocalTime to;
 
     @Setter
     private int duration = 0;
+
+    @Override
+    public void setFrom(LocalTime from) {
+        this.from = from;
+        fillDuration();
+    }
+
+    @Override
+    public void setTo(LocalTime to) {
+        this.to = to;
+        fillDuration();
+    }
 
     @Override
     public void setLaborCost(LaborCost laborCost) {
@@ -69,6 +79,8 @@ public class WorkIntervalImpl implements WorkInterval, HasIdentifyingFields {
 
     @Override
     public void fillDuration() {
+        if (this.to == null || this.from == null)
+            return;
         var to = this.to.toSecondOfDay();
         if (this.to.equals(LocalTime.MIN)) to = Calendar.FULL_DAY_SECONDS;
         this.duration = to - this.from.toSecondOfDay();

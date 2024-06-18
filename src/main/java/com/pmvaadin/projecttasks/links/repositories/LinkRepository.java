@@ -11,7 +11,7 @@ import java.util.List;
 
 public interface LinkRepository extends Repository<LinkImpl, Integer> {
 
-    <I> List<Link> findAllByProjectTaskIdOrderBySortAsc(I id);
+    List<Link> findAllByProjectTaskIdOrderBySortAsc(Integer id);
 
     List<Link> findAllById(Iterable<?> ids);
 

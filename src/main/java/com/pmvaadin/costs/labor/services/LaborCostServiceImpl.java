@@ -1,16 +1,14 @@
 package com.pmvaadin.costs.labor.services;
 
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.costs.labor.entities.LaborCost;
-import com.pmvaadin.costs.labor.entities.LaborCostImpl;
-import com.pmvaadin.costs.labor.entities.LaborCostRepresentation;
-import com.pmvaadin.costs.labor.entities.LaborCostRepresentationDTO;
+import com.pmvaadin.costs.labor.entities.*;
 import com.pmvaadin.costs.labor.repositories.LaborCostRepository;
 import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
 import com.pmvaadin.projecttasks.entity.ProjectTaskRepImpl;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.pmvaadin.resources.labor.services.LaborResourceService;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
+import com.pmvaadin.terms.calendars.common.Interval;
 import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -18,10 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 public class LaborCostServiceImpl implements LaborCostService, ListService<LaborCostRepresentation, LaborCost> {
@@ -29,6 +24,7 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
     private LaborCostRepository laborCostRepository;
     private LaborResourceService laborResourceService;
     private final String queryTextAvailableTasks = getQueryTextForAvailableTasks();
+    private final String queryTextIntervalReps = getQueryTextForIntervalReps();
     private EntityManager entityManager;
 
     @Autowired
@@ -93,6 +89,7 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
         var laborCost = laborCostRepository.findById(representation.getId()).orElse(new LaborCostImpl());
         var resourceRep = laborResourceService.getById(laborCost.getLaborResourceId());
         laborCost.setLaborResourceRepresentation(resourceRep);
+        fillIntervalReps(laborCost);
         return laborCost;
     }
 
@@ -117,6 +114,26 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
 
     }
 
+    private void fillIntervalReps(LaborCost laborCost) {
+        var ids = laborCost.getIntervals().stream().map(WorkInterval::getTaskId).filter(Objects::nonNull).distinct().toList();
+        if (laborCost.getIntervals().isEmpty())
+            return;
+        var query = entityManager.createQuery(queryTextIntervalReps);
+        query.setParameter("ids", ids);
+        var resultList = (List<Object[]>) query.getResultList();
+        var map = new HashMap<Object, ProjectTaskRep>();
+        for (var row: resultList) {
+            var rep = new ProjectTaskRepImpl((Integer) row[0], row[1].toString());
+            map.put(rep.getId(), rep);
+        }
+        laborCost.getIntervals().forEach(workInterval -> {
+            var rep = map.get(workInterval.getTaskId());
+            if (rep != null)
+                workInterval.setTaskName(rep.getRep());
+        });
+
+    }
+
     private String getQueryTextForAvailableTasks() {
         return """
                 SELECT p.id, p.name
@@ -128,6 +145,15 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
                 SELECT tr.projectTaskId
                 FROM TaskResourceImpl tr
                 WHERE tr.resourceId = :resourceId)
+                """;
+    }
+
+    private String getQueryTextForIntervalReps() {
+        return """
+                SELECT p.id, p.name
+                FROM ProjectTaskImpl p
+                WHERE
+                p.id IN(:ids)
                 """;
     }
 

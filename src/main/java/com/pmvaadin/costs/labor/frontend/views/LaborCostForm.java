@@ -2,24 +2,29 @@ package com.pmvaadin.costs.labor.frontend.views;
 
 import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.costs.labor.entities.LaborCost;
+import com.pmvaadin.costs.labor.entities.LaborCostRepresentation;
 import com.pmvaadin.costs.labor.entities.WorkInterval;
 import com.pmvaadin.costs.labor.services.LaborCostService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.entity.LaborResourceRepresentationDTO;
 import com.pmvaadin.resources.labor.frontend.elements.FilteredLaborResourceComboBox;
 import com.pmvaadin.terms.calendars.common.IntervalGrid;
+import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.vaadin.flow.component.AbstractField;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dialog.DialogVariant;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.binder.ValidationException;
@@ -37,50 +42,94 @@ public class LaborCostForm extends DialogForm {
 
     private LaborCost laborCost;
     private final LaborCostService laborCostService;
-    private final TextField name = new TextField("Name");
+//    private final TextField name = new TextField();
     private final FilteredLaborResourceComboBox resource;
-    private final DatePicker day = new DatePicker("Day");
+    private final DatePicker day = new DatePicker();
+    private final NumberField totalSeconds = new NumberField();
+    private final TextField totalSecondsRep = new TextField();
     private final Binder<LaborCost> binder = new Binder<>(LaborCost.class);
     private final Grid<ProjectTaskRep> assignedTasks = new Grid<>();
     private final VerticalLayout assignedTasksContainer = new VerticalLayout();
     private final Intervals intervals = new Intervals();
     private final VerticalLayout intervalsContainer = new VerticalLayout();
     private ProjectTaskRep draggedItem;
+    private boolean isReading;
 
     public LaborCostForm(LaborCostService laborCostService, FilteredLaborResourceComboBox resource) {
         this.laborCostService = laborCostService;
         this.resource = resource.getInstance();
         this.resource.addValueChangeListener(this::refillAssignedTasks);
         day.addValueChangeListener(this::refillAssignedTasks);
-        assignedTasks.addColumn(ProjectTaskRep::getRep).setHeader("Task");
-//        assignedTasks.setRowsDraggable(true);
-        assignedTasks.addDragStartListener(l -> draggedItem = l.getDraggedItems().get(0));
-        assignedTasks.addDragEndListener(l -> draggedItem = null);
         intervalsContainer.add(intervals);
+        intervalsContainer.setSizeFull();
+        var verticalLayout = new VerticalLayout(this.resource, day, totalSecondsRep, intervalsContainer);
         assignedTasksContainer.add(assignedTasks);
         assignedTasksContainer.setSizeFull();
-        var verticalLayout = new VerticalLayout(name, this.resource, day, intervalsContainer);
-        verticalLayout.setSizeFull();
         var horizontalLayout = new HorizontalLayout(verticalLayout, assignedTasksContainer);
-        horizontalLayout.setSizeFull();
         add(horizontalLayout);
+        totalSecondsRep.setReadOnly(true);
+        totalSeconds.addValueChangeListener(event -> {
+            var value = String.valueOf(totalSeconds.getValue() != null ? totalSeconds.getValue() / Calendar.SECONDS_IN_HOUR : 0);
+            totalSecondsRep.setValue(value);
+        });
+//        name.setReadOnly(true);
+        customizeForm();
         customizeButton();
         customizeBinder();
+        customizeAssignedTasks();
     }
 
     public void read(@Nonnull LaborCost laborCost) {
         this.laborCost = laborCost;
+        isReading = true;
         binder.readBean(this.laborCost);
         intervals.setItems(laborCost.getIntervals());
-        var laborCostName = this.laborCost.getName();
-        if (laborCostName == null) laborCostName = "";
-        var title = "Labor cost: ";
-        setHeaderTitle(title + laborCostName);
+        String title = "";
+        if (laborCost instanceof LaborCostRepresentation representation
+                && laborCost.getDateOfCreation() != null
+                && laborCost.getId() != null) {
+            title = representation.getRepresentation();
+        } else {
+            var laborCostName = this.laborCost.getName();
+            if (laborCostName == null) laborCostName = "";
+            title = "Labor cost: " + laborCostName;
+        }
+        setHeaderTitle(title);
         if (this.day.getValue() == null)
             this.day.setValue(LocalDate.now());
-        var chosenResource = this.resource.getValue();
-        var chosenDay = this.day.getValue();
-        refillAssignedTasks(chosenDay, chosenResource);
+//        var chosenResource = this.resource.getValue();
+//        var chosenDay = this.day.getValue();
+//        refillAssignedTasks(chosenDay, chosenResource);
+        isReading = false;
+    }
+
+    private void customizeAssignedTasks() {
+        assignedTasks.addColumn(ProjectTaskRep::getRep).setHeader("Task");
+        assignedTasks.setRowsDraggable(true);
+        assignedTasks.addDragStartListener(l -> {
+            draggedItem = l.getDraggedItems().getFirst();
+            intervals.setDropMode(GridDropMode.ON_GRID);
+        });
+
+        assignedTasks.addDragEndListener(l -> {
+            draggedItem = null;
+            intervals.setDropMode(null);
+        });
+    }
+
+    private void customizeForm() {
+
+        setAsItemForm();
+        setDraggable(true);
+        setResizable(true);
+        setWidth("50%");
+        addClassName("labor-cost-form");
+        addThemeVariants(DialogVariant.LUMO_NO_PADDING);
+        setModal(false);
+        setCloseOnEsc(false);
+        getSave().setVisible(true);
+        getRefresh().setVisible(true);
+
     }
 
     private void refillAssignedTasks(AbstractField.ComponentValueChangeEvent<DatePicker, LocalDate> event) {
@@ -98,10 +147,14 @@ public class LaborCostForm extends DialogForm {
     private void refillAssignedTasks(LocalDate chosenDay, LaborResourceRepresentation chosenResource) {
         if (chosenDay == null || chosenResource == null) {
             this.assignedTasks.setItems(new ArrayList<>(0));
+            if (!isReading)
+                intervals.clear();
             return;
         }
         var assignedTasks = laborCostService.getAvailableTasks(chosenResource, chosenDay);
         this.assignedTasks.setItems(assignedTasks);
+        if (!isReading)
+            intervals.clear();
     }
 
     private void customizeBinder() {
@@ -118,8 +171,6 @@ public class LaborCostForm extends DialogForm {
         laborCost.setLaborResourceId(laborResourceRepresentation.getId());
     }
 
-
-
     private void customizeButton() {
         setAsItemForm();
         getCrossClose().addClickListener(this::closeEvent);
@@ -129,11 +180,14 @@ public class LaborCostForm extends DialogForm {
             close();
         });
         getSave().addClickListener(this::saveEvent);
+        getRefresh().addClickListener(_ -> fireEvent(new RefreshEvent(this, laborCost.getRep())));
     }
 
     private void saveEvent(ClickEvent<Button> event) {
         try {
+            intervals.validate();
             binder.writeBean(this.laborCost);
+            this.laborCost.setIntervals(intervals.getItems());
         } catch (ValidationException | StandardError error) {
             var confDialog = new ConfirmDialog();
             confDialog.setText(error.getMessage());
@@ -169,20 +223,14 @@ public class LaborCostForm extends DialogForm {
 
     private class Intervals extends IntervalGrid<WorkInterval> {
 
-//        {
-//            var taskNameCol = grid.addColumn(WorkInterval::getTaskName).setHeader("Task");
-//        }
-
         Intervals() {
             super(getValidationMessageFrom(), getValidationMessageTo());
-//            setInstantiatable(this::onAddInterval);
+            var taskNameCol = grid.addColumn(WorkInterval::getTaskName).setHeader("Task");
+            super.addColumns();
             setDeletable(true);
             grid.addThemeVariants(GridVariant.LUMO_COMPACT);
             this.addToolbarSmallThemeVariant();
-            var taskNameCol = grid.addColumn(WorkInterval::getTaskName).setHeader("Task");
-//            grid.getColumns().set(0, taskNameCol);
-            grid.setDropMode(GridDropMode.ON_GRID);
-            grid.setRowsDraggable(true);
+
             grid.addDropListener(l -> {
                 if (draggedItem == null)
                     return;
@@ -191,7 +239,19 @@ public class LaborCostForm extends DialogForm {
                     return;
                 grid.getListDataView().addItem(gridItem);
             });
+            this.afterDeletionListener(this::recalculateTotalSeconds);
+            grid.getEditor().addCloseListener(_ ->
+                recalculateTotalSeconds()
+            );
+        }
 
+        private void validate() {
+            // TODO validation
+        }
+
+        private void recalculateTotalSeconds() {
+            double totalSecondsInt = grid.getListDataView().getItems().map(WorkInterval::getDuration).reduce(Integer::sum).orElse(0);
+            totalSeconds.setValue(totalSecondsInt);
         }
 
         private static String getValidationMessageFrom() {
@@ -204,6 +264,10 @@ public class LaborCostForm extends DialogForm {
 
         public void clear() {
             grid.getListDataView().removeItems(grid.getListDataView().getItems().toList());
+        }
+
+        public void setDropMode(GridDropMode dropMode) {
+            grid.setDropMode(dropMode);
         }
 
         private WorkInterval onAddInterval() {

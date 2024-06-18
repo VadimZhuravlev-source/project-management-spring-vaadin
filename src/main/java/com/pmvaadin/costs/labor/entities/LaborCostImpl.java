@@ -19,7 +19,7 @@ import java.util.Objects;
 @Getter
 @NoArgsConstructor
 @Table(name = "labor_costs")
-public class LaborCostImpl implements LaborCost, HasIdentifyingFields {
+public class LaborCostImpl implements LaborCost, HasIdentifyingFields, LaborCostRepresentation {
 
     @Id
     @Setter
@@ -108,7 +108,7 @@ public class LaborCostImpl implements LaborCost, HasIdentifyingFields {
 
     @Override
     public LaborCostRepresentation getRep() {
-        return new LaborCostRepresentationDTO(id, name, day);
+        return new LaborCostRepresentationDTO(id, name, day, dateOfCreation);
     }
 
 }

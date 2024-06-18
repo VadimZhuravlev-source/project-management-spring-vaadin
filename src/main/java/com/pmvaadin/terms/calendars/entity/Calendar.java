@@ -14,6 +14,8 @@ public interface Calendar extends CalendarRepresentation {
 
     int FULL_DAY_SECONDS = 24 * 3600;
 
+    int SECONDS_IN_HOUR = 3600;
+
     static String getCalendarHeader() {
         return "Calendar";
     }

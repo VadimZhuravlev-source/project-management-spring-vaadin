@@ -1,6 +1,7 @@
 package com.pmvaadin.security.frontend.views;
 
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.login.LoginForm;
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -25,11 +26,15 @@ public class LoginView extends VerticalLayout implements BeforeEnterObserver {
         setJustifyContentMode(JustifyContentMode.CENTER);
         setAlignItems(Alignment.CENTER);
         login.setAction("login");
-        LoginI18n i18n = LoginI18n.createDefault();
-        i18n.getForm().setUsername("Name");
-        login.setI18n(i18n);
+//        LoginI18n i18n = LoginI18n.createDefault();
+//        i18n.getForm().setUsername("Name");
+//        login.setI18n(i18n);
+//        add(new H1("Vaadin CRM"));
+//        add(new Span("Username: user, Password: password"));
+//        add(new Span("Username: admin, Password: password"));
 
-        add(new H1("Project management"), login);
+//
+        add( new H1("Project management"), login);
     }
 
     @Override

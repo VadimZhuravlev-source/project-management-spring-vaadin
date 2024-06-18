@@ -1,5 +1,6 @@
 package com.pmvaadin.costs.labor.frontend.elements;
 
+import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.common.vaadin.ItemList;
 import com.pmvaadin.costs.labor.entities.LaborCost;
@@ -7,7 +8,6 @@ import com.pmvaadin.costs.labor.entities.LaborCostRepresentation;
 import com.pmvaadin.costs.labor.frontend.views.LaborCostForm;
 import com.pmvaadin.costs.labor.services.LaborCostService;
 import com.pmvaadin.resources.labor.frontend.elements.FilteredLaborResourceComboBox;
-import com.pmvaadin.resources.labor.frontend.views.LaborResourceForm;
 
 public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> {
 
@@ -24,7 +24,8 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
 
     private void configureGrid() {
 
-        this.grid.addColumn(LaborCostRepresentation::getName).setHeader("Name");
+        this.grid.addColumn(LaborCostRepresentation::getRepresentation).setHeader("Name");
+        this.grid.addColumn(LaborCostRepresentation::getDay).setHeader("Day");
         onMouseDoubleClick(this::openNewItem);
 
         beforeAddition(this::openNewItem);
@@ -40,7 +41,15 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
         editingForm = new LaborCostForm(listService, resourceComboBox);
         editingForm.read(laborCost);
         editingForm.addListener(LaborCostForm.SaveEvent.class, this::saveEvent);
-        editingForm.addListener(LaborCostForm.CloseEvent.class, closeEvent -> closeEditor());
+        editingForm.addListener(LaborCostForm.CloseEvent.class, _ -> closeEditor());
+        editingForm.addListener(DialogForm.RefreshEvent.class, event -> {
+            if (editingForm.isOpened()) {
+                var rep = (LaborCostRepresentation) event.getItem();
+                var item = ((ListService<LaborCostRepresentation, LaborCost>) listService).get(rep);
+                editingForm.read(item);
+            } else
+                this.grid.getDataProvider().refreshAll();
+        });
         editingForm.open();
         setDeletionAvailable(false);
     }
