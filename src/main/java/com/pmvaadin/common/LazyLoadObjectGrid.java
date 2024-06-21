@@ -95,7 +95,7 @@ public class LazyLoadObjectGrid<T> extends ObjectGrid<T> {
     }
 
     public void setSizeFull() {
-        toolBar.setSizeFull();
+        toolbar.setSizeFull();
         grid.setSizeFull();
     }
 
@@ -135,7 +135,7 @@ public class LazyLoadObjectGrid<T> extends ObjectGrid<T> {
     }
 
     private void initialSettings() {
-        add(toolBar, grid);
+        add(toolbar, grid);
         initializeObjectGrid();
         customizeGrid();
 
@@ -162,7 +162,7 @@ public class LazyLoadObjectGrid<T> extends ObjectGrid<T> {
 
     private void initializeObjectGrid() {
         //toolBar.add(addButton, copyButton, deleteButton);
-        add(toolBar, grid);
+        add(toolbar, grid);
         customizeButtons();
     }
 

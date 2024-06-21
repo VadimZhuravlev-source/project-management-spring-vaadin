@@ -8,15 +8,16 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 @Route(value = "laborResources", layout = MainLayout.class)
-@PageTitle("Time units | PM")
+@PageTitle("Labor resources | PM")
 @PermitAll
 public class LaborResourceView extends VerticalLayout {
 
     private final LaborResourceService laborResourceService;
 
-    public LaborResourceView(LaborResourceService laborResourceService) {
+    public LaborResourceView(@Qualifier("LaborResourceService") LaborResourceService laborResourceService) {
 
         this.laborResourceService = laborResourceService;
         if (!(laborResourceService instanceof ListService)) {

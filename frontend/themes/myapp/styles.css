@@ -12,3 +12,10 @@ vaadin-grid.tree-gantt::part(header-cell) {
 vaadin-grid.tree-gantt::part(body-cell) {
     height: 29px;
 }
+
+.object-grid {
+  border: 1px solid var(--lumo-contrast-50pct);
+  margin: 1px;
+  border-radius: var(--lumo-border-radius-m);
+  padding: 4px;
+}

@@ -7,7 +7,10 @@ import com.pmvaadin.costs.labor.entities.LaborCost;
 import com.pmvaadin.costs.labor.entities.LaborCostRepresentation;
 import com.pmvaadin.costs.labor.frontend.views.LaborCostForm;
 import com.pmvaadin.costs.labor.services.LaborCostService;
+import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.resources.labor.frontend.elements.FilteredLaborResourceComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.data.binder.ValidationException;
 
 public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> {
 
@@ -41,7 +44,8 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
         editingForm = new LaborCostForm(listService, resourceComboBox);
         editingForm.read(laborCost);
         editingForm.addListener(LaborCostForm.SaveEvent.class, this::saveEvent);
-        editingForm.addListener(LaborCostForm.CloseEvent.class, _ -> closeEditor());
+        editingForm.addListener(LaborCostForm.SaveAndCloseEvent.class, this::saveAndCloseEvent);
+        editingForm.addListener(LaborCostForm.CloseEvent.class, event -> closeEditor());
         editingForm.addListener(DialogForm.RefreshEvent.class, event -> {
             if (editingForm.isOpened()) {
                 var rep = (LaborCostRepresentation) event.getItem();
@@ -56,10 +60,30 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
 
     private void saveEvent(LaborCostForm.SaveEvent event) {
         var item = event.getItem();
+        saveAndClose(item, false);
+    }
+
+    private void saveAndCloseEvent(LaborCostForm.SaveAndCloseEvent event) {
+        var item = event.getItem();
+        saveAndClose(item, true);
+    }
+
+    private void saveAndClose(Object item, boolean close) {
         if (item instanceof LaborCost laborCost) {
             if (editingForm.isOpened()) {
-                var savedResource = ((ListService<LaborCostRepresentation, LaborCost>) listService).save(laborCost);
-                editingForm.read(savedResource);
+                try {
+                    var savedResource = ((ListService<LaborCostRepresentation, LaborCost>) listService).save(laborCost);
+                    if (close) {
+                        editingForm.close();
+                        return;
+                    }
+                    editingForm.read(savedResource);
+                } catch (StandardError error) {
+                    var confDialog = new ConfirmDialog();
+                    confDialog.setText(error.getMessage());
+                    confDialog.open();
+                    return;
+                }
             } else
                 this.grid.getDataProvider().refreshAll();
         }

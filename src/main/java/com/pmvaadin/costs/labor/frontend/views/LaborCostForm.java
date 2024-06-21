@@ -8,7 +8,6 @@ import com.pmvaadin.costs.labor.services.LaborCostService;
 import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
-import com.pmvaadin.resources.labor.entity.LaborResourceRepresentationDTO;
 import com.pmvaadin.resources.labor.frontend.elements.FilteredLaborResourceComboBox;
 import com.pmvaadin.terms.calendars.common.IntervalGrid;
 import com.pmvaadin.terms.calendars.entity.Calendar;
@@ -62,11 +61,16 @@ public class LaborCostForm extends DialogForm {
         day.addValueChangeListener(this::refillAssignedTasks);
         intervalsContainer.add(intervals);
         intervalsContainer.setSizeFull();
+        intervalsContainer.setPadding(false);
         var verticalLayout = new VerticalLayout(this.resource, day, totalSecondsRep, intervalsContainer);
+        verticalLayout.setPadding(false);
+        assignedTasksContainer.setPadding(false);
         assignedTasksContainer.add(assignedTasks);
         assignedTasksContainer.setSizeFull();
+        assignedTasksContainer.setWidth("30%");
         var horizontalLayout = new HorizontalLayout(verticalLayout, assignedTasksContainer);
         add(horizontalLayout);
+        horizontalLayout.setPadding(false);
         totalSecondsRep.setReadOnly(true);
         totalSeconds.addValueChangeListener(event -> {
             var value = String.valueOf(totalSeconds.getValue() != null ? totalSeconds.getValue() / Calendar.SECONDS_IN_HOUR : 0);
@@ -107,7 +111,7 @@ public class LaborCostForm extends DialogForm {
         assignedTasks.addColumn(ProjectTaskRep::getRep).setHeader("Task");
         assignedTasks.setRowsDraggable(true);
         assignedTasks.addDragStartListener(l -> {
-            draggedItem = l.getDraggedItems().getFirst();
+            draggedItem = l.getDraggedItems().get(0);//.getFirst();
             intervals.setDropMode(GridDropMode.ON_GRID);
         });
 
@@ -175,15 +179,12 @@ public class LaborCostForm extends DialogForm {
         setAsItemForm();
         getCrossClose().addClickListener(this::closeEvent);
         getClose().addClickListener(this::closeEvent);
-        getSaveAndClose().addClickListener(event -> {
-            saveEvent(event);
-            close();
-        });
-        getSave().addClickListener(this::saveEvent);
-        getRefresh().addClickListener(_ -> fireEvent(new RefreshEvent(this, laborCost.getRep())));
+        getSaveAndClose().addClickListener(event -> saveEvent(event, true));
+        getSave().addClickListener(event -> saveEvent(event, false));
+        getRefresh().addClickListener(event -> fireEvent(new RefreshEvent(this, laborCost.getRep())));
     }
 
-    private void saveEvent(ClickEvent<Button> event) {
+    private void saveEvent(ClickEvent<Button> event, boolean close) {
         try {
             intervals.validate();
             binder.writeBean(this.laborCost);
@@ -194,7 +195,11 @@ public class LaborCostForm extends DialogForm {
             confDialog.open();
             return;
         }
-        fireEvent(new SaveEvent(this, this.laborCost));
+        if (close) {
+            fireEvent(new SaveAndCloseEvent(this, this.laborCost));
+        } else {
+            fireEvent(new SaveEvent(this, this.laborCost));
+        }
     }
 
     private void closeEvent(ClickEvent<Button> event) {
@@ -240,7 +245,7 @@ public class LaborCostForm extends DialogForm {
                 grid.getListDataView().addItem(gridItem);
             });
             this.afterDeletionListener(this::recalculateTotalSeconds);
-            grid.getEditor().addCloseListener(_ ->
+            grid.getEditor().addCloseListener(event ->
                 recalculateTotalSeconds()
             );
         }

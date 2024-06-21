@@ -138,6 +138,12 @@ public class DialogForm extends Dialog {
         }
     }
 
+    public static class SaveAndCloseEvent extends DialogFormEvent {
+        public SaveAndCloseEvent(DialogForm source, Object item) {
+            super(source, item);
+        }
+    }
+
     public static class RefreshEvent extends DialogFormEvent {
         public RefreshEvent(DialogForm source, Object item) {
             super(source, item);

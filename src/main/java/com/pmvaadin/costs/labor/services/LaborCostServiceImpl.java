@@ -3,12 +3,12 @@ package com.pmvaadin.costs.labor.services;
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.costs.labor.entities.*;
 import com.pmvaadin.costs.labor.repositories.LaborCostRepository;
+import com.pmvaadin.projectstructure.StandardError;
 import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
 import com.pmvaadin.projecttasks.entity.ProjectTaskRepImpl;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.pmvaadin.resources.labor.services.LaborResourceService;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
-import com.pmvaadin.terms.calendars.common.Interval;
 import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -55,15 +55,26 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
             result.add(rep);
         }
         return result;
-//        return query.getResultStream().map(p -> (ProjectTaskRep) p).toList();
-//        var availableTasks = laborCostRepository.getAvailableTasks(laborResource.getId(), day, ProjectTaskRepImpl.class);
-//        return new ArrayList<>(availableTasks);
     }
 
     // ListService
     @Override
     public LaborCost save(LaborCost laborCost) {
+        var day = laborCost.getDay();
+        var resource = laborCost.getLaborResourceId();
+        if (day == null
+                || day.equals(LocalDate.MIN)
+                || day.equals(LocalDate.MAX))
+            throw new StandardError("Uncorrected day.");
+        if (resource == null)
+            throw new StandardError("Uncorrected labor resource.");
+        var persistedResourceOpt = laborCostRepository.findByDayAndLaborResourceId(day, resource);
+        if (persistedResourceOpt.isPresent()
+                && !persistedResourceOpt.get().getId().equals(laborCost.getId()))
+            throw new StandardError("Labor cost with the same day and resource already exists.");
+
         return laborCostRepository.save(laborCost);
+
     }
 
     @Override
@@ -87,9 +98,7 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
     @Override
     public LaborCost get(LaborCostRepresentation representation) {
         var laborCost = laborCostRepository.findById(representation.getId()).orElse(new LaborCostImpl());
-        var resourceRep = laborResourceService.getById(laborCost.getLaborResourceId());
-        laborCost.setLaborResourceRepresentation(resourceRep);
-        fillIntervalReps(laborCost);
+        fillRepresentations(laborCost);
         return laborCost;
     }
 
@@ -106,12 +115,22 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
     @Override
     public LaborCost copy(LaborCostRepresentation calRep) {
 
-        LaborCost laborCost = laborCostRepository.findById(calRep.getId()).orElse(new LaborCostImpl());
+        var laborCost = laborCostRepository.findById(calRep.getId()).orElse(new LaborCostImpl());
         if (laborCost instanceof HasIdentifyingFields)
             ((HasIdentifyingFields) laborCost).nullIdentifyingFields();
+        fillRepresentations(laborCost);
 
         return laborCost;
 
+    }
+
+    private void fillRepresentations(LaborCost laborCost) {
+        var resourceId = laborCost.getLaborResourceId();
+        if (resourceId != null) {
+            var resourceRep = laborResourceService.getById(resourceId);
+            laborCost.setLaborResourceRepresentation(resourceRep);
+        }
+        fillIntervalReps(laborCost);
     }
 
     private void fillIntervalReps(LaborCost laborCost) {

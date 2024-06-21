@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
 
 public class ObjectGrid<T> extends VerticalLayout {
 
-    protected final HorizontalLayout toolBar = new HorizontalLayout();
+    protected final HorizontalLayout toolbar = new HorizontalLayout();
 //    protected final MenuBar toolBar = new MenuBar();
     protected final Grid<T> grid;
 
@@ -123,7 +123,7 @@ public class ObjectGrid<T> extends VerticalLayout {
     }
 
     public void addToolbarSmallThemeVariant() {
-        toolBar.getChildren().forEach(c -> {
+        toolbar.getChildren().forEach(c -> {
             if (! (c instanceof Button button)) return;
             button.addThemeVariants(ButtonVariant.LUMO_SMALL);
         });
@@ -142,10 +142,12 @@ public class ObjectGrid<T> extends VerticalLayout {
     }
 
     private void initialSettings() {
-        add(toolBar, grid);
+        add(toolbar, grid);
         initializeObjectGrid();
         customizeGrid();
-        setPadding(true);
+        toolbar.setPadding(false);
+        addClassName("object-grid");
+        setSpacing(false);
     }
 
     private void customizeGrid() {
@@ -176,7 +178,7 @@ public class ObjectGrid<T> extends VerticalLayout {
     }
 
     private void initializeObjectGrid() {
-        toolBar.add(addButton, copyButton, deleteButton);
+        toolbar.add(addButton, copyButton, deleteButton);
         //add(toolBar, grid);
         customizeButtons();
     }

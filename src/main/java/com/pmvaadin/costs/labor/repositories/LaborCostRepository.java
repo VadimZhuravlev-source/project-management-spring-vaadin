@@ -36,4 +36,6 @@ public interface LaborCostRepository extends Repository<LaborCostImpl, Integer> 
             """)
     <I, T> List<T> getAvailableTasks(@Param("resourceId") I resourceId, @Param("day") LocalDate day, Class<T> type);
 
+    Optional<LaborCost> findByDayAndLaborResourceId(LocalDate day, Integer laborResourceId);
+
 }

@@ -305,6 +305,9 @@ public class CalendarForm extends DialogForm {
             this.addButtonToToolbar();
             this.customizeGrid();
             this.add(toolbar, grid);
+            toolbar.setPadding(false);
+            addClassName("object-grid");
+            setSpacing(false);
         }
 
         public void setWorkingWeeks(List<WorkingWeek> workingWeeks) {
