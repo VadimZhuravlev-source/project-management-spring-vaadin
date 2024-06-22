@@ -139,7 +139,11 @@ public class CalendarForm extends DialogForm {
         exceptions.getItems().forEach(e ->
                 e.getExceptionAsDayConstraint().forEach((k, v) -> exceptionsMap.put(k, k))
         );
-        if (this.calendar.isNew()) getRefresh().setEnabled(false);
+        if (this.calendar.isNew())
+            getRefresh().setEnabled(false);
+
+        name.setReadOnly(false);
+        setting.setReadOnly(false);
 
     }
 

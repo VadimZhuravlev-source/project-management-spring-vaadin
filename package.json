@@ -2,6 +2,7 @@
   "name": "no-name",
   "license": "UNLICENSED",
   "dependencies": {
+    "@polymer/iron-a11y-keys-behavior": "3.0.1",
     "@polymer/polymer": "3.5.1",
     "@vaadin/bundles": "24.4.0",
     "@vaadin/common-frontend": "0.0.19",
@@ -19,7 +20,7 @@
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "react-router-dom": "6.23.1",
-    "tltv-gantt-element": "1.0.27",
+    "tltv-gantt-element": "1.0.28",
     "tltv-timeline-element": "1.0.20"
   },
   "devDependencies": {
@@ -44,6 +45,7 @@
   },
   "vaadin": {
     "dependencies": {
+      "@polymer/iron-a11y-keys-behavior": "3.0.1",
       "@polymer/polymer": "3.5.1",
       "@vaadin/bundles": "24.4.0",
       "@vaadin/common-frontend": "0.0.19",
@@ -61,7 +63,7 @@
       "react": "18.3.1",
       "react-dom": "18.3.1",
       "react-router-dom": "6.23.1",
-      "tltv-gantt-element": "1.0.27",
+      "tltv-gantt-element": "1.0.28",
       "tltv-timeline-element": "1.0.20"
     },
     "devDependencies": {
@@ -84,7 +86,7 @@
       "workbox-core": "7.1.0",
       "workbox-precaching": "7.1.0"
     },
-    "hash": "2d037a2079ce0a94b7a4c61c9841255bfb18290043d08585ba8570ec523f141b"
+    "hash": "2e398795e57deb66e14104b0411646e7e2ec4693a41549de650941f920d1b3a6"
   },
   "overrides": {
     "@vaadin/bundles": "$@vaadin/bundles",
@@ -96,16 +98,17 @@
     "construct-style-sheets-polyfill": "$construct-style-sheets-polyfill",
     "lit": "$lit",
     "@polymer/polymer": "$@polymer/polymer",
-    "@vaadin/react-components": "$@vaadin/react-components",
-    "react-dom": "$react-dom",
-    "react-router-dom": "$react-router-dom",
-    "react": "$react",
     "tltv-timeline-element": "$tltv-timeline-element",
     "date-fns": "$date-fns",
     "@vaadin/vaadin-themable-mixin": "$@vaadin/vaadin-themable-mixin",
     "tltv-gantt-element": "$tltv-gantt-element",
     "@vaadin/vaadin-lumo-styles": "$@vaadin/vaadin-lumo-styles",
-    "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles"
+    "@vaadin/vaadin-material-styles": "$@vaadin/vaadin-material-styles",
+    "@vaadin/react-components": "$@vaadin/react-components",
+    "react-dom": "$react-dom",
+    "react-router-dom": "$react-router-dom",
+    "react": "$react",
+    "@polymer/iron-a11y-keys-behavior": "$@polymer/iron-a11y-keys-behavior"
   },
   "type": "module"
 }
