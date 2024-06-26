@@ -122,6 +122,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
                         ptField.getValue().setWbs(selectedProjectTask.getWbs());
                         ptField.refreshTextValue();
                     });
+            projectSelectionForm.addListener(ProjectSelectionForm.CloseEvent.class, _ -> projectSelectionForm.close());
             projectSelectionForm.open();
         });
         ptField.setWidthFull();
@@ -142,7 +143,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         //linkTypeField.setAutofocus(false);
         addCloseHandler(linkTypeField, editor);
         binder.forField(linkTypeField)
-                .asRequired("The link type has not to be empty")
+                .asRequired("The link type must not be empty")
                 .bind(Link::getLinkType, Link::setLinkType);
         linkTypeColumn.setEditorComponent(linkTypeField);
 

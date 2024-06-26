@@ -142,6 +142,7 @@ public class ProjectTaskForm extends Dialog {
     public void setProjectTask(ProjectTask projectTask) {
 
         projectTaskData = projectTaskDataService.read(projectTask);
+        projectTaskData.getProjectTask().setWbs(projectTask.getWbs());
         readData(projectTaskData);
         this.laborResources.setProjectTask(projectTaskData.getProjectTask());
         name.focus();

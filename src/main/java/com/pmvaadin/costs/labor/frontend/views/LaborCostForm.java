@@ -18,6 +18,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.DialogVariant;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.grid.dnd.GridDropMode;
@@ -35,6 +36,7 @@ import java.time.*;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 
 @SpringComponent
 public class LaborCostForm extends DialogForm {
@@ -45,7 +47,7 @@ public class LaborCostForm extends DialogForm {
     private final FilteredLaborResourceComboBox resource;
     private final DatePicker day = new DatePicker();
     private final NumberField totalSeconds = new NumberField();
-    private final TextField totalSecondsRep = new TextField();
+    private final TextField totalHoursRep = new TextField();
     private final Binder<LaborCost> binder = new Binder<>(LaborCost.class);
     private final Grid<ProjectTaskRep> assignedTasks = new Grid<>();
     private final VerticalLayout assignedTasksContainer = new VerticalLayout();
@@ -62,7 +64,9 @@ public class LaborCostForm extends DialogForm {
         intervalsContainer.add(intervals);
         intervalsContainer.setSizeFull();
         intervalsContainer.setPadding(false);
-        var verticalLayout = new VerticalLayout(this.resource, day, totalSecondsRep, intervalsContainer);
+        var mainLayout = new FormLayout();
+        mainLayout.addFormItem(totalHoursRep, "Total hours");
+        var verticalLayout = new VerticalLayout(this.resource, day, mainLayout, intervalsContainer);
         verticalLayout.setPadding(false);
         assignedTasksContainer.setPadding(false);
         assignedTasksContainer.add(assignedTasks);
@@ -71,10 +75,11 @@ public class LaborCostForm extends DialogForm {
         var horizontalLayout = new HorizontalLayout(verticalLayout, assignedTasksContainer);
         add(horizontalLayout);
         horizontalLayout.setPadding(false);
-        totalSecondsRep.setReadOnly(true);
+        totalHoursRep.setReadOnly(true);
+        // TODO recalculation totalSeconds after any actions of intervals changing
         totalSeconds.addValueChangeListener(event -> {
             var value = String.valueOf(totalSeconds.getValue() != null ? totalSeconds.getValue() / Calendar.SECONDS_IN_HOUR : 0);
-            totalSecondsRep.setValue(value);
+            totalHoursRep.setValue(value);
         });
 //        name.setReadOnly(true);
         customizeForm();
@@ -250,13 +255,25 @@ public class LaborCostForm extends DialogForm {
             );
         }
 
+        @Override
+        public void setItems(List<WorkInterval> items) {
+            super.setItems(items);
+            recalculateTotalSeconds();
+        }
+
         private void validate() {
             // TODO validation
         }
 
         private void recalculateTotalSeconds() {
-            double totalSecondsInt = grid.getListDataView().getItems().map(WorkInterval::getDuration).reduce(Integer::sum).orElse(0);
-            totalSeconds.setValue(totalSecondsInt);
+            var totalSum = (double) grid.getListDataView().getItems()
+                    .map(wi -> {
+                        wi.fillDuration();
+                        return wi.getDuration();
+                    })
+                    .reduce(Integer::sum)
+                    .orElse(0);
+            totalSeconds.setValue(totalSum);
         }
 
         private static String getValidationMessageFrom() {

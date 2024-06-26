@@ -31,12 +31,14 @@ public class MainLayout extends AppLayout {
     }
 
     private void createHeader() {
+
         H6 logo = new H6("Project management");
         logo.addClassNames("text-l", "m-m");
 
         Button logout = new Button("Log out",  click ->
                 securityService.logout());
 
+        // TODO add user name in the header, how to do that is on the vaadin site in the section concerning security
         HorizontalLayout header = new HorizontalLayout(new DrawerToggle(), logo
                 , logout
         );

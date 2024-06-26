@@ -18,6 +18,9 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;
@@ -78,7 +81,7 @@ public class UserForm extends DialogForm {
 
     private void configureBinder() {
         binder.forField(accessType)
-                .withValidator(Objects::nonNull, "Can not be empty")
+                .withValidator(Objects::nonNull, "The field must not be empty")
                 .bind(User::getAccessType, User::setAccessType);
         binder.forField(projectComboBox).bind(User::getRootProject, this::setRootProject);
         binder.forField(password).bind(user1 -> convertPasswordToString(user1.getPassword()), (user1, s) -> user1.setPassword(s.getBytes(StandardCharsets.UTF_8)));
@@ -161,11 +164,24 @@ public class UserForm extends DialogForm {
         mainLayout.addFormItem(password, "Password");
         mainLayout.addFormItem(isActive, "Is active");
         mainLayout.addFormItem(projectComboBox, "Root project");
-        var horLayout = new HorizontalLayout(mainLayout, rolesTable);
+        var wrapper = rolesTable;//new Div(rolesTable);
+        wrapper.setWidthFull();
+        wrapper.setHeight("12em");
+        var horLayout = new HorizontalLayout(mainLayout, wrapper);
         var accessTypeLayout = new FormLayout();
         accessTypeLayout.addFormItem(accessType, "Access type");
-        var rootFormElement = new VerticalLayout(horLayout, accessTypeLayout, this.projectsTable,
-                this.userLaborResources);
+        var vertLayoutProjects = new VerticalLayout(accessTypeLayout, this.projectsTable);
+        vertLayoutProjects.setSpacing(false);
+        vertLayoutProjects.setPadding(false);
+        var tabProjects = new Tab("Projects");
+        var tabResources = new Tab("Labor resources");
+        var tabSheet = new TabSheet();
+        tabSheet.add(tabProjects, vertLayoutProjects);
+        tabSheet.add(tabResources, this.userLaborResources);
+        tabSheet.setSizeFull();
+        var rootFormElement = new VerticalLayout(horLayout, tabSheet);
+        rootFormElement.setSpacing(false);
+        rootFormElement.setPadding(false);
         add(rootFormElement);
     }
 

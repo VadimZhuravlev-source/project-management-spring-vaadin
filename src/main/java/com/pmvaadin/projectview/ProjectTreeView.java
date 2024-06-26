@@ -104,6 +104,8 @@ public class ProjectTreeView extends VerticalLayout {
     }
 
     private void fillGantt() {
+        // TODO A new version of the Gantt chart has been released,
+        //  there is a need to find out if it is possible to improve the current chart.
         ganttChart = new Gantt();
         ganttChart.setHeightFull();
         var tempTree = dataProvider.getTempTree();
@@ -157,10 +159,10 @@ public class ProjectTreeView extends VerticalLayout {
         var step = new Step();
         step.setResizable(false);
         step.setMovable(false);
-        step.setShowProgress(false);
+//        step.setShowProgress(false);
         step.setSubstep(false);
         step.setCaption(projectTask.getName());
-        step.setDescription(projectTask.getName());
+//        step.setDescription(projectTask.getName());
         step.setUid(projectTask.getId().toString());
         step.setStartDate(projectTask.getStartDate());
         step.setEndDate(projectTask.getFinishDate());

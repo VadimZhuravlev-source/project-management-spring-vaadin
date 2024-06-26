@@ -17,6 +17,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -58,6 +60,9 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
 
     @Override
     public TimeUnit save(TimeUnit timeUnit) {
+        var numberOfHours = timeUnit.getNumberOfHours();
+        if (numberOfHours == null || numberOfHours.compareTo(BigDecimal.ZERO) <= 0)
+            throw new StandardError("The number of hours has to be greater than 0");
         return timeUnitRepositoryPaging.save(timeUnit);
     }
 
@@ -114,13 +119,14 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
         var reps = findUndeletableTimeUnits(ids);
         var checkPredefined = reps.stream().anyMatch(TimeUnit::isPredefined);
 
-        if (checkPredefined) throw new StandardError("Cannot remove a predefined element");
+        if (checkPredefined)
+            throw new StandardError("Cannot remove a predefined element");
         if (!reps.isEmpty()) {
             var string = reps.stream().map(c -> c.getName() + " with id " + c.getId()).toList().toString();
             throw new StandardError("Cannot remove the time units: " + string + ", because they is used in project tasks");
         }
 
-        return reps.stream().map(TimeUnit::getId).toList();
+        return new ArrayList<>(0);
 
     }
 
@@ -149,7 +155,7 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
             id = ANY(:ids)
             	AND predefined
             ),
-                        
+            
             used_time_units_ids AS(
             SELECT DISTINCT
             	time_unit_id id
@@ -165,7 +171,7 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
             WHERE
             	time_unit_id = ANY(:ids)
             ),
-                     
+            
             used_time_units AS (
             SELECT
             	*
@@ -173,13 +179,13 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
             WHERE
             	id IN(SELECT id FROM used_time_units_ids)
             )
-                        
+            
             SELECT DISTINCT
             	*
             FROM predefined_time_units
-                        
+            
             UNION
-                        
+            
             SELECT
             	*
             FROM used_time_units
