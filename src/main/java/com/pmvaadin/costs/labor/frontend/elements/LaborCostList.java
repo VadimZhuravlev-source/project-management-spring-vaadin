@@ -29,6 +29,7 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
 
         this.grid.addColumn(LaborCostRepresentation::getRepresentation).setHeader("Name");
         this.grid.addColumn(LaborCostRepresentation::getDay).setHeader("Day");
+        this.grid.addColumn(LaborCostRepresentation::getResourceName).setHeader("Resource");
         onMouseDoubleClick(this::openNewItem);
 
         beforeAddition(this::openNewItem);

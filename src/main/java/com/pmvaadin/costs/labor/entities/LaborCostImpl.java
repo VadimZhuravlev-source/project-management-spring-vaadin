@@ -40,10 +40,9 @@ public class LaborCostImpl implements LaborCost, HasIdentifyingFields, LaborCost
     @Setter
     private String name;
 
-    // now, the employeeName is a name of a user.
     @Setter
     @Transient
-    private String employeeName;
+    private String resourceName;
 
     @Setter
     @Column(name = "labor_resource_id")
@@ -108,7 +107,7 @@ public class LaborCostImpl implements LaborCost, HasIdentifyingFields, LaborCost
 
     @Override
     public LaborCostRepresentation getRep() {
-        return new LaborCostRepresentationDTO(id, name, day, dateOfCreation);
+        return new LaborCostRepresentationDTO(id, name, day, dateOfCreation, resourceName);
     }
 
 }

@@ -16,4 +16,5 @@ public interface LaborCostRepresentation {
     default String getRepresentation() {
         return "Labor cost " + String.format("%06d" , getId()) + " created " + dateFormat.format(getDateOfCreation());
     };
+    String getResourceName();
 }

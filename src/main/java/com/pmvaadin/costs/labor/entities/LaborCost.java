@@ -19,8 +19,8 @@ public interface LaborCost {
     String getName();
     void setName(String name);
 
-    String getEmployeeName();
-    void setEmployeeName(String name);
+    String getResourceName();
+    void setResourceName(String name);
 
     Integer getLaborResourceId();
     void setLaborResourceId(Integer name);

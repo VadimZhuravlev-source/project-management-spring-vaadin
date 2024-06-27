@@ -4,7 +4,7 @@ import java.time.LocalDate;
 import java.util.Date;
 import java.util.Objects;
 
-public record LaborCostRepresentationDTO(Integer id, String name, LocalDate day, Date dateOfCreation) implements LaborCostRepresentation {
+public record LaborCostRepresentationDTO(Integer id, String name, LocalDate day, Date dateOfCreation, String resourceName) implements LaborCostRepresentation {
 
     @Override
     public Integer getId() {
@@ -29,6 +29,11 @@ public record LaborCostRepresentationDTO(Integer id, String name, LocalDate day,
     @Override
     public Date getDateOfCreation() {
         return dateOfCreation;
+    }
+
+    @Override
+    public String getResourceName() {
+        return resourceName;
     }
 
     @Override

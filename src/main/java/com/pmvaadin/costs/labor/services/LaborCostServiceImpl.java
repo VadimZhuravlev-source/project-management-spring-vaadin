@@ -13,6 +13,9 @@ import jakarta.persistence.EntityManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -25,6 +28,7 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
     private LaborResourceService laborResourceService;
     private final String queryTextAvailableTasks = getQueryTextForAvailableTasks();
     private final String queryTextIntervalReps = getQueryTextForIntervalReps();
+    private final String queryTextLaborCosts = getQueryTextForLaborCosts();
     private EntityManager entityManager;
 
     @Autowired
@@ -49,7 +53,7 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
         query.setParameter("day", day);
         query.setParameter("resourceId", laborResource.getId());
         var resultList = (List<Object[]>) query.getResultList();
-        var result = new ArrayList<ProjectTaskRep>();
+        var result = new ArrayList<ProjectTaskRep>(resultList.size());
         for (var row: resultList) {
             var rep = new ProjectTaskRepImpl((Integer) row[0], row[1].toString());
             result.add(rep);
@@ -79,13 +83,21 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
 
     @Override
     public List<LaborCostRepresentation> getItems(String filter, Pageable pageable) {
-        var items = laborCostRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable, LaborCostRepresentationDTO.class);
-        return items.stream().map(l -> (LaborCostRepresentation) l).toList();
+
+        var userDetails = getUserDetails();
+        if (userDetails == null || userDetails.getAuthorities().isEmpty())
+            return new ArrayList<>(0);
+        return getItemsCountingUserRights(filter, userDetails.getUsername(), pageable);
+//        var items = laborCostRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable, LaborCostRepresentationDTO.class);
+//        return items.stream().map(l -> (LaborCostRepresentation) l).toList();
     }
 
     @Override
     public int sizeInBackEnd(String filter, Pageable pageable) {
-        return laborCostRepository.findByNameLikeIgnoreCase("%" + filter + "%", pageable, LaborCostRepresentationDTO.class).size();
+        var userDetails = getUserDetails();
+        if (userDetails == null || userDetails.getAuthorities().isEmpty())
+            return 0;
+        return getCountItemsCountingUserRights(filter, userDetails.getUsername(), pageable);
     }
 
     @Override
@@ -167,6 +179,52 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
                 """;
     }
 
+    private String getQueryTextForLaborCosts() {
+        return """
+               SELECT :queryFields
+               FROM labor_costs l
+               JOIN labor_resources lr
+                   ON l.labor_resource_id = lr.id
+                   AND lr.name LIKE :search
+               WHERE l.labor_resource_id IN(SELECT labor_resource_id
+                                         FROM user_labor_resources
+                                         WHERE user_id IN(SELECT id FROM users WHERE name = :userName)
+                                        )
+               :order
+               LIMIT :limit OFFSET :offset
+               """;
+    }
+
+    private List<LaborCostRepresentation> getItemsCountingUserRights(String filter, String userName, Pageable pageable) {
+        var queryTextLaborCosts = this.queryTextLaborCosts.replace(":queryFields", "l.id, l.name, l.day, l.date_of_creation, lr.name resourceName");
+        queryTextLaborCosts = queryTextLaborCosts.replace(":limit", String.valueOf(pageable.getPageSize()));
+        queryTextLaborCosts = queryTextLaborCosts.replace(":offset", String.valueOf(pageable.getOffset()));
+        queryTextLaborCosts = queryTextLaborCosts.replace(":order", "ORDER BY l.day");
+        var query = entityManager.createNativeQuery(queryTextLaborCosts);
+        query.setParameter("userName", userName);
+        query.setParameter("search", "%" + filter + "%");
+        var resultList = (List<Object[]>) query.getResultList();
+        var result = new ArrayList<LaborCostRepresentation>(resultList.size());
+        for (var row: resultList) {
+            var sqlDay = (java.sql.Date) row[2];
+            var day = sqlDay.toLocalDate();
+            var rep = new LaborCostRepresentationDTO((Integer) row[0], row[1].toString(), day, (Date) row[3], row[4].toString());
+            result.add(rep);
+        }
+        return result;
+    }
+
+    private int getCountItemsCountingUserRights(String filter, String userName, Pageable pageable) {
+        var queryTextLaborCosts = this.queryTextLaborCosts.replace(":queryFields", "COUNT(l.id)");
+        queryTextLaborCosts = queryTextLaborCosts.replace(":limit", String.valueOf(pageable.getPageSize()));
+        queryTextLaborCosts = queryTextLaborCosts.replace(":offset", String.valueOf(pageable.getOffset()));
+        queryTextLaborCosts = queryTextLaborCosts.replace(":order", "");
+        var query = entityManager.createNativeQuery(queryTextLaborCosts);
+        query.setParameter("userName", userName);
+        query.setParameter("search", "%" + filter + "%");
+        return ((Long) query.getSingleResult()).intValue();
+    }
+
     private String getQueryTextForIntervalReps() {
         return """
                 SELECT p.id, p.name
@@ -174,6 +232,18 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
                 WHERE
                 p.id IN(:ids)
                 """;
+    }
+
+    private UserDetails getUserDetails() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null)
+            return null;
+
+        var principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails) {
+            return (UserDetails) principal;
+        }
+        return null;
     }
 
 }
