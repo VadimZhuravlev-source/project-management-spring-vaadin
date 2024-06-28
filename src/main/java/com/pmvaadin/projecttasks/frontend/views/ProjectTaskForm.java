@@ -249,8 +249,9 @@ public class ProjectTaskForm extends Dialog {
         finishDate.addValueChangeListener(this::finishDateChangeListener);
         durationRepresentation.addThemeVariants(TextFieldVariant.LUMO_SMALL);
         durationRepresentation.setStepButtonsVisible(true);
-        durationRepresentation.setStep(1);
+        durationRepresentation.setStep(0.01);
         durationRepresentation.addValueChangeListener(this::durationValueChangeListener);
+        durationRepresentation.setManualValidation(true);
         scheduleMode.addThemeVariants(ComboBoxVariant.LUMO_SMALL);
         scheduleMode.setItems(ScheduleMode.values());
         scheduleMode.addValueChangeListener(this::scheduleModeAddListener);
@@ -524,7 +525,7 @@ public class ProjectTaskForm extends Dialog {
             fireEvent(new SaveEvent(this, projectTaskData.getProjectTask()));
 
         });
-        binder.addStatusChangeListener(e -> saveAndClose.setEnabled(binder.isValid()));
+//        binder.addStatusChangeListener(e -> saveAndClose.setEnabled(binder.isValid()));
 
         Button sync = new Button("Refresh", new Icon("lumo", "reload"));
         sync.addClickListener(event -> syncData());
@@ -536,7 +537,7 @@ public class ProjectTaskForm extends Dialog {
 
         Button save = new Button("Save");
         save.addClickListener(event -> validateAndSave());
-        binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
+//        binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
 
         getFooter().add(saveAndClose, save, sync, close);
 
@@ -554,7 +555,8 @@ public class ProjectTaskForm extends Dialog {
         binder.forField(finishDate).withConverter(new LocalDateToDateConverter())
                 .bind(this::getFinishDate, this::setFinishDate);
         binder.forField(durationRepresentation).withConverter(new BigDecimalToDoubleConverter(durationRepresentation))
-                .bind(ProjectTask::getDurationRepresentation, ProjectTask::setDurationRepresentation);
+                .bind(ProjectTask::getDurationRepresentation, ProjectTask::setDurationRepresentation)
+                .setValidatorsDisabled(true);
         binder.forField(progress).withConverter(new IntegerToDoubleConverter())
                 .bind(ProjectTask::getProgress, ProjectTask::setProgress);
 

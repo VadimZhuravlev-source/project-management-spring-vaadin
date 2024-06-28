@@ -9,6 +9,7 @@ import com.pmvaadin.projecttasks.services.role.level.calculation.Row;
 import com.pmvaadin.projecttasks.services.role.level.security.ProjectTaskFilter;
 import com.pmvaadin.projectview.ProjectTaskPropertyNames;
 import com.pmvaadin.security.services.UserService;
+import com.pmvaadin.terms.calendars.entity.Calendar;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -212,15 +213,27 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
 
         StringBuilder newLinks = new StringBuilder();
         for (String link : links) {
-            var wbsWithType = link.split("-");
-            if (wbsWithType.length <= 1) continue;
+            var wbsWithType = link.split("=");
+            if (wbsWithType.length <= 2) continue;
 
             var wbs = wbsWithType[0];
             var type = wbsWithType[1];
+            var lag = wbsWithType[2];
             var typeCode = Integer.valueOf(type);
             var linkType = LinkType.getByCode(typeCode);
+            var lagLong = Long.parseLong(lag);
+            String lagRep = "";
+            if (lagLong != 0) {
+                var innerLagRep = new BigDecimal(lagLong).divide(new BigDecimal(Calendar.SECONDS_IN_HOUR), 2, RoundingMode.CEILING)
+                        .setScale(2, RoundingMode.CEILING);
+                lagRep = innerLagRep.toString();
+                if (innerLagRep.compareTo(BigDecimal.ZERO) > 0) {
+                    lagRep = "+" + lagRep;
+                }
+            }
             newLinks.append(wbs);
             newLinks.append(linkType.getShortRep());
+            newLinks.append(lagRep);
             newLinks.append(";");
         }
 

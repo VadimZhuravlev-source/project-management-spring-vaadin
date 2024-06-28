@@ -275,6 +275,7 @@ LEFT JOIN durations
                     SELECT
                         links.project_task,
                         links.link_type,
+                        links.lag,
                         links.linked_project_task id,
                         project_tasks.parent_id,
                         CAST(project_tasks.level_order AS TEXT) wbs
@@ -295,6 +296,7 @@ LEFT JOIN durations
                     SELECT
                         links.project_task,
                         links.link_type,
+                        links.lag,
                         links.id,
                         links.parent_id,
                         ARRAY[links.id] path,
@@ -308,6 +310,7 @@ LEFT JOIN durations
                     SELECT
                         found_links_wbs.project_task,
                         found_links_wbs.link_type,
+                        found_links_wbs.lag,
                         found_links_wbs.id,
                         project_tasks.parent_id,
                         found_links_wbs.path || project_tasks.id path,
@@ -325,7 +328,7 @@ LEFT JOIN durations
                     SELECT
                         project_task id,
                         --id,
-                        STRING_AGG(wbs || '-' || link_type, '; ') rep
+                        STRING_AGG(wbs || '=' || link_type || '=' || lag, '; ') rep
                     FROM found_links_wbs
                     WHERE\s
                         found_links_wbs.parent_id IS NULL

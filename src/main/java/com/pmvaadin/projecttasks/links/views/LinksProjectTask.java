@@ -151,7 +151,7 @@ public class LinksProjectTask extends ObjectGrid<Link> {
         lagRepresentation.setWidthFull();
         //lagRepresentation.setAutofocus(false);
         lagRepresentation.setStepButtonsVisible(true);
-        lagRepresentation.setStep(1);
+        lagRepresentation.setStep(0.01);
         addCloseHandler(lagRepresentation, editor);
         binder.forField(lagRepresentation).withConverter(new BigDecimalToDoubleConverter(lagRepresentation))
                 .bind(Link::getLagRepresentation, this::setLagRepresentation);

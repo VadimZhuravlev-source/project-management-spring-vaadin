@@ -12,6 +12,7 @@ import com.pmvaadin.projecttasks.entity.ProjectTask;
 import com.pmvaadin.projecttasks.links.repositories.LinkRepository;
 import com.pmvaadin.projecttasks.dependencies.DependenciesService;
 import com.pmvaadin.projecttasks.services.ProjectTaskService;
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -186,6 +187,10 @@ public class LinkServiceImpl implements LinkService {
             link.setRepresentation(projectTask.getName());
             link.setWbs(projectTask.getWbs());
             link.setLinkedProjectTask(projectTask);
+            var timeUnit = link.getTimeUnit();
+            if (timeUnit instanceof TimeUnit)
+                link.setLagRepresentation(((TimeUnit) timeUnit).getDurationRepresentation(link.getLag()));
+
         });
     }
 
