@@ -1,8 +1,8 @@
 package com.pmvaadin.terms.timeunit.frontend.views;
 
 import com.pmvaadin.common.DialogForm;
-import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.projecttasks.common.BigDecimalToDoubleConverter;
+import com.pmvaadin.project.structure.StandardError;
+import com.pmvaadin.project.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.vaadin.flow.component.ClickEvent;
 import com.vaadin.flow.component.button.Button;

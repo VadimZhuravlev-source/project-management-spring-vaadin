@@ -1,6 +1,6 @@
 package com.pmvaadin.terms.calendars.validators;
 
-import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.exceptions.CalendarException;

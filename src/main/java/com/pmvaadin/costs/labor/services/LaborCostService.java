@@ -1,6 +1,6 @@
 package com.pmvaadin.costs.labor.services;
 
-import com.pmvaadin.projecttasks.entity.ProjectTaskRep;
+import com.pmvaadin.project.tasks.entity.ProjectTaskRep;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 
 import java.time.LocalDate;

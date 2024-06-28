@@ -1,8 +1,8 @@
 package com.pmvaadin.security.frontend.elements;
 
 import com.pmvaadin.common.ObjectGrid;
-import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.projecttasks.frontend.elements.ProjectComboBox;
+import com.pmvaadin.project.structure.StandardError;
+import com.pmvaadin.project.tasks.frontend.elements.ProjectComboBox;
 import com.pmvaadin.security.entities.User;
 import com.pmvaadin.security.entities.UserProject;
 import com.vaadin.flow.spring.annotation.SpringComponent;

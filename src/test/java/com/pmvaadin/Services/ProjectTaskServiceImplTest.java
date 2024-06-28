@@ -1,8 +1,8 @@
 package com.pmvaadin.Services;
 
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.services.ProjectTaskService;
-import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.services.ProjectTaskService;
+import com.pmvaadin.project.tasks.repositories.ProjectTaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;

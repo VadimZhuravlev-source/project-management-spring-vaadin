@@ -1,6 +1,6 @@
 package com.pmvaadin.terms.calendars.services;
 
-import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
 import com.pmvaadin.terms.calculation.TermCalculationData;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarImpl;

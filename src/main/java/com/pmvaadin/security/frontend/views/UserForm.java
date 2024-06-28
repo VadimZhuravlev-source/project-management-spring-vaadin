@@ -1,9 +1,9 @@
 package com.pmvaadin.security.frontend.views;
 
 import com.pmvaadin.common.DialogForm;
-import com.pmvaadin.projectstructure.NotificationDialogs;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.frontend.elements.ProjectComboBox;
+import com.pmvaadin.project.structure.NotificationDialogs;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.frontend.elements.ProjectComboBox;
 import com.pmvaadin.security.entities.*;
 import com.pmvaadin.security.frontend.elements.ProjectsTable;
 import com.pmvaadin.security.frontend.elements.UserLaborResources;
@@ -20,7 +20,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
-import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.Binder;

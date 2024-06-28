@@ -4,7 +4,7 @@ import com.pmvaadin.costs.labor.frontend.views.LaborCostView;
 import com.pmvaadin.resources.labor.frontend.views.LaborResourceView;
 import com.pmvaadin.security.entities.Role;
 import com.pmvaadin.terms.calendars.frontend.view.CalendarsView;
-import com.pmvaadin.projectview.ProjectTreeView;
+import com.pmvaadin.project.view.ProjectTreeView;
 import com.pmvaadin.security.services.SecurityService;
 import com.pmvaadin.security.frontend.views.AdminUsersView;
 import com.pmvaadin.terms.timeunit.frontend.views.TimeUnitsView;

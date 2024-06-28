@@ -1,7 +1,6 @@
 package com.pmvaadin;
 
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.project.tasks.entity.ProjectTaskImpl;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 

@@ -1,6 +1,6 @@
 package com.pmvaadin.security.entities;
 
-import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.*;
 import lombok.Getter;

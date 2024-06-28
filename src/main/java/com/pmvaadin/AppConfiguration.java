@@ -1,13 +1,13 @@
 package com.pmvaadin;
 
-import com.pmvaadin.projectstructure.TreeProjectTasks;
-import com.pmvaadin.projectstructure.TreeProjectTasksImpl;
-import com.pmvaadin.projecttasks.links.entities.Link;
-import com.pmvaadin.projecttasks.links.entities.LinkImpl;
+import com.pmvaadin.project.structure.TreeProjectTasks;
+import com.pmvaadin.project.structure.TreeProjectTasksImpl;
+import com.pmvaadin.project.links.entities.Link;
+import com.pmvaadin.project.links.entities.LinkImpl;
 import com.pmvaadin.terms.calculation.TermsCalculation;
 import com.pmvaadin.terms.calculation.TermsCalculationImpl;
-import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversion;
-import com.pmvaadin.projecttasks.dependencies.ProjectTasksIdConversionWrapper;
+import com.pmvaadin.project.dependencies.ProjectTasksIdConversion;
+import com.pmvaadin.project.dependencies.ProjectTasksIdConversionWrapper;
 import com.pmvaadin.terms.calendars.validators.CalendarValidation;
 import com.pmvaadin.terms.calendars.validators.CalendarValidationImpl;
 import org.springframework.context.annotation.Bean;

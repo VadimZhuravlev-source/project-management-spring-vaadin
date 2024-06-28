@@ -1,7 +1,7 @@
 package com.pmvaadin.resources.labor.services;
 
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.resources.labor.entity.LaborResource;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentationDTO;
 import com.pmvaadin.resources.labor.entity.LaborResourceImpl;

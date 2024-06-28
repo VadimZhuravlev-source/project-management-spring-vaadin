@@ -1,7 +1,7 @@
 package com.pmvaadin.security.frontend.elements;
 
 import com.pmvaadin.common.ObjectGrid;
-import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.resources.labor.frontend.elements.LaborResourceComboBox;
 import com.pmvaadin.security.entities.User;
 import com.pmvaadin.security.user.labor.resource.UserLaborResource;

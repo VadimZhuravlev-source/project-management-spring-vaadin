@@ -2,7 +2,7 @@ package com.pmvaadin.terms.calendars.frontend.elements;
 
 import com.pmvaadin.common.ComboBoxWithButtons;
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.projecttasks.data.ProjectTaskData;
+import com.pmvaadin.project.data.ProjectTaskData;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;
 import com.pmvaadin.terms.calendars.frontend.view.CalendarForm;

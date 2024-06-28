@@ -1,8 +1,8 @@
 package com.pmvaadin.terms.calculation;
 
 import com.pmvaadin.terms.calendars.entity.Calendar;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.links.entities.Link;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
+import com.pmvaadin.project.links.entities.Link;
 
 import java.util.List;
 

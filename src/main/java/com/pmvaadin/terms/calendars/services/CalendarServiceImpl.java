@@ -1,8 +1,8 @@
 package com.pmvaadin.terms.calendars.services;
 
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.projectstructure.ProjectRecalculation;
-import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.project.structure.ProjectRecalculation;
+import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.calendars.entity.*;
 import com.pmvaadin.terms.calendars.repositories.CalendarRepository;

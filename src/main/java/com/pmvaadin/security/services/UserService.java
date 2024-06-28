@@ -1,7 +1,7 @@
 package com.pmvaadin.security.services;
 
-import com.pmvaadin.projecttasks.entity.HierarchyElement;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.entity.HierarchyElement;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
 import com.pmvaadin.security.entities.User;
 
 import java.util.Collection;

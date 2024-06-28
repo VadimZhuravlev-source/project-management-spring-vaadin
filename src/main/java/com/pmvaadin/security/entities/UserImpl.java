@@ -1,7 +1,7 @@
 package com.pmvaadin.security.entities;
 
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.entity.ProjectTaskImpl;
 import com.pmvaadin.security.user.labor.resource.UserLaborResource;
 import com.pmvaadin.security.user.labor.resource.UserLaborResourceImpl;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;

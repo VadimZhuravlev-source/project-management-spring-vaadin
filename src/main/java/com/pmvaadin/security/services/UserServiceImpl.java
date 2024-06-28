@@ -1,10 +1,10 @@
 package com.pmvaadin.security.services;
 
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.projectstructure.StandardError;
-import com.pmvaadin.projecttasks.entity.HierarchyElement;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
+import com.pmvaadin.project.structure.StandardError;
+import com.pmvaadin.project.tasks.entity.HierarchyElement;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.repositories.ProjectTaskRepository;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.pmvaadin.resources.labor.services.LaborResourceService;
 import com.pmvaadin.security.entities.*;

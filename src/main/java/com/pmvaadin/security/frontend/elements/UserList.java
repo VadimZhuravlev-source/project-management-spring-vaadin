@@ -2,7 +2,7 @@ package com.pmvaadin.security.frontend.elements;
 
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.common.vaadin.ItemList;
-import com.pmvaadin.projectstructure.NotificationDialogs;
+import com.pmvaadin.project.structure.NotificationDialogs;
 import com.pmvaadin.security.entities.User;
 import com.pmvaadin.security.entities.UserRepresentation;
 import com.pmvaadin.security.entities.UserRepresentationDTO;

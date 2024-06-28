@@ -1,7 +1,7 @@
 package com.pmvaadin.terms.calendars.exceptions.views;
 
 import com.pmvaadin.common.IntegerToDoubleConverter;
-import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.terms.calendars.common.Interval;
 import com.pmvaadin.terms.calendars.common.IntervalGrid;
 import com.pmvaadin.terms.calendars.exceptions.*;
@@ -36,7 +36,6 @@ import com.vaadin.flow.data.binder.ValueContext;
 import com.vaadin.flow.data.converter.Converter;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.shared.Registration;
-import org.checkerframework.common.value.qual.IntRange;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;

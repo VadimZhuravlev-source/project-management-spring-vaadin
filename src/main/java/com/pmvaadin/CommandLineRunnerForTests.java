@@ -1,13 +1,9 @@
 package com.pmvaadin;
 
-import com.pmvaadin.projecttasks.repositories.ProjectTaskRepository;
-import com.pmvaadin.terms.calculation.LinkedProjectTaskDTO;
+import com.pmvaadin.project.tasks.repositories.ProjectTaskRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Component
 public class CommandLineRunnerForTests implements CommandLineRunner {

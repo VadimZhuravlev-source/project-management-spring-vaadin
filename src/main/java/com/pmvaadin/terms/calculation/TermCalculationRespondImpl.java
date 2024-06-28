@@ -1,6 +1,6 @@
 package com.pmvaadin.terms.calculation;
 
-import com.pmvaadin.projecttasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
 
 import javax.annotation.Nonnull;
 import java.util.HashSet;

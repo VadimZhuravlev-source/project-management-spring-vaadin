@@ -7,10 +7,9 @@ import com.pmvaadin.costs.labor.entities.LaborCost;
 import com.pmvaadin.costs.labor.entities.LaborCostRepresentation;
 import com.pmvaadin.costs.labor.frontend.views.LaborCostForm;
 import com.pmvaadin.costs.labor.services.LaborCostService;
-import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.resources.labor.frontend.elements.FilteredLaborResourceComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
-import com.vaadin.flow.data.binder.ValidationException;
 
 public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> {
 

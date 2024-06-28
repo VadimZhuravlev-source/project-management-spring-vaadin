@@ -1,7 +1,7 @@
 package com.pmvaadin.terms.timeunit.services;
 
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.projectstructure.StandardError;
+import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitImpl;

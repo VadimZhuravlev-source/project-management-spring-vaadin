@@ -2,8 +2,10 @@ package com.pmvaadin.projectstructure;
 
 import com.pmvaadin.common.tree.SimpleTree;
 import com.pmvaadin.common.tree.Tree;
-import com.pmvaadin.projecttasks.entity.ProjectTask;
-import com.pmvaadin.projecttasks.entity.ProjectTaskImpl;
+import com.pmvaadin.project.structure.Unloopable;
+import com.pmvaadin.project.structure.UnloopableImpl;
+import com.pmvaadin.project.tasks.entity.ProjectTask;
+import com.pmvaadin.project.tasks.entity.ProjectTaskImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

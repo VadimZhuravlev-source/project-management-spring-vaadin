@@ -2,7 +2,7 @@ package com.pmvaadin.terms.calendars.frontend.view;
 
 import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.common.ObjectGrid;
-import com.pmvaadin.projectstructure.NotificationDialogs;
+import com.pmvaadin.project.structure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.calendars.entity.CalendarSettings;
 import com.pmvaadin.terms.calendars.exceptions.CalendarException;

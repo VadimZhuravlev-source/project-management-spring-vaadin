@@ -2,7 +2,7 @@ package com.pmvaadin.terms.timeunit.frontend.elements;
 
 import com.pmvaadin.common.ComboBoxWithButtons;
 import com.pmvaadin.common.services.ListService;
-import com.pmvaadin.projecttasks.data.ProjectTaskData;
+import com.pmvaadin.project.data.ProjectTaskData;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 import com.pmvaadin.terms.timeunit.frontend.views.TimeUnitForm;
