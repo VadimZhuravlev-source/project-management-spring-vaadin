@@ -144,6 +144,10 @@ public class ProjectTaskImpl implements ProjectTask, Serializable {
     @Transient
     private String laborResourceRepresentation;
 
+    @Setter
+    @Transient
+    private String laborCosts = "";
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

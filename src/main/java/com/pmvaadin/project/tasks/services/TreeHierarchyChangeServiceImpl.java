@@ -183,7 +183,6 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
             var row = valueMap.get(projectTask1.getId());
             if (row == null) return;
             fillAccordingValues(projectTask1, row, columns);
-
         });
 
         fillWbs(projectTasks, projectTask, columns);
@@ -199,6 +198,13 @@ public class TreeHierarchyChangeServiceImpl implements TreeHierarchyChangeServic
             projectTask.setDurationRepresentation(new BigDecimal(row.dur()).setScale(2, RoundingMode.CEILING));
         if (columns.contains(propertyNames.getPropertyLaborResources()))
             projectTask.setLaborResourceRepresentation(row.laborResources());
+        if (columns.contains(propertyNames.getPropertyLaborCosts())
+                && !row.laborCosts().isEmpty()) {
+            int laborCosts = Integer.parseInt(row.laborCosts());
+            var laborCostsRep = new BigDecimal(laborCosts).divide(new BigDecimal(Calendar.SECONDS_IN_HOUR), 2, RoundingMode.CEILING)
+                     .setScale(2, RoundingMode.CEILING);
+            projectTask.setLaborCosts(laborCostsRep.toString());
+        }
 
         fillLinkRepresentation(projectTask, row, columns);
 

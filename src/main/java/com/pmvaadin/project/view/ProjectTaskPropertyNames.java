@@ -91,6 +91,10 @@ public class ProjectTaskPropertyNames {
         return "laborResources";
     }
 
+    public String getPropertyLaborCosts() {
+        return "laborResources";
+    }
+
     public String getHeaderName() {
         return "Name";
     }
@@ -163,6 +167,10 @@ public class ProjectTaskPropertyNames {
         return "Labor resources";
     }
 
+    public String getHeaderLaborCosts() {
+        return "Labor costs, hours";
+    }
+
     private Map<String, String> getPropertiesMap() {
 
         Map<String, String> map = new HashMap<>();
@@ -179,6 +187,7 @@ public class ProjectTaskPropertyNames {
         map.put(getPropertyTimeUnit(), getHeaderTimeUnit());
         map.put(getPropertyScheduleMode(), getHeaderScheduleMode());
         map.put(getPropertyLaborResources(), getHeaderLaborResources());
+        map.put(getPropertyLaborCosts(), getHeaderLaborCosts());
 
         return Collections.unmodifiableMap(map);
 
@@ -200,6 +209,7 @@ public class ProjectTaskPropertyNames {
         map.put(getPropertyProgress(), new ColumnProperties(getHeaderProgress(), ProjectTask::getProgress));
         map.put(getPropertyStatus(), new ColumnProperties(getHeaderStatus(), ProjectTask::getStatus));
         map.put(getPropertyLaborResources(), new ColumnProperties(getHeaderLaborResources(), ProjectTask::getLaborResourceRepresentation));
+        map.put(getPropertyLaborCosts(), new ColumnProperties(getHeaderLaborCosts(), ProjectTask::getLaborCosts));
 
         return Collections.unmodifiableMap(map);
 

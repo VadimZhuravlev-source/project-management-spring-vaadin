@@ -38,6 +38,7 @@ public class ColumnsData {
         var durIndex = 4;
         var linksIndex = 5;
         var laborResourcesIndex = 6;
+        var laborCostIndex = 7;
         Map<I, Row> map = new HashMap<>(rows.size());
 
         for (Object[] row: rows) {
@@ -48,7 +49,8 @@ public class ColumnsData {
             var durRep = Objects.toString(row[durIndex], "");
             var linkRep = Objects.toString(row[linksIndex], "");
             var laborResourcesRep = Objects.toString(row[laborResourcesIndex], "");
-            var rowMap = new Row(count, calRep, timeRep, durRep, linkRep, laborResourcesRep);
+            var laborCosts = Objects.toString(row[laborCostIndex], "");
+            var rowMap = new Row(count, calRep, timeRep, durRep, linkRep, laborResourcesRep, laborCosts);
             map.put(id, rowMap);
         }
 
@@ -70,18 +72,7 @@ public class ColumnsData {
     }
 
     private void changeQuery() {
-        List<TablesInfo> list = new ArrayList<>(4);
-        var calendarQueryTexts = getCalendarRepTablesInfo();
-        list.add(calendarQueryTexts);
-        var timeUnitQueryTexts = getTimeUnitRepTablesInfo();
-        list.add(timeUnitQueryTexts);
-        var durationQueryTexts = getDurationRepTablesInfo();
-        list.add(durationQueryTexts);
-
-        var linksQueryTexts = getLinkRepTablesInfo();
-        list.add(linksQueryTexts);
-        var laborResourcesQueryTexts = getLaborResourcesRepTablesInfo();
-        list.add(laborResourcesQueryTexts);
+        List<TablesInfo> list = getTablesInfos();
 
         list.forEach(tablesInfo -> {
             queryText = queryText.replace("&pt_field", tablesInfo.ptField);
@@ -95,6 +86,24 @@ public class ColumnsData {
         queryText = queryText.replace("&result_field", "");
         queryText = queryText.replace("&join", "");
 
+    }
+
+    private List<TablesInfo> getTablesInfos() {
+        List<TablesInfo> list = new ArrayList<>(6);
+        var calendarQueryTexts = getCalendarRepTablesInfo();
+        list.add(calendarQueryTexts);
+        var timeUnitQueryTexts = getTimeUnitRepTablesInfo();
+        list.add(timeUnitQueryTexts);
+        var durationQueryTexts = getDurationRepTablesInfo();
+        list.add(durationQueryTexts);
+
+        var linksQueryTexts = getLinkRepTablesInfo();
+        list.add(linksQueryTexts);
+        var laborResourcesQueryTexts = getLaborResourcesRepTablesInfo();
+        list.add(laborResourcesQueryTexts);
+        var laborCostQueryTexts = getLaborCostsTablesInfo();
+        list.add(laborCostQueryTexts);
+        return list;
     }
 
     private TablesInfo getDefaultTableInfo(String resultField) {
@@ -405,13 +414,60 @@ LEFT JOIN labor_resources_representation
 
     }
 
+    private TablesInfo getLaborCostsTablesInfo() {
+
+        if (!columns.contains(propertyNames.getPropertyLaborCosts())) {
+            var resField = """
+                        ,'' labor_cost
+                        &result_field
+                        """;
+            return getDefaultTableInfo(resField);
+        }
+
+        var fieldPT =
+                """
+--actual labor cost
+                                        &pt_field
+                """;
+
+        var table = """
+--actual labor cost
+                    actual_labor_costs AS (
+                    SELECT
+                        found_pts.id id,
+                        SUM(labor_cost_intervals.duration) labor_cost
+                    FROM
+                        found_pts
+                        JOIN labor_cost_intervals
+                            ON labor_cost_intervals.project_task_id = found_pts.id
+                    GROUP BY
+                        found_pts.id
+                    ),
+                    
+                    &table
+                    """;
+        var resultField = """
+,actual_labor_costs.labor_cost labor_cost
+                        &result_field
+                    """;
+
+        var resultJoin = """
+LEFT JOIN actual_labor_costs
+                		ON found_pts.id = actual_labor_costs.id
+                	&join
+                    """;
+
+        return new TablesInfo(fieldPT, table, resultField, resultJoin);
+
+    }
+
     private record TablesInfo(String ptField, String table, String resultField, String join) {}
 
     private String getQueryText() {
 
         return """
                         WITH RECURSIVE found_pts AS (
-                            
+                        
                             SELECT
                                 project_tasks.id id
                                 &pt_field
@@ -422,7 +478,7 @@ LEFT JOIN labor_resources_representation
                                 --project_tasks.parent_id IS NULL
                                 --project_tasks.parent_id = 2
                             ),
-                            
+                        
                             -- amount of children
                             amount_of_children AS (
                             SELECT
@@ -435,9 +491,9 @@ LEFT JOIN labor_resources_representation
                             GROUP BY\s
                                 found_pts.id
                             ),
-                            
+                        
                             &table
-                            
+                        
                             -- result data
                             result_query AS (
                             SELECT
@@ -450,18 +506,19 @@ LEFT JOIN labor_resources_representation
                                 ON found_pts.id = amount_of_children.id
                             &join
                             )
-                            
+                        
                             SELECT
                                 result_query.id,
-                                  CAST(result_query.amount AS INT) amount,
-                                  result_query.calendar_rep,
+                                CAST(result_query.amount AS INT) amount,
+                                result_query.calendar_rep,
                                 result_query.time_rep,
                                 result_query.dur_rep,
                                 result_query.links_rep,
-                                result_query.labor_resources_rep
+                                result_query.labor_resources_rep,
+                                result_query.labor_cost
                             FROM result_query
-                                
-                                """;
+                        
+                        """;
 
     }
 

@@ -121,4 +121,7 @@ public interface ProjectTask extends ProjectTaskOrderedHierarchy {
     String getLaborResourceRepresentation();
     void setLaborResourceRepresentation(String representation);
 
+    String getLaborCosts();
+    void setLaborCosts(String laborCosts);
+
 }
