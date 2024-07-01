@@ -1,25 +1,24 @@
 package com.pmvaadin.costs.labor.frontend.elements;
 
-import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.common.vaadin.ItemList;
 import com.pmvaadin.costs.labor.entities.LaborCost;
 import com.pmvaadin.costs.labor.entities.LaborCostRepresentation;
 import com.pmvaadin.costs.labor.frontend.views.LaborCostForm;
 import com.pmvaadin.costs.labor.services.LaborCostService;
-import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.resources.labor.frontend.elements.FilteredLaborResourceComboBox;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 
 public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> {
 
-    private final LaborCostService listService;
+    private final LaborCostService laborCostService;
+    private final ListService<LaborCostRepresentation, LaborCost> listService;
     private final FilteredLaborResourceComboBox resourceComboBox;
     private LaborCostForm editingForm;
 
     public LaborCostList(LaborCostService listService, FilteredLaborResourceComboBox resourceComboBox) {
         super((ListService<LaborCostRepresentation, LaborCost>) listService);
-        this.listService = listService;
+        this.laborCostService = listService;
+        this.listService = (ListService<LaborCostRepresentation, LaborCost>) listService;
         this.resourceComboBox = resourceComboBox;
         configureGrid();
     }
@@ -41,21 +40,27 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
     }
 
     private void openEditingForm(LaborCost laborCost) {
-        editingForm = new LaborCostForm(listService, resourceComboBox);
+        editingForm = new LaborCostForm(laborCostService, resourceComboBox);
         editingForm.read(laborCost);
         editingForm.addListener(LaborCostForm.SaveEvent.class, this::saveEvent);
         editingForm.addListener(LaborCostForm.SaveAndCloseEvent.class, this::saveAndCloseEvent);
         editingForm.addListener(LaborCostForm.CloseEvent.class, event -> closeEditor());
-        editingForm.addListener(DialogForm.RefreshEvent.class, event -> {
-            if (editingForm.isOpened()) {
-                var rep = (LaborCostRepresentation) event.getItem();
-                var item = ((ListService<LaborCostRepresentation, LaborCost>) listService).get(rep);
-                editingForm.read(item);
-            } else
-                this.grid.getDataProvider().refreshAll();
-        });
+        editingForm.addListener(LaborCostForm.RefreshEvent.class, this::refreshEvent);
         editingForm.open();
         setDeletionAvailable(false);
+    }
+
+    private void refreshEvent(LaborCostForm.RefreshEvent event) {
+        if (editingForm.isOpened()) {
+            var rep = (LaborCostRepresentation) event.getItem();
+            try {
+                var item = listService.get(rep);
+                editingForm.read(item);
+            } catch (Throwable error) {
+                showDialog(error);
+            }
+        } else
+            this.grid.getDataProvider().refreshAll();
     }
 
     private void saveEvent(LaborCostForm.SaveEvent event) {
@@ -69,23 +74,18 @@ public class LaborCostList extends ItemList<LaborCostRepresentation, LaborCost> 
     }
 
     private void saveAndClose(Object item, boolean close) {
-        if (item instanceof LaborCost laborCost) {
-            if (editingForm.isOpened()) {
-                try {
-                    var savedResource = ((ListService<LaborCostRepresentation, LaborCost>) listService).save(laborCost);
-                    if (close) {
-                        editingForm.close();
-                        return;
-                    }
-                    editingForm.read(savedResource);
-                } catch (StandardError error) {
-                    var confDialog = new ConfirmDialog();
-                    confDialog.setText(error.getMessage());
-                    confDialog.open();
+        if (item instanceof LaborCost castItem) {
+            try {
+                var savedItem = listService.save(castItem);
+                if (close) {
+                    closeEditor();
                     return;
                 }
-            } else
-                this.grid.getDataProvider().refreshAll();
+                if (editingForm.isOpened())
+                    editingForm.read(savedItem);
+            } catch (Throwable error) {
+                showDialog(error);
+            }
         }
     }
 

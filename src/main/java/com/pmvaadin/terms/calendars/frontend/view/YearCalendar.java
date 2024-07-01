@@ -62,10 +62,14 @@ public class YearCalendar extends VerticalLayout {
         });
 
         var horLayout = new HorizontalLayout(doubleLeft, left, month, right, doubleRight);
+        horLayout.setSpacing(false);
+        horLayout.setPadding(false);
         month.setValue(getDisplayedName(YearMonth.now()));
         monthCalendar.setClassNameGenerator(this::classNameGenerator);
         monthCalendar.setSizeFull();
         var monthContent = new VerticalLayout(horLayout, monthCalendar);
+        monthContent.setSpacing(false);
+        monthContent.setPadding(false);
         monthContent.setAlignItems(Alignment.CENTER);
 
         var yearChanger = new IntegerField();
@@ -77,8 +81,12 @@ public class YearCalendar extends VerticalLayout {
         yearChanger.setValue(yearCalendar.getYear());
         yearChanger.addValueChangeListener(e -> yearCalendar.setYear(e.getValue()));
         var yearContent = new VerticalLayout(yearChanger, yearCalendar);
+        yearContent.setSpacing(false);
+        yearContent.setPadding(false);
 
         var content = new HorizontalLayout(monthContent, yearContent);
+        content.setSpacing(false);
+        content.setPadding(false);
         monthContent.setVisible(true);
         yearContent.setVisible(false);
         radioGroup.addValueChangeListener(event -> {

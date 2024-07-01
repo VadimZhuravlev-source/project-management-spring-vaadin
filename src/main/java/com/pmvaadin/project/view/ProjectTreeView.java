@@ -41,6 +41,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.vaadin.tltv.gantt.Gantt;
 import org.vaadin.tltv.gantt.model.Resolution;
 import org.vaadin.tltv.gantt.model.Step;
@@ -52,9 +53,9 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
 
-@Route(value="", layout = MainLayout.class)
+@Route(value="Projects", layout = MainLayout.class)
 @PageTitle("Projects | PM")
-@PermitAll
+@RolesAllowed({"ADMIN", "PROJECT_MANAGER"})
 public class ProjectTreeView extends VerticalLayout {
 
     private final ProjectTreeService projectTreeService;
@@ -171,6 +172,7 @@ public class ProjectTreeView extends VerticalLayout {
 
     private void configureTreeGrid() {
 
+        // TODO tooltip for cells
         treeGrid.setDataProvider(dataProvider);
         treeGrid.addClassNames("tree-gantt");
         treeGrid.setSizeFull();

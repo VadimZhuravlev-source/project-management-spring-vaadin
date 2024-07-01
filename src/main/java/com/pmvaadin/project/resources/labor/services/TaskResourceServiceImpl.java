@@ -1,11 +1,11 @@
-package com.pmvaadin.project.resources.services;
+package com.pmvaadin.project.resources.labor.services;
 
 import com.pmvaadin.project.structure.StandardError;
-import com.pmvaadin.project.resources.repositories.TaskResourceRepository;
+import com.pmvaadin.project.resources.labor.repositories.TaskResourceRepository;
 import com.pmvaadin.project.data.ProjectTaskData;
 import com.pmvaadin.project.tasks.entity.ProjectTask;
-import com.pmvaadin.project.resources.entity.TaskResource;
-import com.pmvaadin.project.resources.entity.TaskResourceImpl;
+import com.pmvaadin.project.resources.labor.entity.TaskResource;
+import com.pmvaadin.project.resources.labor.entity.TaskResourceImpl;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentationDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;

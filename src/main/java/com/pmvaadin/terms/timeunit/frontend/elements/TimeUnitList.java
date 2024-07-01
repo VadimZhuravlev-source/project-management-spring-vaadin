@@ -20,6 +20,7 @@ public class TimeUnitList extends ItemList<TimeUnitRepresentation, TimeUnit> {
     private void configureGrid() {
 
         this.grid.addColumn(TimeUnitRepresentation::getName).setHeader("Name");
+        this.grid.addColumn(TimeUnitRepresentation::getNumberOfHours).setHeader("Hours");
         this.addFlagColumn(TimeUnitRepresentation::isPredefined);
         onMouseDoubleClick(this::openNewItem);
         beforeAddition(this::openNewItem);
@@ -34,24 +35,33 @@ public class TimeUnitList extends ItemList<TimeUnitRepresentation, TimeUnit> {
     private void openEditingForm(TimeUnit timeUnit) {
         editingForm = new TimeUnitForm();
         editingForm.read(timeUnit);
-        editingForm.addListener(TimeUnitForm.SaveEvent.class, this::saveEvent);
+        editingForm.addListener(TimeUnitForm.SaveEvent.class, event -> saveAndClose(event.getItem(), false));
         editingForm.addListener(TimeUnitForm.CloseEvent.class, closeEvent -> closeEditor());
+        editingForm.addListener(TimeUnitForm.SaveAndCloseEvent.class, event -> saveAndClose(event.getItem(), true));
         editingForm.open();
         setDeletionAvailable(false);
-    }
-
-    private void saveEvent(TimeUnitForm.SaveEvent event) {
-        editingForm.close();
-        var item = event.getItem();
-        if (item instanceof TimeUnit timeUnit)
-            listService.save(timeUnit);
-        this.grid.getDataProvider().refreshAll();
     }
 
     private void closeEditor() {
         editingForm.close();
         setDeletionAvailable(true);
         this.grid.getDataProvider().refreshAll();
+    }
+
+    private void saveAndClose(Object item, boolean close) {
+        if (item instanceof TimeUnit castItem) {
+            try {
+                var savedItem = listService.save(castItem);
+                if (close) {
+                    closeEditor();
+                    return;
+                }
+                if (editingForm.isOpened())
+                    editingForm.read(savedItem);
+            } catch (Throwable error) {
+                showDialog(error);
+            }
+        }
     }
 
 }

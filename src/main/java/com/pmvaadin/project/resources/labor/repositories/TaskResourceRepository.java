@@ -1,7 +1,7 @@
-package com.pmvaadin.project.resources.repositories;
+package com.pmvaadin.project.resources.labor.repositories;
 
-import com.pmvaadin.project.resources.entity.TaskResource;
-import com.pmvaadin.project.resources.entity.TaskResourceImpl;
+import com.pmvaadin.project.resources.labor.entity.TaskResource;
+import com.pmvaadin.project.resources.labor.entity.TaskResourceImpl;
 import org.springframework.data.repository.Repository;
 
 import java.util.List;

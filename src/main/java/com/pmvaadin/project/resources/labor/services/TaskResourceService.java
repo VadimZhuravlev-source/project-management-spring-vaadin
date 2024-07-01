@@ -1,8 +1,8 @@
-package com.pmvaadin.project.resources.services;
+package com.pmvaadin.project.resources.labor.services;
 
 import com.pmvaadin.project.data.ProjectTaskData;
 import com.pmvaadin.project.tasks.entity.ProjectTask;
-import com.pmvaadin.project.resources.entity.TaskResource;
+import com.pmvaadin.project.resources.labor.entity.TaskResource;
 
 import java.util.List;
 

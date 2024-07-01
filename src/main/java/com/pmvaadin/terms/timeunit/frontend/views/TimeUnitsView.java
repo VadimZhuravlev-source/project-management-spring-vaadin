@@ -8,10 +8,11 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 
-@Route(value = "timeUnits", layout = MainLayout.class)
+@Route(value = "TimeUnits", layout = MainLayout.class)
 @PageTitle("Time units | PM")
-@PermitAll
+@RolesAllowed({"ADMIN", "PROJECT_MANAGER"})
 public class TimeUnitsView extends VerticalLayout {
 
     public TimeUnitsView(TimeUnitService timeUnitService) {

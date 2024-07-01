@@ -11,6 +11,7 @@ import com.vaadin.flow.component.grid.contextmenu.GridMenuItem;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
 
+import java.util.Set;
 import java.util.function.Consumer;
 
 public class ItemList<T, I> extends SearchableGrid<T> {
@@ -61,8 +62,12 @@ public class ItemList<T, I> extends SearchableGrid<T> {
             var itemOpt = event.getItem();
             if (itemOpt.isEmpty()) return;
             var item = itemOpt.get();
-            var timeUnit = ((ListService<T, I>) this.itemService).get(item);
-            openEvent.accept(timeUnit);
+            try {
+                var openingItem = ((ListService<T, I>) this.itemService).get(item);
+                openEvent.accept(openingItem);
+            } catch (Throwable error) {
+                showDialog(error);
+            }
         });
     }
 
@@ -100,15 +105,24 @@ public class ItemList<T, I> extends SearchableGrid<T> {
 
         var item = event.getItem();
 
-        var doubleClickItem = ((ListService<T, I>) itemService).get(item);
-        if (onMouseDoubleClick != null) onMouseDoubleClick.accept(doubleClickItem);
+        try {
+            var doubleClickItem = ((ListService<T, I>) itemService).get(item);
+            if (onMouseDoubleClick != null)
+                onMouseDoubleClick.accept(doubleClickItem);
+        } catch (Throwable error) {
+            showDialog(error);
+        }
 
     }
 
     private void additionListener(ClickEvent<Button> event) {
 
-        var newItem = ((ListService<T, I>) itemService).add();
-        if (beforeAddition != null) beforeAddition.accept(newItem);
+        try {
+            var newItem = ((ListService<T, I>) itemService).add();
+            if (beforeAddition != null) beforeAddition.accept(newItem);
+        } catch (Throwable error) {
+            showDialog(error);
+        }
 
     }
 
@@ -117,18 +131,22 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         if (!isDeletionAvailable) return;
 
         var selectedItems = grid.getSelectedItems();
-        if (selectedItems.isEmpty()) return;
+        if (selectedItems.isEmpty())
+            return;
+        var dialog = new ConfirmDialog("Deletion", "Are you sure you want to delete the selected objects?",
+                "Ok", confirmEvent -> delete(selectedItems),
+                "Cancel", cancelEvent -> {var a = 0;});
+        dialog.open();
+    }
+
+    private void delete(Set<T> items) {
         try {
-            ((ListService<T, I>) itemService).delete(selectedItems);
+            ((ListService<T, I>) itemService).delete(items);
             grid.deselectAll();
             grid.getDataProvider().refreshAll();
         } catch (Throwable e) {
-            var dialog = new ConfirmDialog();
-            dialog.add(e.getMessage());
-            dialog.open();
-            //NotificationDialogs.notifyValidationErrors(e.getMessage());
+            showDialog(e);
         }
-
     }
 
     private void copingListener(ClickEvent<Button> event) {
@@ -137,9 +155,12 @@ public class ItemList<T, I> extends SearchableGrid<T> {
         var selectedItems = grid.getSelectedItems();
         if (selectedItems.isEmpty()) return;
         var item = selectedItems.stream().findFirst().get();
-        var copyItem = ((ListService<T, I>) itemService).copy(item);
-        onCoping.accept(copyItem);
-
+        try {
+            var copyItem = ((ListService<T, I>) itemService).copy(item);
+            onCoping.accept(copyItem);
+        } catch (Throwable e) {
+            showDialog(e);
+        }
     }
 
 }

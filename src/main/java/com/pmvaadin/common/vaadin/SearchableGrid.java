@@ -2,6 +2,7 @@ package com.pmvaadin.common.vaadin;
 
 import com.pmvaadin.common.services.ItemService;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.ItemClickEvent;
 import com.vaadin.flow.component.html.Div;
@@ -40,7 +41,7 @@ public class SearchableGrid<T> extends VerticalLayout {
     public SearchableGrid(ItemService<T> itemService) {
 
         this.itemService = itemService;
-        DataProvider<T> dataProvider = new DataProvider<>(itemService);
+        DataProvider dataProvider = new DataProvider(itemService);
         this.filterDataProvider = dataProvider.withConfigurableFilter();
         grid.setItems(filterDataProvider);
 
@@ -74,6 +75,12 @@ public class SearchableGrid<T> extends VerticalLayout {
                         getElement().executeJs(
                                 "if (this.querySelector('vaadin-grid-flow-selection-column')) {" +
                                         " this.querySelector('vaadin-grid-flow-selection-column').hidden = true }")));
+    }
+
+    public void showDialog(Throwable error) {
+        var confDialog = new ConfirmDialog();
+        confDialog.setText(error.getMessage());
+        confDialog.open();
     }
 
     private void customizeGrid() {
@@ -132,7 +139,7 @@ public class SearchableGrid<T> extends VerticalLayout {
 
     }
 
-    private static class DataProvider<T> extends AbstractBackEndDataProvider<T, ItemFilter> {
+    private class DataProvider extends AbstractBackEndDataProvider<T, ItemFilter> {
 
         private final ItemService<T> itemService;
         private final ItemFilter emptyFilter = new ItemFilter();
@@ -146,8 +153,8 @@ public class SearchableGrid<T> extends VerticalLayout {
 
             var pageable = PageRequest.of(query.getPage(), query.getPageSize());
             var filter = query.getFilter().orElse(emptyFilter).getSearchTerm();
-            var list = itemService.getItems(filter, pageable);
 
+            var list = itemService.getItems(filter, pageable);
             return list.stream();
 
         }
@@ -157,6 +164,7 @@ public class SearchableGrid<T> extends VerticalLayout {
 
             var pageable = PageRequest.of(query.getPage(), query.getPageSize());
             var filter = query.getFilter().orElse(emptyFilter).getSearchTerm();
+
             return itemService.sizeInBackEnd(filter, pageable);
 
         }

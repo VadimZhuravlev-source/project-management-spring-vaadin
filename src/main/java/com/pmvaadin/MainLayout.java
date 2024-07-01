@@ -11,12 +11,17 @@ import com.pmvaadin.terms.timeunit.frontend.views.TimeUnitsView;
 import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H6;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.HighlightConditions;
+import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouterLink;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 
 @RolesAllowed({"ADMIN, PROJECT_MANAGER, WORKER"})
@@ -59,7 +64,8 @@ public class MainLayout extends AppLayout {
             return;
 
         var verticalLayout = new VerticalLayout();
-        // TODO put partition by roles in a method
+
+        // TODO put the below code of the partition by roles in a method
         if (userRole == Role.ADMIN || userRole == Role.PROJECT_MANAGER) {
             RouterLink projectTasksLink = new RouterLink("Projects", ProjectTreeView.class);
             projectTasksLink.setHighlightCondition(HighlightConditions.sameLocation());
@@ -96,5 +102,13 @@ public class MainLayout extends AppLayout {
         addToDrawer(verticalLayout);
     }
 
+    @Route(value="", layout = MainLayout.class)
+    @PageTitle("About | PM")
+//    @PermitAll
+    class EmptyRoute extends Div {
+        EmptyRoute() {
+            add(new Span("Welcome"));
+        }
+    }
 
 }

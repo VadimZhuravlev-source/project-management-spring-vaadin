@@ -21,7 +21,10 @@ public class LaborResourceForm extends DialogForm {
     public LaborResourceForm() {
         binder.bindInstanceFields(this);
         add(name);
+        setAsItemForm();
         customizeButton();
+        setDraggable(true);
+        setResizable(true);
     }
 
     public void read(@Nonnull LaborResource laborResource) {
@@ -34,14 +37,18 @@ public class LaborResourceForm extends DialogForm {
     }
 
     private void customizeButton() {
-        setAsItemForm();
         getCrossClose().addClickListener(this::closeEvent);
         getClose().addClickListener(this::closeEvent);
         getSaveAndClose().addClickListener(event -> {
             saveEvent(event);
-            close();
+            fireEvent(new SaveAndCloseEvent(this, this.laborResource));
         });
-        getSave().addClickListener(this::saveEvent);
+        getSave().addClickListener(event -> {
+            saveEvent(event);
+            fireEvent(new SaveEvent(this, this.laborResource));
+        });
+        getRefresh().setVisible(true);
+        getRefresh().addClickListener(event -> fireEvent(new RefreshEvent(this, laborResource.getRep())));
     }
 
     private void saveEvent(ClickEvent<Button> event) {
@@ -53,12 +60,10 @@ public class LaborResourceForm extends DialogForm {
             confDialog.open();
             return;
         }
-        fireEvent(new SaveEvent(this, this.laborResource));
     }
 
     private void closeEvent(ClickEvent<Button> event) {
         fireEvent(new CloseEvent(this, this.laborResource));
-        this.close();
     }
 
 }

@@ -1,34 +1,62 @@
 Project management
 =
 
-This is the Gradle Spring+Vaadin project, designed for project management.
+Welcome to our comprehensive Project Management Application,
+designed to streamline the way you manage projects, tasks, resources, and users.
+This powerful tool offers a robust set of features aimed at enhancing productivity,
+ensuring seamless collaboration, and providing detailed oversight of all project-related activities.
 
-The project uses Spring Security, so the following data is used to authenticate the user: phone number: 000, password: ADMIN 
+**Key Sections and Functionalities**
 
-The user can view three sections:
-
-Section Projects:
+**Projects Section:**
 
 <img src="images/Projects.png" alt="Projects" width="100%"/>
 
-In this section, the following actions are available with project tasks:
-+ Addition.
-+ Deletion.
-+ Moving. You can move tasks within the tree using buttons and drag and drop with the mouse
-+ Double-clicking opens the task editing form (Task data can only be changed by using the edit form)
++ **Project and Task Management:**
+  + A hierarchical tree view displaying all projects and tasks.
+  + Full control for users with "admin" or "project manager" roles to create, edit, delete, and move projects and tasks through intuitive buttons or drag-and-drop functionality.
+  + Flexible project nesting and advanced filtering options to manage visibility by name or project-only views.
+  + Customizable column display options in the settings menu (note: user settings saving is currently unavailable).
 
 <img src="images/Project_task.png" alt="Project task" width="100%"/>
 
-+ + The "Main" tab contains the main data of the task
++ **Task Editing:**
+  + A dedicated form with four detailed tabs:
+    + **Main:** Comprehensive task attribute management.
+    + **Predecessors:** Manage task dependencies with options to add, edit, and delete predecessors.
+    + **Successors:** View but not edit task successors.
+    + **Labor Resources:** Plan and allocate labor resources effectively.
 
-<img src="images/Predecessors.png" alt="Predecessors" width="100%"/>
+**Calendars Section:**
 
-+ + On the "Predecessors" tab, you can set task predecessors.
-You can add a predecessor by clicking on the Add button,
-in the Project tasks column click on the icon <img src="Images/selection_icon.png" alt="selection_icon" width="25"/>.
-In the selection form that opens, select the required task, either by clicking on the Select button or by double-clicking the mouse.
-In the second column, select Link type.
++ **Calendar Management:**
 
-In the Calendars section, you can add project task calendars, but they are not used yet.
+  + Add, edit, and delete calendars, with all changes triggering recalculations of task deadlines.
+  + A familiar interface akin to MS Project 2013 for setting exceptions and working weeks.
+  + A visual calendar view to inspect changes day-by-day, selectable by month or year.
 
-In the Users section, you can create new users and edit current ones.
+**Time Units Section:**
+
++ **Time Unit Management:**
+  + Add, edit, and delete time units that determine the task duration calculations.
+  
+**Labor Resources Section:**
+
++ **Resource Management:**
+  + Manage labor resources with capabilities to add, edit, and delete.
+
+**Users Section:**
+
++ **User Management:**
+  + Available exclusively to administrators to manage user accounts, roles, and permissions.
+  + Role-based security to govern data visibility and access.
+  + Four types of access control for project managers, ranging from restrictive to comprehensive task visibility.
+
+**Actual Labor Costs Section:**
+
++ **Tracking Labor Costs:**
+  + Record, edit, and delete actual labor costs.
+  + Assign tasks and track work periods by dragging tasks into a designated table, reflecting actual labor costs against planned resources.
+
+
+

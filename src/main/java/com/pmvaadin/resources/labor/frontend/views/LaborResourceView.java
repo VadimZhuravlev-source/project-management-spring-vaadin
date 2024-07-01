@@ -8,11 +8,12 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.springframework.beans.factory.annotation.Qualifier;
 
-@Route(value = "laborResources", layout = MainLayout.class)
+@Route(value = "LaborResources", layout = MainLayout.class)
 @PageTitle("Labor resources | PM")
-@PermitAll
+@RolesAllowed({"ADMIN", "PROJECT_MANAGER"})
 public class LaborResourceView extends VerticalLayout {
 
     private final LaborResourceService laborResourceService;

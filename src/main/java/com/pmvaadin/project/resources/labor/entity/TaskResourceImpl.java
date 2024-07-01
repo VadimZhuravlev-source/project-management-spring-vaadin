@@ -1,4 +1,4 @@
-package com.pmvaadin.project.resources.entity;
+package com.pmvaadin.project.resources.labor.entity;
 
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;

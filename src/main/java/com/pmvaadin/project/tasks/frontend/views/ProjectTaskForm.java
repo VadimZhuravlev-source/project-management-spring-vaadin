@@ -7,7 +7,7 @@ import com.pmvaadin.project.tasks.entity.ScheduleMode;
 import com.pmvaadin.project.tasks.entity.Status;
 import com.pmvaadin.project.links.entities.Link;
 import com.pmvaadin.project.view.ProjectTaskPropertyNames;
-import com.pmvaadin.resources.labor.frontend.elements.ProjectTaskLaborResources;
+import com.pmvaadin.project.resources.labor.frontend.elements.ProjectTaskLaborResources;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.project.structure.NotificationDialogs;
 import com.pmvaadin.terms.calendars.entity.CalendarRepresentation;

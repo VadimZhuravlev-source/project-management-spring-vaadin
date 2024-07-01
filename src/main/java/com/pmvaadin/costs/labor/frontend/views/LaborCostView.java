@@ -10,7 +10,7 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.PermitAll;
 
-@Route(value = "actualLaborCosts", layout = MainLayout.class)
+@Route(value = "ActualLaborCosts", layout = MainLayout.class)
 @PageTitle("Actual labor costs | PM")
 @PermitAll
 public class LaborCostView extends VerticalLayout {

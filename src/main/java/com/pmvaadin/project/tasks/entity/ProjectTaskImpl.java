@@ -1,7 +1,7 @@
 package com.pmvaadin.project.tasks.entity;
 
-import com.pmvaadin.project.resources.entity.TaskResource;
-import com.pmvaadin.project.resources.entity.TaskResourceImpl;
+import com.pmvaadin.project.resources.labor.entity.TaskResource;
+import com.pmvaadin.project.resources.labor.entity.TaskResourceImpl;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 import jakarta.persistence.Table;
 import lombok.Getter;

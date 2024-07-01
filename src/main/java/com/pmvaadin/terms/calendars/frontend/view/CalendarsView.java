@@ -9,10 +9,11 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 
 import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 
-@Route(value = "calendars", layout = MainLayout.class)
+@Route(value = "Calendars", layout = MainLayout.class)
 @PageTitle("Calendars | PM")
-@PermitAll
+@RolesAllowed({"ADMIN", "PROJECT_MANAGER"})
 public class CalendarsView extends VerticalLayout {
 
     public CalendarsView(CalendarService calendarService, CalendarForm calendarForm) {

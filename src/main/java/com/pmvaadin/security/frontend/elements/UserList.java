@@ -7,6 +7,7 @@ import com.pmvaadin.security.entities.User;
 import com.pmvaadin.security.entities.UserRepresentation;
 import com.pmvaadin.security.entities.UserRepresentationDTO;
 import com.pmvaadin.security.frontend.views.UserForm;
+import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 
 public class UserList extends ItemList<UserRepresentation, User> {
 
@@ -39,7 +40,8 @@ public class UserList extends ItemList<UserRepresentation, User> {
     private void openEditingForm(User user) {
         editingForm = editingForm.getInstance();
         editingForm.read(user);
-        editingForm.addListener(UserForm.SaveEvent.class, this::saveEvent);
+        editingForm.addListener(UserForm.SaveEvent.class, event -> saveAndClose(event.getItem(), false));
+        editingForm.addListener(UserForm.SaveAndCloseEvent.class, event -> saveAndClose(event.getItem(), true));
         editingForm.addListener(UserForm.CloseEvent.class, closeEvent -> closeEditor());
         editingForm.addListener(UserForm.RefreshEvent.class, this::refreshEvent);
         editingForm.open();
@@ -55,22 +57,19 @@ public class UserList extends ItemList<UserRepresentation, User> {
         }
     }
 
-    private void saveEvent(UserForm.SaveEvent event) {
-
-        var item = event.getItem();
-        if (item instanceof User user) {
-            User savedUser;
+    private void saveAndClose(Object item, boolean close) {
+        if (item instanceof User castItem) {
             try {
-                savedUser = listService.save(user);
-            } catch (Throwable exception) {
-                NotificationDialogs.notifyValidationErrors(exception.getMessage());
-                return;
+                var savedItem = listService.save(castItem);
+                if (close) {
+                    closeEditor();
+                    return;
+                }
+                if (editingForm.isOpened())
+                    editingForm.read(savedItem);
+            } catch (Throwable error) {
+                showDialog(error);
             }
-
-            if (editingForm.isOpened())
-                editingForm.read(savedUser);
-            else
-                this.grid.getDataProvider().refreshAll();
         }
     }
 

@@ -126,7 +126,7 @@ public class TimeUnitServiceImpl implements TimeUnitService, ListService<TimeUni
             throw new StandardError("Cannot remove the time units: " + string + ", because they is used in project tasks");
         }
 
-        return new ArrayList<>(0);
+        return ids;
 
     }
 

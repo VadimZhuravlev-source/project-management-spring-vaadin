@@ -1,11 +1,12 @@
-package com.pmvaadin.resources.labor.frontend.elements;
+package com.pmvaadin.project.resources.labor.frontend.elements;
 
 import com.pmvaadin.common.ObjectGrid;
 import com.pmvaadin.project.structure.StandardError;
 import com.pmvaadin.project.common.BigDecimalToDoubleConverter;
 import com.pmvaadin.project.tasks.entity.ProjectTask;
-import com.pmvaadin.project.resources.entity.TaskResource;
+import com.pmvaadin.project.resources.labor.entity.TaskResource;
 import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
+import com.pmvaadin.resources.labor.frontend.elements.LaborResourceComboBox;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 
@@ -83,7 +84,7 @@ public class ProjectTaskLaborResources extends ObjectGrid<TaskResource> {
         NumberField duration = new NumberField();
         duration.setWidthFull();
         duration.setStepButtonsVisible(true);
-        duration.setStep(1);
+        duration.setStep(0.01);
         duration.setMin(0);
         duration.setValue(1.0);
         duration.addValueChangeListener(event -> {

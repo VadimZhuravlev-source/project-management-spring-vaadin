@@ -105,10 +105,13 @@ public class UserForm extends DialogForm {
     private void configureMainButtons() {
         getClose().addClickListener(event -> closeEvent());
         getCrossClose().addClickListener(event -> closeEvent());
-        getSave().addClickListener(event -> saveEvent());
+        getSave().addClickListener(event -> {
+            saveEvent();
+            fireEvent(new SaveEvent(this, this.user));
+        });
         getSaveAndClose().addClickListener(event -> {
             saveEvent();
-            this.close();
+            fireEvent(new SaveAndCloseEvent(this, this.user));
         });
         getRefresh().setVisible(true);
         getRefresh().addClickListener(event -> fireEvent(new RefreshEvent(this, this.user)));
@@ -116,7 +119,6 @@ public class UserForm extends DialogForm {
 
     private void closeEvent() {
         fireEvent(new CloseEvent(this, this.user));
-        this.close();
     }
 
     private void saveEvent() {
@@ -128,7 +130,6 @@ public class UserForm extends DialogForm {
             userLaborResources.validate();
             user.setUserLaborResources(userLaborResources.getItems());
             fillUserRoles();
-            fireEvent(new SaveEvent(this, this.user));
         } catch (Throwable e) {
             NotificationDialogs.notifyValidationErrors(e.getMessage());
         }
@@ -157,6 +158,8 @@ public class UserForm extends DialogForm {
 
     private void configureForm() {
         setAsItemForm();
+        setDraggable(true);
+        setResizable(true);
         accessType.setItems(AccessType.values());
         var mainLayout = new FormLayout();
         mainLayout.addFormItem(name, "Name");

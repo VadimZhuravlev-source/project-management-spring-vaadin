@@ -3,7 +3,7 @@ package com.pmvaadin.project.data;
 import com.pmvaadin.common.ChangedTableData;
 import com.pmvaadin.project.tasks.entity.ProjectTask;
 import com.pmvaadin.project.links.entities.Link;
-import com.pmvaadin.project.resources.entity.TaskResource;
+import com.pmvaadin.project.resources.labor.entity.TaskResource;
 import com.pmvaadin.terms.calendars.entity.Calendar;
 import com.pmvaadin.terms.timeunit.entity.TimeUnit;
 

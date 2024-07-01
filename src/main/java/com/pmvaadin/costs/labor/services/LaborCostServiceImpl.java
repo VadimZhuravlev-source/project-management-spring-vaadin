@@ -10,6 +10,7 @@ import com.pmvaadin.resources.labor.entity.LaborResourceRepresentation;
 import com.pmvaadin.resources.labor.services.LaborResourceService;
 import com.pmvaadin.terms.calendars.common.HasIdentifyingFields;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Pageable;
@@ -77,7 +78,9 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
                 && !persistedResourceOpt.get().getId().equals(laborCost.getId()))
             throw new StandardError("Labor cost with the same day and resource already exists.");
 
-        return laborCostRepository.save(laborCost);
+        var savedItem = laborCostRepository.save(laborCost);
+        fillRepresentations(savedItem);
+        return savedItem;
 
     }
 
@@ -203,12 +206,24 @@ public class LaborCostServiceImpl implements LaborCostService, ListService<Labor
         var query = entityManager.createNativeQuery(queryTextLaborCosts);
         query.setParameter("userName", userName);
         query.setParameter("search", "%" + filter + "%");
+        return getLaborCostRepresentations(query);
+    }
+
+    private ArrayList<LaborCostRepresentation> getLaborCostRepresentations(Query query) {
         var resultList = (List<Object[]>) query.getResultList();
         var result = new ArrayList<LaborCostRepresentation>(resultList.size());
         for (var row: resultList) {
             var sqlDay = (java.sql.Date) row[2];
             var day = sqlDay.toLocalDate();
-            var rep = new LaborCostRepresentationDTO((Integer) row[0], row[1].toString(), day, (Date) row[3], row[4].toString());
+            var nameObj = row[1];
+            var name = "";
+            if (nameObj != null)
+                name = (String) nameObj;
+            var devNameObj = row[4];
+            var devName = "";
+            if (devNameObj != null)
+                devName = (String) devNameObj;
+            var rep = new LaborCostRepresentationDTO((Integer) row[0], name, day, (Date) row[3], devName);
             result.add(rep);
         }
         return result;

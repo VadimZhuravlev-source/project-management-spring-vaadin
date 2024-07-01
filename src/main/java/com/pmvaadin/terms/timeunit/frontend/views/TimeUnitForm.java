@@ -22,14 +22,17 @@ public class TimeUnitForm extends DialogForm {
     public TimeUnitForm() {
 
         numberOfHours.setStepButtonsVisible(true);
-        numberOfHours.setStep(1);
-        numberOfHours.setMin(1);
+        numberOfHours.setStep(0.01);
+        numberOfHours.setMin(0.01);
         binder.forField(numberOfHours).withConverter(new BigDecimalToDoubleConverter(numberOfHours))
                 .withValidator(bigDecimal -> bigDecimal.doubleValue() > 0, getMessage())
                 .bind(TimeUnit::getNumberOfHours, TimeUnit::setNumberOfHours);
+        binder.forField(name).bind(TimeUnit::getName, TimeUnit::setName);
         binder.bindInstanceFields(this);
         add(name, numberOfHours);
         setAsItemForm();
+        setDraggable(true);
+        setResizable(true);
         customizeButtons();
     }
 
@@ -49,9 +52,12 @@ public class TimeUnitForm extends DialogForm {
     private void customizeButtons() {
         getSaveAndClose().addClickListener(event -> {
             saveEvent(event);
-            close();
+            fireEvent(new SaveAndCloseEvent(this, this.timeUnit));
         });
-        getSave().addClickListener(this::saveEvent);
+        getSave().addClickListener(event -> {
+            saveEvent(event);
+            fireEvent(new SaveEvent(this, this.timeUnit));
+        });
         getCrossClose().addClickListener(this::closeEvent);
         getClose().addClickListener(this::closeEvent);
     }
@@ -74,14 +80,12 @@ public class TimeUnitForm extends DialogForm {
             var confDialog = new ConfirmDialog();
             confDialog.setText(error.getMessage());
             confDialog.open();
-            return;
+//            return;
         }
-        fireEvent(new SaveEvent(this, this.timeUnit));
     }
 
     private void closeEvent(ClickEvent<Button> event) {
         fireEvent(new CloseEvent(this, this.timeUnit));
-        this.close();
     }
 
     private String getMessage() {

@@ -9,14 +9,12 @@ import com.vaadin.flow.router.Route;
 
 import jakarta.annotation.security.PermitAll;
 
-@Route(value="Tests", layout = MainLayout.class)
-@PageTitle("Tests | Tests")
-@PermitAll
+//@Route(value="Tests", layout = MainLayout.class)
+//@PageTitle("Tests | Tests")
+//@PermitAll
 public class TestElementsView extends FormLayout {
 
-
     public TestElementsView() {
-        super();
         add(new SelectedComboBox<>(), new TextField());
     }
 }

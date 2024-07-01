@@ -1,5 +1,6 @@
 package com.pmvaadin.terms.calendars.frontend.elements;
 
+import com.pmvaadin.common.DialogForm;
 import com.pmvaadin.common.services.ListService;
 import com.pmvaadin.common.vaadin.ItemList;
 import com.pmvaadin.terms.calendars.entity.Calendar;
@@ -41,12 +42,18 @@ public class CalendarList extends ItemList<CalendarRepresentation, Calendar> {
         editingForm.read(calendar);
         editingForm.addListener(CalendarForm.SaveEvent.class, this::saveEvent);
         editingForm.addListener(CalendarForm.CloseEvent.class, closeEvent -> closeEditor());
+        editingForm.addListener(DialogForm.SaveAndCloseEvent.class, this::saveAndCloseEvent);
         editingForm.open();
         setDeletionAvailable(false);
     }
 
     private void saveEvent(CalendarForm.SaveEvent event) {
         this.grid.getDataProvider().refreshAll();
+    }
+
+    private void saveAndCloseEvent(CalendarForm.SaveAndCloseEvent event) {
+        this.grid.getDataProvider().refreshAll();
+        editingForm.close();
     }
 
     private void closeEditor() {

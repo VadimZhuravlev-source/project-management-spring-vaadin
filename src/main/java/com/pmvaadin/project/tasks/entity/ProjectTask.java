@@ -1,6 +1,6 @@
 package com.pmvaadin.project.tasks.entity;
 
-import com.pmvaadin.project.resources.entity.TaskResource;
+import com.pmvaadin.project.resources.labor.entity.TaskResource;
 import com.pmvaadin.terms.timeunit.entity.TimeUnitRepresentation;
 
 import java.math.BigDecimal;

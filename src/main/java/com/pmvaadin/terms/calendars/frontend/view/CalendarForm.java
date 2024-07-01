@@ -124,6 +124,9 @@ public class CalendarForm extends DialogForm {
 
     private void customizeBinder() {
 
+        // the binder do not take the name and the setting fields, so put in them manually
+        binder.forField(name).bind(Calendar::getName, Calendar::setName);
+        binder.forField(setting).bind(Calendar::getSetting, Calendar::setSetting);
         binder.bindInstanceFields(this);
 
     }
@@ -141,9 +144,6 @@ public class CalendarForm extends DialogForm {
         );
         if (this.calendar.isNew())
             getRefresh().setEnabled(false);
-
-        name.setReadOnly(false);
-        setting.setReadOnly(false);
 
     }
 
@@ -175,11 +175,17 @@ public class CalendarForm extends DialogForm {
         var endOfWeek = new FormLayout();
         endOfWeek.addFormItem(this.endOfWeek, "End of week");
         var vertLayout = new VerticalLayout(endOfWeek, exceptions);
+        vertLayout.setPadding(false);
+        vertLayout.setSpacing(false);
 
         tabSheet.add(exceptionsTab, vertLayout);
         tabSheet.add(workWeeksTab, workingWeeks);
 
+        yearCalendar.setSpacing(false);
+        yearCalendar.setPadding(false);
         var verticalLayout = new VerticalLayout(yearCalendar, mainLayout, tabSheet);
+        verticalLayout.setPadding(false);
+        verticalLayout.setSpacing(false);
         super.add(verticalLayout);
 
     }
@@ -199,7 +205,7 @@ public class CalendarForm extends DialogForm {
 
             boolean validationDone = validateAndSave();
             if (!validationDone) return;
-            fireEvent(new SaveEvent(this, this.calendar));
+            fireEvent(new SaveAndCloseEvent(this, this.calendar));
             this.close();
 
         });
@@ -220,6 +226,7 @@ public class CalendarForm extends DialogForm {
             fireEvent(new SaveEvent(this, this.calendar));
             read();
         });
+
         binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
 
     }
