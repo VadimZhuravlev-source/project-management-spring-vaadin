@@ -44,8 +44,7 @@ ensuring seamless collaboration, and providing detailed oversight of all project
   <img src="images/working_week.png" alt="Working week" width="49%"/>
   
   + A visual calendar view to inspect changes day-by-day, selectable by month or year.
-  
-  + <img src="images/calendar.png" alt="Labor Resources" width="50%"/>
+  <img src="images/calendar.png" alt="Labor Resources" width="50%"/>
 
 **Time Units Section:**
 
