@@ -66,6 +66,10 @@ ensuring seamless collaboration, and providing detailed oversight of all project
   + Role-based security to govern data visibility and access.
   + Four types of access control for project managers, ranging from restrictive to comprehensive task visibility.
 
+The default user who creates at the very beginning has the following credentials:
+Login: Admin
+Password: 1
+
 **Actual Labor Costs Section:**
 
 + **Tracking Labor Costs:**
